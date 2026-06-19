@@ -1,7 +1,7 @@
-import { ScreenGallery } from "@/components/screens/ScreenGallery";
+import { Stepper2D } from "@/components/experience/Stepper2D";
 
-// Fase 1: a raiz renderiza a galeria 2D das telas. Será substituída pela
-// <Experience/> (Canvas + Chrome) na Fase 3.
+// Fase 2: stepper 2D que percorre o grafo e prova os forks. Será substituído
+// pela <Experience/> (Canvas + Chrome) na Fase 3.
 export default function Home() {
-  return <ScreenGallery />;
+  return <Stepper2D />;
 }
