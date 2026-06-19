@@ -58,7 +58,7 @@ export function StationPlane({
       occlude={false}
       wrapperClass="station-html"
     >
-      <div className="overflow-hidden rounded-wire border border-neutral-200 bg-paper shadow-[0_1px_2px_rgba(24,24,26,0.04)]">
+      <div className="station-reveal overflow-hidden rounded-wire border border-neutral-200 bg-paper shadow-[0_1px_2px_rgba(24,24,26,0.04)]">
         <Screen {...props} />
       </div>
     </Html>
