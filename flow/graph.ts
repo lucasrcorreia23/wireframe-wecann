@@ -2,7 +2,7 @@ import type { FlowNode, NodeId, Zone } from "./types";
 
 // Espaçamento do trilho ao longo de −Z e offset lateral dos ramos (§3.1).
 const STEP = 16;
-const SIDE = 9;
+const SIDE = 11;
 const z = (i: number): number => -i * STEP;
 
 // Trilho com estações. Spine ao longo de −Z; forks deslocam em ±X e reentram.

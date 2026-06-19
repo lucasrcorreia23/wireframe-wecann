@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { gsap, useGSAP, SplitText } from "@/lib/gsap";
 import { prefersReducedMotion } from "@/lib/motion";
 
@@ -10,6 +10,14 @@ import { prefersReducedMotion } from "@/lib/motion";
 export function Intro() {
   const root = useRef<HTMLDivElement>(null);
   const [done, setDone] = useState(prefersReducedMotion());
+
+  // Rede de segurança: garante que a intro sempre se dispense, mesmo que o
+  // onComplete do GSAP não dispare em algum ambiente. Nunca fica preso no overlay.
+  useEffect(() => {
+    if (done) return;
+    const id = window.setTimeout(() => setDone(true), 4500);
+    return () => window.clearTimeout(id);
+  }, [done]);
 
   useGSAP(
     () => {

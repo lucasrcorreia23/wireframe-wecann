@@ -31,9 +31,10 @@ export function WorldCanvas() {
         far: 400,
       }}
     >
-      {/* Fundo e névoa cinza — base da atmosfera. */}
-      <color attach="background" args={["#f2f2f1"]} />
-      <fog attach="fog" args={["#e7e7e5", 14, 120]} />
+      {/* Fundo e névoa cinza — base da atmosfera. Levemente mais escuro que o
+          papel das estações (#fff) para que as telas brancas "flutuem". */}
+      <color attach="background" args={["#e3e3e1"]} />
+      <fog attach="fog" args={["#d6d6d3", 16, 130]} />
 
       <Atmosphere intensityRef={intensityRef} />
       <CameraRig proxyRef={proxyRef} intensityRef={intensityRef} />

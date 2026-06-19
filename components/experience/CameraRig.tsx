@@ -47,42 +47,30 @@ export function CameraRig({
   const travelToken = useFlow((s) => s.travelToken);
   const target = useRef(cameraTargetFor(NODES.home.position));
 
-  // Intro (1º load): inicializa o proxy "longe" e a câmera entra → enquadra home;
-  // fog "acende" via intensidade decaindo (§6). Roda uma única vez.
+  // Intro (1º load): inicializa o proxy no enquadramento de repouso da home.
+  // A câmera "voa" de longe via damping no useFrame (não-GSAP) durante os
+  // primeiros frames — robusto e independente do ticker do GSAP. Roda uma vez.
+  const intro = useRef({ active: false, t: 0 });
   useEffect(() => {
     const t = cameraTargetFor(NODES.home.position);
     target.current = t;
-    const reduce = prefersReducedMotion();
+    // `?still` (ou reduced-motion) inicia já no repouso, sem fly-in.
+    const still =
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).has("still");
+    const reduce = prefersReducedMotion() || still;
 
-    // Inicialização do proxy (fora do render para respeitar as regras de refs).
+    // Inicialização do proxy (fora do render — regras de refs). Com movimento,
+    // começa um pouco atrás/acima e o useFrame amortece até o repouso.
     proxyRef.current = {
       px: t.pos[0],
-      py: t.pos[1] + (reduce ? 0 : 6),
-      pz: t.pos[2] + (reduce ? 0 : 34),
+      py: t.pos[1] + (reduce ? 0 : 5),
+      pz: t.pos[2] + (reduce ? 0 : 26),
       tx: t.look[0],
       ty: t.look[1],
       tz: t.look[2],
     };
-    const p = proxyRef.current;
-
-    if (reduce) {
-      setProxy(p, t.pos, t.look);
-      return;
-    }
-    const tl = gsap.timeline();
-    tl.to(p, {
-      px: t.pos[0],
-      py: t.pos[1],
-      pz: t.pos[2],
-      tx: t.look[0],
-      ty: t.look[1],
-      tz: t.look[2],
-      duration: DURATION.intro,
-      ease: travelEase(),
-    });
-    return () => {
-      tl.kill();
-    };
+    intro.current = { active: !reduce, t: 0 };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -125,10 +113,26 @@ export function CameraRig({
     };
   }, [travelToken, currentNode, proxyRef]);
 
-  useFrame(() => {
+  useFrame((_, dt) => {
     const p = proxyRef.current;
     if (!p) return;
     const t = target.current;
+
+    // Fly-in da intro por damping (não depende do ticker do GSAP).
+    if (intro.current.active) {
+      const lambda = 1.9;
+      const clampedDt = Math.min(dt, 0.05);
+      p.px = THREE.MathUtils.damp(p.px, t.pos[0], lambda, clampedDt);
+      p.py = THREE.MathUtils.damp(p.py, t.pos[1], lambda, clampedDt);
+      p.pz = THREE.MathUtils.damp(p.pz, t.pos[2], lambda, clampedDt);
+      intro.current.t += dt;
+      // Encerra quando chega perto ou após a duração máxima da intro.
+      const near = Math.abs(p.pz - t.pos[2]) < 0.05;
+      if (near || intro.current.t > DURATION.intro + 0.5) {
+        setProxy(p, t.pos, t.look);
+        intro.current.active = false;
+      }
+    }
     // Intensidade da atmosfera ∝ distância restante até o alvo (sobe no trânsito).
     const remaining = Math.hypot(
       t.pos[0] - p.px,

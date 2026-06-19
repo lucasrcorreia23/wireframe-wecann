@@ -4,11 +4,11 @@ import { Html, Edges } from "@react-three/drei";
 import { SCREENS, type ScreenProps } from "@/components/screens";
 import { useFlow } from "@/flow/store";
 import type { FlowNode } from "@/flow/types";
-import { STATION_SCALE } from "@/lib/camera";
+import { STATION_SCALE, PLACEHOLDER_W, PLACEHOLDER_H } from "@/lib/camera";
 
-// Footprint do placeholder 3D (estações distantes), em unidades de mundo.
-const PH_W = 1160 * STATION_SCALE;
-const PH_H = 760 * STATION_SCALE;
+// Footprint do placeholder 3D (estações distantes), em unidades de mundo reais.
+const PH_W = PLACEHOLDER_W;
+const PH_H = PLACEHOLDER_H;
 
 // Um plano-estação. Quando `mounted` (ativa + adjacente §5/armadilha 5), monta o
 // Screen real via <Html transform>. Caso contrário, um placeholder leve mantém o
@@ -38,7 +38,7 @@ export function StationPlane({
 
   const Screen = SCREENS[node.id];
 
-  // Liga forks/confirmação ao store (mesma lógica do Stepper2D).
+  // Liga forks/confirmação ao store (decisões resolvidas na própria tela §3.3).
   const props: ScreenProps = {};
   if (node.fork) {
     props.onYes = () => goTo(node.fork!.yes.to);
@@ -61,7 +61,12 @@ export function StationPlane({
       occlude={false}
       wrapperClass="station-html"
     >
-      <div className="station-reveal overflow-hidden rounded-wire border border-neutral-200 bg-paper shadow-[0_1px_2px_rgba(24,24,26,0.04)]">
+      {/* Largura explícita: sem ela o wrapper CSS3D colapsa e o overflow-hidden
+          recorta a tela de 1160px. As telas usam w-[1160px] (ScreenShell). */}
+      <div
+        style={{ width: 1160 }}
+        className="station-reveal overflow-hidden rounded-wire border border-neutral-200 bg-paper shadow-[0_8px_40px_rgba(24,24,26,0.12)]"
+      >
         <Screen {...props} />
       </div>
     </Html>
