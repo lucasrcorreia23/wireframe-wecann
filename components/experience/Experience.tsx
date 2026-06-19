@@ -1,11 +1,11 @@
 "use client";
 
 import { WorldCanvasClient } from "./WorldCanvasClient";
-import { TempNav } from "./TempNav";
+import { ChromeOverlay } from "@/components/chrome/ChromeOverlay";
 import { Intro } from "./Intro";
 
 // Compõe a experiência: canvas-mundo persistente (camada-mundo) + chrome DOM
-// acima (camada-chrome). Na Fase 5 o TempNav vira ChromeOverlay.
+// acima (camada-chrome), sempre nítida. O canvas nunca remonta ao navegar.
 export function Experience() {
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-neutral-100">
@@ -14,10 +14,8 @@ export function Experience() {
         <WorldCanvasClient />
       </div>
 
-      {/* Camada-chrome (DOM acima do canvas, sempre nítida) */}
-      <div className="pointer-events-none absolute inset-0 z-10">
-        <TempNav />
-      </div>
+      {/* Camada-chrome */}
+      <ChromeOverlay />
 
       {/* Momento editorial de abertura */}
       <Intro />

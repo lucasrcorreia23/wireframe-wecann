@@ -113,6 +113,34 @@
   animation: station-in 520ms ease-out both;
 }
 
+/* Entrada dos painéis companheiros (slide+fade 420ms §6). */
+@keyframes panel-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes panel-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.panel-in-left {
+  animation: panel-in-left 420ms ease-out both;
+}
+.panel-in-right {
+  animation: panel-in-right 420ms ease-out both;
+}
+
 /* Respeita prefers-reduced-motion globalmente (transições/animações DOM).
    O fallback 3D é tratado em lib/motion.ts e na CameraRig. */
 @media (prefers-reduced-motion: reduce) {
