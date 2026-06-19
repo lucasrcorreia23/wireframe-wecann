@@ -141,15 +141,30 @@
   animation: panel-in-right 420ms ease-out both;
 }
 
-/* Respeita prefers-reduced-motion globalmente (transições/animações DOM).
-   O fallback 3D é tratado em lib/motion.ts e na CameraRig. */
+/* Cross-fade curto (fallback reduced-motion, §6): substitui reveal/slide por
+   um fade de 200ms — sem dolly, sem translate. A câmera é setada instantaneamente
+   na CameraRig e a atmosfera fica estática (Atmosphere). */
+@keyframes soft-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .station-reveal,
+  .panel-in-left,
+  .panel-in-right {
+    animation: soft-fade 200ms ease both;
+  }
+
+  /* Neutraliza grandes movimentos de transição decorativos, preservando o
+     fade do cross-fade acima e os outlines de foco. */
   *,
   *::before,
   *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
 }

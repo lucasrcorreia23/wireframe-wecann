@@ -14,7 +14,12 @@ export function Stations() {
   return (
     <>
       {ALL_NODE_IDS.map((id) => (
-        <StationPlane key={id} node={NODES[id]} mounted={near.has(id)} />
+        <StationPlane
+          key={id}
+          node={NODES[id]}
+          mounted={near.has(id)}
+          active={id === current}
+        />
       ))}
     </>
   );

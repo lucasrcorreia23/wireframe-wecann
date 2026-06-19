@@ -16,9 +16,11 @@ const PH_H = 760 * STATION_SCALE;
 export function StationPlane({
   node,
   mounted,
+  active,
 }: {
   node: FlowNode;
   mounted: boolean;
+  active: boolean;
 }) {
   const goTo = useFlow((s) => s.goTo);
   const back = useFlow((s) => s.back);
@@ -53,7 +55,8 @@ export function StationPlane({
       center
       position={node.position}
       scale={STATION_SCALE}
-      pointerEvents="auto"
+      // Só a estação ativa recebe cliques; vizinhas montadas não interceptam.
+      pointerEvents={active ? "auto" : "none"}
       zIndexRange={[10, 0]}
       occlude={false}
       wrapperClass="station-html"

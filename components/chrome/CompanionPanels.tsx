@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { gsap, useGSAP, Flip } from "@/lib/gsap";
+import { useGSAP, Flip } from "@/lib/gsap";
 import { useFlow } from "@/flow/store";
 import { NODES } from "@/flow/graph";
 import { Eyebrow, WireBadge } from "@/components/ui";

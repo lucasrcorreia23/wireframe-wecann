@@ -47,10 +47,14 @@ export function CameraRig({
   const travelToken = useFlow((s) => s.travelToken);
   const target = useRef(cameraTargetFor(NODES.home.position));
 
-  // Inicializa o proxy. Com motion: começa "longe" para a sequência de intro.
-  if (proxyRef.current === null) {
+  // Intro (1º load): inicializa o proxy "longe" e a câmera entra → enquadra home;
+  // fog "acende" via intensidade decaindo (§6). Roda uma única vez.
+  useEffect(() => {
     const t = cameraTargetFor(NODES.home.position);
+    target.current = t;
     const reduce = prefersReducedMotion();
+
+    // Inicialização do proxy (fora do render para respeitar as regras de refs).
     proxyRef.current = {
       px: t.pos[0],
       py: t.pos[1] + (reduce ? 0 : 6),
@@ -59,16 +63,9 @@ export function CameraRig({
       ty: t.look[1],
       tz: t.look[2],
     };
-  }
-
-  // Intro (1º load): câmera entra de longe → enquadra home; fog "acende" via
-  // intensidade decaindo (§6). Roda uma única vez.
-  useEffect(() => {
     const p = proxyRef.current;
-    if (!p) return;
-    const t = cameraTargetFor(NODES.home.position);
-    target.current = t;
-    if (prefersReducedMotion()) {
+
+    if (reduce) {
       setProxy(p, t.pos, t.look);
       return;
     }

@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { gsap, useGSAP } from "@/lib/gsap";
+import { prefersReducedMotion } from "@/lib/motion";
 import {
   ScreenShell,
   WireCard,
@@ -15,44 +17,7 @@ export function ReportScreen() {
   const [sent, setSent] = useState(false);
 
   if (sent) {
-    return (
-      <ScreenShell zone="Pós-consulta · terminus" title="Relatório enviado">
-        <div className="flex min-h-[320px] flex-col items-center justify-center gap-6 text-center">
-          {/* Checkmark hairline — animado com DrawSVG na Fase 6. */}
-          <svg
-            viewBox="0 0 64 64"
-            className="h-16 w-16"
-            fill="none"
-            aria-hidden
-          >
-            <circle
-              cx="32"
-              cy="32"
-              r="30"
-              stroke="var(--color-neutral-300)"
-              strokeWidth="1"
-            />
-            <path
-              d="M20 33 L29 42 L45 24"
-              stroke="var(--color-ink)"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-          <p className="font-display text-display-l font-medium text-ink">
-            Relatório enviado
-          </p>
-          <p className="max-w-md text-body-l text-neutral-600">
-            Marina Castro receberá o relatório completo da jornada por e-mail e
-            no portal do paciente.
-          </p>
-          <WireButton variant="secondary" onClick={() => setSent(false)}>
-            Ver relatório
-          </WireButton>
-        </div>
-      </ScreenShell>
-    );
+    return <ReportSent onReset={() => setSent(false)} />;
   }
 
   return (
@@ -125,5 +90,73 @@ export function ReportScreen() {
         </WireCard>
       </div>
     </ScreenShell>
+  );
+}
+
+// Estado de sucesso editorial: o checkmark é desenhado com DrawSVG e o título
+// display faz reveal. Sob reduced-motion, aparece estático.
+function ReportSent({ onReset }: { onReset: () => void }) {
+  const root = useRef<HTMLDivElement>(null);
+
+  useGSAP(
+    () => {
+      if (prefersReducedMotion() || !root.current) return;
+      const check = root.current.querySelector<SVGPathElement>(".report-check");
+      const circle = root.current.querySelector<SVGCircleElement>(".report-ring");
+      const tl = gsap.timeline();
+      if (circle) {
+        tl.from(circle, { drawSVG: "0%", duration: 0.55, ease: "power1.inOut" });
+      }
+      if (check) {
+        tl.from(check, { drawSVG: "0%", duration: 0.45, ease: "power2.out" }, "-=0.1");
+      }
+      tl.from(
+        ".report-title",
+        { yPercent: 40, opacity: 0, duration: 0.6, ease: "power3.out" },
+        "-=0.2",
+      ).from(
+        ".report-sub",
+        { opacity: 0, y: 8, duration: 0.5 },
+        "-=0.3",
+      );
+    },
+    { scope: root },
+  );
+
+  return (
+    <div ref={root}>
+      <ScreenShell zone="Pós-consulta · terminus" title="Relatório enviado">
+        <div className="flex min-h-[320px] flex-col items-center justify-center gap-6 text-center">
+          <svg viewBox="0 0 64 64" className="h-16 w-16" fill="none" aria-hidden>
+            <circle
+              className="report-ring"
+              cx="32"
+              cy="32"
+              r="30"
+              stroke="var(--color-neutral-300)"
+              strokeWidth="1"
+            />
+            <path
+              className="report-check"
+              d="M20 33 L29 42 L45 24"
+              stroke="var(--color-ink)"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <p className="report-title font-display text-display-l font-medium text-ink">
+            Relatório enviado
+          </p>
+          <p className="report-sub max-w-md text-body-l text-neutral-600">
+            Marina Castro receberá o relatório completo da jornada por e-mail e
+            no portal do paciente.
+          </p>
+          <WireButton variant="secondary" onClick={onReset}>
+            Ver relatório
+          </WireButton>
+        </div>
+      </ScreenShell>
+    </div>
   );
 }
