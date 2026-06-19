@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Evita addons não transpilados do ecossistema three (drei/postprocessing).
+  transpilePackages: ["three"],
 };
 
 export default nextConfig;
