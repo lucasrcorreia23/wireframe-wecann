@@ -1,7 +1,7 @@
-import { Stepper2D } from "@/components/experience/Stepper2D";
+import { Experience } from "@/components/experience/Experience";
 
-// Fase 2: stepper 2D que percorre o grafo e prova os forks. Será substituído
-// pela <Experience/> (Canvas + Chrome) na Fase 3.
+// Server Component que monta a <Experience/> (client). O canvas é carregado
+// client-only dentro do WorldCanvasClient (zero hidratação no server).
 export default function Home() {
-  return <Stepper2D />;
+  return <Experience />;
 }
