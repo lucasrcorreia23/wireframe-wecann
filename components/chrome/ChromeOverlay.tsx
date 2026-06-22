@@ -1,7 +1,7 @@
 "use client";
 
 import { ContextBar } from "./ContextBar";
-import { HiddenSidebar } from "./HiddenSidebar";
+import { TopBar } from "./TopBar";
 import { CompanionPanels } from "./CompanionPanels";
 import { AdvanceControl } from "./AdvanceControl";
 
@@ -10,7 +10,7 @@ import { AdvanceControl } from "./AdvanceControl";
 export function ChromeOverlay() {
   return (
     <div className="pointer-events-none absolute inset-0 z-10">
-      <HiddenSidebar />
+      <TopBar />
       <ContextBar />
       <CompanionPanels />
       <AdvanceControl />

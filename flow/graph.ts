@@ -33,6 +33,28 @@ export const NODES: Record<NodeId, FlowNode> = {
     position: [SIDE, 0, z(0.5)],
     panels: [],
   },
+  // Módulos utilitários acessados pelo menu (ramos laterais, fora do caminho-ouro).
+  messages: {
+    id: "messages",
+    zone: "pre",
+    title: "Mensagens",
+    position: [SIDE * 1.4, 0, z(0.9)],
+    panels: [],
+  },
+  patients: {
+    id: "patients",
+    zone: "pre",
+    title: "Pacientes",
+    position: [-SIDE * 1.4, 0, z(0.9)],
+    panels: [],
+  },
+  utilities: {
+    id: "utilities",
+    zone: "pre",
+    title: "Utilidades",
+    position: [SIDE * 1.4, 0, z(1.5)],
+    panels: [],
+  },
   "clinical-queue": {
     id: "clinical-queue",
     zone: "pre",

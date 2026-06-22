@@ -7,7 +7,16 @@ import { cn } from "@/lib/cn";
 
 // Telas que adotam o layout modular (módulos flutuam sobre o mundo 3D, sem o
 // card fosco único). As demais mantêm o card fosco contido.
-const MODULAR = new Set<string>(["home", "agenda", "pre-review", "consult", "report"]);
+const MODULAR = new Set<string>([
+  "home",
+  "agenda",
+  "messages",
+  "patients",
+  "utilities",
+  "pre-review",
+  "consult",
+  "report",
+]);
 
 // Overlay DOM 1:1 da estação ativa — nítido, centralizado, acima do canvas.
 // O mundo 3D (globo + atmosfera + planos) viaja atrás; aqui a UI fica fixa.

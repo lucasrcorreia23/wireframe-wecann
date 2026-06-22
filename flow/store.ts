@@ -5,28 +5,39 @@ import { NODES } from "./graph";
 type FlowState = {
   currentNode: NodeId;
   history: NodeId[];
-  sidebarOpen: boolean;
+  /** Dropdown de navegação (menu ☰) aberto. */
+  menuOpen: boolean;
+  /** Barra de busca (⌕) aberta. */
+  searchOpen: boolean;
   /** Incrementa a cada navegação — sinal para a CameraRig disparar o timeline. */
   travelToken: number;
 
   goTo: (id: NodeId) => void;
   back: () => void;
-  toggleSidebar: (open?: boolean) => void;
+  toggleMenu: (open?: boolean) => void;
+  toggleSearch: (open?: boolean) => void;
 };
 
 export const useFlow = create<FlowState>((set, get) => ({
   currentNode: "home",
   history: [],
-  sidebarOpen: false,
+  menuOpen: false,
+  searchOpen: false,
   travelToken: 0,
 
   goTo: (id) => {
     const { currentNode } = get();
-    if (id === currentNode) return;
+    if (id === currentNode) {
+      // Mesmo nó: apenas fecha overlays de navegação.
+      set({ menuOpen: false, searchOpen: false });
+      return;
+    }
     set((s) => ({
       currentNode: id,
       history: [...s.history, currentNode],
       travelToken: s.travelToken + 1,
+      menuOpen: false,
+      searchOpen: false,
     }));
   },
 
@@ -38,11 +49,22 @@ export const useFlow = create<FlowState>((set, get) => ({
       currentNode: prev,
       history: s.history.slice(0, -1),
       travelToken: s.travelToken + 1,
+      menuOpen: false,
+      searchOpen: false,
     }));
   },
 
-  toggleSidebar: (open) =>
-    set((s) => ({ sidebarOpen: open ?? !s.sidebarOpen })),
+  // Abrir um fecha o outro.
+  toggleMenu: (open) =>
+    set((s) => {
+      const next = open ?? !s.menuOpen;
+      return { menuOpen: next, searchOpen: next ? false : s.searchOpen };
+    }),
+  toggleSearch: (open) =>
+    set((s) => {
+      const next = open ?? !s.searchOpen;
+      return { searchOpen: next, menuOpen: next ? false : s.menuOpen };
+    }),
 }));
 
 // ───────────────────────── Selectors derivados ─────────────────────────

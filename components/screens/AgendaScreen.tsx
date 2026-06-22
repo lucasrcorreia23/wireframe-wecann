@@ -2,8 +2,8 @@ import { WireButton, WireBadge, Eyebrow } from "@/components/ui";
 import { ModuleCard } from "@/components/ui/ModuleCard";
 import { cn } from "@/lib/cn";
 
-// `agenda` — módulo de calendário (vista semana) estilo Google Calendar.
-// Gutter de horários + 7 colunas de dias; eventos posicionados por hora/duração.
+// `agenda` — calendário estilo Google Calendar: mini-mês + "Criar" à esquerda,
+// grade da semana (gutter de horários + 7 dias, eventos por hora/duração) à direita.
 const DAYS = [
   ["Seg", "16"], ["Ter", "17"], ["Qua", "18"], ["Qui", "19"],
   ["Sex", "20"], ["Sáb", "21"], ["Dom", "22"],
@@ -27,17 +27,81 @@ const TONE_BAR: Record<NonNullable<Ev["tone"]>, string> = {
   hard: "border-l-state-hard",
 };
 
+const MONTH_DAYS = Array.from({ length: 30 }, (_, i) => i + 1);
+const WEEK_INITIALS = ["S", "T", "Q", "Q", "S", "S", "D"];
+const CURRENT_WEEK = new Set([16, 17, 18, 19, 20, 21, 22]);
+const TODAY = 19;
+
 export function AgendaScreen() {
-  const cols = `56px repeat(${DAYS.length}, minmax(0, 1fr))`;
+  const cols = `52px repeat(${DAYS.length}, minmax(0, 1fr))`;
 
   return (
-    <div className="flex w-full max-w-[1160px] flex-col gap-4">
+    <div
+      className="grid w-full max-w-[1220px] items-start gap-4"
+      style={{ gridTemplateColumns: "248px minmax(0, 1fr)" }}
+    >
+      {/* Coluna esquerda — criar + mini-mês + legenda */}
+      <div className="flex flex-col gap-4">
+        <ModuleCard className="gap-4">
+          <WireButton variant="primary" className="w-full">
+            + Criar
+          </WireButton>
+
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <span className="text-body font-medium text-ink">Junho 2026</span>
+              <div className="flex gap-1 font-mono text-micro text-neutral-400">
+                <button className="hover:text-ink">←</button>
+                <button className="hover:text-ink">→</button>
+              </div>
+            </div>
+            <div className="grid grid-cols-7 gap-0.5">
+              {WEEK_INITIALS.map((w, i) => (
+                <span
+                  key={i}
+                  className="grid h-6 place-items-center font-mono text-micro text-neutral-400"
+                >
+                  {w}
+                </span>
+              ))}
+              {MONTH_DAYS.map((d) => (
+                <span
+                  key={d}
+                  className={cn(
+                    "grid h-7 place-items-center rounded-full font-mono text-micro",
+                    d === TODAY
+                      ? "bg-ink text-paper"
+                      : CURRENT_WEEK.has(d)
+                        ? "bg-white/55 text-ink"
+                        : "text-neutral-600",
+                  )}
+                >
+                  {d}
+                </span>
+              ))}
+            </div>
+          </div>
+        </ModuleCard>
+
+        <ModuleCard eyebrow="Legenda">
+          <div className="flex flex-wrap gap-1.5">
+            <WireBadge>Consulta</WireBadge>
+            <WireBadge tone="mid">Pré-consulta</WireBadge>
+            <WireBadge tone="hard">Controle especial</WireBadge>
+          </div>
+        </ModuleCard>
+      </div>
+
+      {/* Coluna direita — grade da semana */}
       <ModuleCard className="gap-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
+            <WireButton variant="secondary" size="sm">Hoje</WireButton>
             <WireButton variant="ghost" size="sm">←</WireButton>
-            <span className="font-display text-title font-medium text-ink">Junho 2026</span>
             <WireButton variant="ghost" size="sm">→</WireButton>
+            <span className="font-display text-title font-medium text-ink">
+              16–22 jun
+            </span>
           </div>
           <div className="flex items-center gap-1.5">
             {["Dia", "Semana", "Mês"].map((v) => (
@@ -68,7 +132,7 @@ export function AgendaScreen() {
 
         {/* Grade horária */}
         <div
-          className="no-scrollbar grid max-h-[440px] overflow-y-auto"
+          className="no-scrollbar grid max-h-[460px] overflow-y-auto"
           style={{ gridTemplateColumns: cols, gridAutoRows: "3rem" }}
         >
           {HOURS.map((h, r) => (
@@ -105,13 +169,6 @@ export function AgendaScreen() {
               <span className="truncate font-mono text-micro text-neutral-500">{ev.sub}</span>
             </div>
           ))}
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Eyebrow>Legenda</Eyebrow>
-          <WireBadge>Consulta</WireBadge>
-          <WireBadge tone="mid">Pré-consulta</WireBadge>
-          <WireBadge tone="hard">Controle especial</WireBadge>
         </div>
       </ModuleCard>
     </div>

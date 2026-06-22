@@ -3,6 +3,9 @@ import { SCREENS } from "./index";
 const ORDER = [
   "home",
   "agenda",
+  "messages",
+  "patients",
+  "utilities",
   "pre-review",
   "clinical-queue",
   "consult",

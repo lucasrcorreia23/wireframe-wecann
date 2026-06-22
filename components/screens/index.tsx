@@ -1,6 +1,9 @@
 import type { ComponentType } from "react";
 import { HomeScreen } from "./HomeScreen";
 import { AgendaScreen } from "./AgendaScreen";
+import { MessagesScreen } from "./MessagesScreen";
+import { PatientsScreen } from "./PatientsScreen";
+import { UtilitiesScreen } from "./UtilitiesScreen";
 import { PreReviewScreen } from "./PreReviewScreen";
 import { ClinicalQueueScreen } from "./ClinicalQueueScreen";
 import { ConsultScreen } from "./ConsultScreen";
@@ -18,6 +21,9 @@ import { ReportScreen } from "./ReportScreen";
 export {
   HomeScreen,
   AgendaScreen,
+  MessagesScreen,
+  PatientsScreen,
+  UtilitiesScreen,
   PreReviewScreen,
   ClinicalQueueScreen,
   ConsultScreen,
@@ -48,6 +54,9 @@ export type ScreenProps = {
 export const SCREENS: Record<string, ComponentType<ScreenProps>> = {
   home: HomeScreen,
   agenda: AgendaScreen,
+  messages: MessagesScreen,
+  patients: PatientsScreen,
+  utilities: UtilitiesScreen,
   "pre-review": PreReviewScreen,
   "clinical-queue": ClinicalQueueScreen,
   consult: ConsultScreen,
