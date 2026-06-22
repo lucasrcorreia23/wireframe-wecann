@@ -19,7 +19,7 @@ export function ModuleCard({
   return (
     <section
       className={cn(
-        "glass-panel-blue flex flex-col gap-3 rounded-[24px] p-5",
+        "glass-panel-blue backdrop-blur-2xl flex flex-col gap-3 rounded-[24px] p-5",
         className,
       )}
     >

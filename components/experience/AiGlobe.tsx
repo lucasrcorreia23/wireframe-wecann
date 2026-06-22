@@ -14,7 +14,7 @@ const DIST = 7; // distância à frente da câmera (billboard)
 // GRANDE na Home — cobrindo atrás de toda a faixa de módulos para o vidro
 // "pegar" o globo (blur estilo Casuística); nas demais telas desliza para o
 // canto superior direito, menor, alinhada ao "slot do globo" no AIDock.
-const HOME_ANCHOR = { x: 0.0, y: 0.04, scale: 1.6 };
+const HOME_ANCHOR = { x: 0.0, y: 0.08, scale: 1.25 };
 const DOCK_ANCHOR = { x: 0.6, y: 0.42, scale: 0.44 };
 
 // O globo persiste e billboarda à frente da câmera: um único globo 3D que segue
@@ -57,7 +57,7 @@ export function AiGlobe() {
       const lerp = 1 - Math.pow(0.001, dt);
       if (coreMat.current) {
         const mat = coreMat.current;
-        mat.opacity = THREE.MathUtils.lerp(mat.opacity ?? 1, isHome ? 0.7 : 0.5, lerp);
+        mat.opacity = THREE.MathUtils.lerp(mat.opacity ?? 1, isHome ? 0.55 : 0.5, lerp);
         const hue = 0.58 + Math.sin(t * 0.25) * 0.09;
         mat.color.setHSL(hue, 0.45, 0.68);
       }
