@@ -11,7 +11,8 @@ const ZONES: Zone[] = ["pre", "consulta", "pos"];
 export function ContextBar() {
   const currentNode = useFlow((s) => s.currentNode);
   const node = NODES[currentNode];
-  const showPatient = node.id !== "home" && node.id !== "clinical-queue";
+  const showPatient =
+    node.id !== "home" && node.id !== "clinical-queue" && node.id !== "agenda";
 
   return (
     <div className="pointer-events-auto absolute left-1/2 top-5 flex -translate-x-1/2 items-center gap-4 rounded-wire border border-neutral-200 bg-paper/85 px-4 py-2 backdrop-blur">

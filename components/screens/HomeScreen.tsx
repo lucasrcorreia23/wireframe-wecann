@@ -1,143 +1,153 @@
-import {
-  ScreenShell,
-  WireCard,
-  WireButton,
-  WireBadge,
-  WireField,
-  WireTable,
-  Stat,
-} from "@/components/ui";
+"use client";
 
-// `home` — Painel do dia (Home / Agenda) · entrada.
+import { useFlow } from "@/flow/store";
+import { WireBadge, WireButton } from "@/components/ui";
+import { ModuleCard } from "@/components/ui/ModuleCard";
+
+const RECENT = [
+  { initials: "MC", name: "Marina Castro" },
+  { initials: "AL", name: "André Lobo" },
+  { initials: "JT", name: "Júlia Tavares" },
+  { initials: "RS", name: "Rui Salgado" },
+  { initials: "HP", name: "Helena Pires" },
+];
+
+const AGENDA = [
+  { time: "09:30", name: "Marina Castro", condition: "Dor crônica · pré 40%", urgent: true },
+  { time: "10:15", name: "André Lobo", condition: "Fibromialgia · retorno", urgent: false },
+  { time: "11:00", name: "Júlia Tavares", condition: "Insônia · 1ª consulta", urgent: false },
+];
+
+const PILLS = [
+  { tag: "Farmacologia", title: "Titulação de CBD em dor neuropática", meta: "4 min" },
+  { tag: "Regulatório", title: "Nova RDC para controle especial", meta: "2 min" },
+];
+
+const ATHENA_SUGGESTIONS = [
+  "Revisar pré-consulta de Marina Castro",
+  "Confirmar agenda das 10h",
+  "2 receitas de controle especial venceram",
+];
+
+// Home — Athena (IA) CENTRAL (exceção da jornada): o globo billboarda no centro.
+// Agenda do dia à esquerda; recentes + pílulas à direita. Módulos de vidro
+// flutuando sobre o globo.
 export function HomeScreen() {
+  const goTo = useFlow((s) => s.goTo);
+
   return (
-    <ScreenShell
-      zone="Pré-consulta"
-      title="Painel do dia"
-      lead="Bom dia, Dra. Helena — quinta, 19 de junho. Você tem 7 compromissos hoje."
-      actions={
-        <>
-          <WireButton variant="secondary">Ver anamnese</WireButton>
-          <WireButton variant="primary">Abrir consulta</WireButton>
-        </>
-      }
+    <div
+      className="grid h-[min(780px,86vh)] w-full max-w-[1240px] items-stretch gap-4"
+      style={{ gridTemplateColumns: "minmax(0,1fr) minmax(0,1.25fr) minmax(0,1fr)" }}
     >
-      {/* Resumo do dia */}
-      <div className="grid grid-cols-4 gap-px overflow-hidden rounded-wire border border-neutral-200 bg-neutral-200">
-        <div className="bg-paper p-5">
-          <Stat value="07" label="Compromissos" />
-        </div>
-        <div className="bg-paper p-5">
-          <Stat value="04" label="Confirmados" />
-        </div>
-        <div className="bg-paper p-5">
-          <Stat value="02" label="Aguardando" />
-        </div>
-        <div className="bg-paper p-5">
-          <Stat value="01" label="Atenção redobrada" />
-        </div>
-      </div>
+      {/* Esquerda — Agenda do dia */}
+      <ModuleCard eyebrow="Agenda do dia" className="min-h-0">
+        <p className="text-caption text-neutral-500">
+          Quinta, 19 de junho · 7 compromissos
+        </p>
+        <ul className="flex flex-col gap-3">
+          {AGENDA.map((item) => (
+            <li
+              key={item.time}
+              className="flex flex-col gap-1.5 border-b border-white/40 pb-3 last:border-0 last:pb-0"
+            >
+              <div className="flex items-baseline gap-2">
+                <span className="font-mono text-caption font-medium text-ink">
+                  {item.time}
+                </span>
+                <span className="text-body font-medium text-ink">{item.name}</span>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <p className="min-w-0 flex-1 truncate text-caption text-neutral-500">
+                  {item.condition}
+                </p>
+                <WireButton
+                  variant={item.urgent ? "primary" : "secondary"}
+                  size="sm"
+                  className="shrink-0"
+                  onClick={() => goTo("pre-review")}
+                >
+                  {item.urgent ? "Revisar" : "Abrir"}
+                </WireButton>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </ModuleCard>
 
-      {/* Filtros */}
-      <WireCard eyebrow="Filtros" title="Agenda da semana">
-        <div className="grid grid-cols-4 gap-4">
-          <WireField label="Médico" value="Dra. Helena Prado" />
-          <WireField label="Data" value="19/06/2026" mono />
-          <WireField label="Modalidade" value="Todas" />
-          <WireField label="Status" placeholder="Confirmado / aguardando" />
-        </div>
-
-        <div className="mt-5">
-          <WireTable
-            columns={[
-              { key: "hora", header: "Hora", numeric: true, width: "84px" },
-              { key: "paciente", header: "Paciente" },
-              { key: "modalidade", header: "Modalidade" },
-              { key: "status", header: "Status" },
-            ]}
-            rows={[
-              {
-                hora: "09:00",
-                paciente: "André Lobo",
-                modalidade: "Teleconsulta",
-                status: <WireBadge tone="neutral">Confirmado</WireBadge>,
-              },
-              {
-                hora: "09:40",
-                paciente: "Marina Castro",
-                modalidade: "Presencial",
-                status: <WireBadge tone="soft">Aguardando</WireBadge>,
-              },
-              {
-                hora: "10:30",
-                paciente: "Júlia Tavares",
-                modalidade: "Teleconsulta",
-                status: <WireBadge tone="neutral">Confirmado</WireBadge>,
-              },
-              {
-                hora: "11:15",
-                paciente: "Rui Salgado",
-                modalidade: "Presencial",
-                status: <WireBadge tone="soft">Aguardando</WireBadge>,
-              },
-            ]}
-          />
-        </div>
-      </WireCard>
-
-      <div className="grid grid-cols-5 gap-6">
-        {/* Pacientes que precisam de atenção */}
-        <WireCard
-          className="col-span-3"
-          eyebrow="Triagem"
-          title="Pacientes que precisam de atenção"
-        >
-          <WireTable
-            columns={[
-              { key: "paciente", header: "Paciente" },
-              { key: "pre", header: "Pré-consulta", numeric: true, width: "120px" },
-              { key: "flag", header: "Sinalização" },
-            ]}
-            rows={[
-              {
-                paciente: "Marina Castro",
-                pre: "40%",
-                flag: <WireBadge tone="hard">Atenção redobrada</WireBadge>,
-              },
-              {
-                paciente: "André Lobo",
-                pre: "100%",
-                flag: <WireBadge tone="neutral">Completa</WireBadge>,
-              },
-              {
-                paciente: "Rui Salgado",
-                pre: "65%",
-                flag: <WireBadge tone="mid">Pendências</WireBadge>,
-              },
-            ]}
-          />
-        </WireCard>
-
-        {/* Alta relevância — Athena */}
-        <WireCard
-          className="col-span-2"
-          eyebrow="Alta relevância"
-          title="Confirmados e faltas via Athena"
-          emphasis
-        >
-          <div className="flex flex-col gap-4">
-            <div className="grid grid-cols-2 gap-4">
-              <Stat value="04" label="Confirmados" />
-              <Stat value="01" label="Faltas" />
-            </div>
-            <div className="flex min-h-28 items-center justify-center rounded-wire border border-dashed border-neutral-300 bg-paper-50">
-              <span className="font-mono text-micro uppercase tracking-[0.12em] text-neutral-400">
-                Container da Athena
-              </span>
-            </div>
+      {/* Centro — Athena: globo flutua no espaço superior; chat abaixo. */}
+      <div className="flex min-h-0 flex-col justify-end gap-4">
+        <div className="flex flex-1 items-end justify-center pb-2">
+          <div className="text-center">
+            <p className="font-display text-display-m font-medium text-ink">Athena</p>
+            <p className="text-caption text-neutral-600">
+              Sugestões para começar o dia
+            </p>
           </div>
-        </WireCard>
+        </div>
+
+        <section className="glass-panel-blue flex flex-col gap-3 rounded-[28px] p-6">
+          <ul className="flex flex-col gap-2">
+            {ATHENA_SUGGESTIONS.map((text) => (
+              <li
+                key={text}
+                className="glass-frost-inner rounded-2xl px-3 py-2.5 text-caption text-neutral-700"
+              >
+                {text}
+              </li>
+            ))}
+          </ul>
+          <div className="glass-frost-inner flex items-center gap-2 rounded-full py-2 pl-4 pr-2">
+            <span className="flex-1 truncate text-caption text-neutral-400">
+              Pergunte à Athena…
+            </span>
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-ink text-paper">
+              →
+            </span>
+          </div>
+        </section>
       </div>
-    </ScreenShell>
+
+      {/* Direita — Recentes + Pílulas do dia */}
+      <div className="flex min-h-0 flex-col gap-4">
+        <ModuleCard eyebrow="Recentes">
+          <div className="flex flex-wrap gap-2">
+            {RECENT.map((p) => (
+              <button
+                key={p.initials}
+                onClick={() => goTo("pre-review")}
+                title={p.name}
+                aria-label={p.name}
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/45 bg-white/30 font-mono text-micro text-neutral-600 backdrop-blur-md transition-colors hover:border-ink hover:text-ink"
+              >
+                {p.initials}
+              </button>
+            ))}
+          </div>
+        </ModuleCard>
+
+        <ModuleCard eyebrow="Pílulas do dia" className="min-h-0">
+          <ul className="flex flex-col gap-3">
+            {PILLS.map((pill) => (
+              <li
+                key={pill.title}
+                className="glass-frost-inner flex flex-col gap-2 rounded-[18px] p-4"
+              >
+                <div className="flex items-center justify-between">
+                  <WireBadge tone="mid">{pill.tag}</WireBadge>
+                  <span className="font-mono text-micro text-neutral-400">
+                    {pill.meta}
+                  </span>
+                </div>
+                <h4 className="text-body font-medium text-ink text-pretty">
+                  {pill.title}
+                </h4>
+                <span className="text-caption text-neutral-500">Abrir →</span>
+              </li>
+            ))}
+          </ul>
+        </ModuleCard>
+      </div>
+    </div>
   );
 }

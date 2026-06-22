@@ -2,6 +2,7 @@
 
 export type NodeId =
   | "home"
+  | "agenda"
   | "pre-review"
   | "clinical-queue"
   | "consult"

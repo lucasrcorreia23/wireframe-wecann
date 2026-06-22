@@ -25,6 +25,14 @@ export const NODES: Record<NodeId, FlowNode> = {
     next: "pre-review",
     branch: "clinical-queue",
   },
+  agenda: {
+    id: "agenda",
+    zone: "pre",
+    title: "Agenda",
+    // Ramo lateral a partir da home (espelho de clinical-queue, lado +X).
+    position: [SIDE, 0, z(0.5)],
+    panels: [],
+  },
   "clinical-queue": {
     id: "clinical-queue",
     zone: "pre",

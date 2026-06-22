@@ -1,5 +1,6 @@
 import type { ComponentType } from "react";
 import { HomeScreen } from "./HomeScreen";
+import { AgendaScreen } from "./AgendaScreen";
 import { PreReviewScreen } from "./PreReviewScreen";
 import { ClinicalQueueScreen } from "./ClinicalQueueScreen";
 import { ConsultScreen } from "./ConsultScreen";
@@ -16,6 +17,7 @@ import { ReportScreen } from "./ReportScreen";
 
 export {
   HomeScreen,
+  AgendaScreen,
   PreReviewScreen,
   ClinicalQueueScreen,
   ConsultScreen,
@@ -45,6 +47,7 @@ export type ScreenProps = {
 // Mapa id → componente da tela. Os ids casam com os nós do flow/graph.ts.
 export const SCREENS: Record<string, ComponentType<ScreenProps>> = {
   home: HomeScreen,
+  agenda: AgendaScreen,
   "pre-review": PreReviewScreen,
   "clinical-queue": ClinicalQueueScreen,
   consult: ConsultScreen,

@@ -8,7 +8,7 @@ import { cn } from "@/lib/cn";
 
 // Ordem de navegação por fase (saltos de fase §3.2).
 const GROUPS: { zone: Zone; nodes: NodeId[] }[] = [
-  { zone: "pre", nodes: ["home", "pre-review", "clinical-queue"] },
+  { zone: "pre", nodes: ["home", "agenda", "pre-review", "clinical-queue"] },
   {
     zone: "consulta",
     nodes: [

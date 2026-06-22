@@ -13,7 +13,9 @@ export function CompanionPanels() {
   const currentNode = useFlow((s) => s.currentNode);
   const node = NODES[currentNode];
 
-  if (node.zone !== "consulta" || node.panels.length === 0) return null;
+  // `consult` é tela modular (Paciente 360 e copiloto vivem nos módulos/AIDock).
+  if (node.zone !== "consulta" || node.panels.length === 0 || currentNode === "consult")
+    return null;
 
   return (
     <>
