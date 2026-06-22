@@ -47,10 +47,13 @@ export function ActiveStationLayer() {
       <div
         key={currentNode}
         className={cn(
-          "station-reveal station-sharp pointer-events-auto w-full max-w-[1240px]",
+          "station-sharp pointer-events-auto w-full max-w-[1240px]",
           isModular
-            ? "bg-transparent"
+            ? // Fade SÓ de opacidade (sem transform) — para não criar backdrop
+              // root e preservar o backdrop-filter dos módulos sobre o canvas.
+              "station-fade bg-transparent"
             : cn(
+                "station-reveal",
                 "overflow-hidden rounded-[40px] border border-white/50 bg-white/55",
                 "shadow-[0_8px_40px_rgba(0,0,0,0.06)] backdrop-blur-2xl",
                 "no-scrollbar max-h-[88vh] overflow-y-auto",

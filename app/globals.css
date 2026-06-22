@@ -153,6 +153,13 @@
   }
 }
 
+/* Reveal das telas MODULARES: só opacidade — NUNCA transform. Um ancestral com
+   transform cria um "backdrop root" e mata o backdrop-filter dos módulos filhos
+   (vidro não pegaria o globo). Por isso o wrapper modular usa fade puro. */
+.station-fade {
+  animation: soft-fade 520ms ease-out both;
+}
+
 /* ───────────────────────── Vidro / glassmorphism ─────────────────────────
    Os módulos flutuam sobre o mundo 3D (overlay DOM com wrapper transparente).
    O backdrop-filter (blur gaussiano) só aparece porque o fundo é translúcido —
@@ -196,6 +203,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .station-reveal,
+  .station-fade,
   .panel-in-left,
   .panel-in-right {
     animation: soft-fade 200ms ease both;

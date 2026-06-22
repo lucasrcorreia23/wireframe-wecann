@@ -75,16 +75,10 @@ export function HomeScreen() {
         </ul>
       </ModuleCard>
 
-      {/* Centro — Athena: globo flutua no espaço superior; chat abaixo. */}
+      {/* Centro — Athena: o GLOBO 3D é o centro visual (atrás); chat na base. */}
       <div className="flex min-h-0 flex-col justify-end gap-4">
-        <div className="flex flex-1 items-end justify-center pb-2">
-          <div className="text-center">
-            <p className="font-display text-display-m font-medium text-ink">Athena</p>
-            <p className="text-caption text-neutral-600">
-              Sugestões para começar o dia
-            </p>
-          </div>
-        </div>
+        {/* Espaço transparente onde o globo aparece (billboard 3D atrás). */}
+        <div className="flex-1" />
 
         <section className="glass-panel-blue flex flex-col gap-3 rounded-[28px] p-6">
           <ul className="flex flex-col gap-2">
