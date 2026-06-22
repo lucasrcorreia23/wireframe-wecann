@@ -3,6 +3,7 @@
 import { SCREENS, type ScreenProps } from "@/components/screens";
 import { useFlow } from "@/flow/store";
 import { NODES } from "@/flow/graph";
+import { WireButton } from "@/components/ui";
 import { cn } from "@/lib/cn";
 
 // Telas que adotam o layout modular (módulos flutuam sobre o mundo 3D, sem o
@@ -57,6 +58,16 @@ export function ActiveStationLayer() {
         )}
       >
         <Screen {...props} />
+
+        {/* Avanço do caminho-ouro embutido na própria tela (sem barra flutuante).
+            Telas modulares trazem seus próprios CTAs; forks resolvem na tela. */}
+        {!isModular && node.next && !node.fork ? (
+          <div className="flex justify-end border-t border-neutral-200 bg-white/40 px-12 py-5">
+            <WireButton variant="primary" onClick={() => goTo(node.next!)}>
+              Continuar → {NODES[node.next].title}
+            </WireButton>
+          </div>
+        ) : null}
       </div>
     </div>
   );

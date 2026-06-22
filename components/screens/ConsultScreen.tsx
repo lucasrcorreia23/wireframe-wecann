@@ -1,16 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { WireBadge, WireField, Eyebrow } from "@/components/ui";
+import { WireBadge, WireButton, WireField, Eyebrow } from "@/components/ui";
 import { ModuleCard } from "@/components/ui/ModuleCard";
 import { JourneyShell } from "@/components/layout/JourneyShell";
 import { cn } from "@/lib/cn";
+import type { ScreenProps } from "./index";
 
 const TABS = ["Transcrição", "Nota clínica", "Prescrição", "Exames"] as const;
 
 // `consult` — Tela de consulta: vídeo do paciente + conteúdo em ABAS ao centro,
 // módulos complementares à esquerda, copiloto de IA à direita (AIDock).
-export function ConsultScreen() {
+export function ConsultScreen({ onContinue }: ScreenProps) {
   const [tab, setTab] = useState(0);
 
   const left = (
@@ -53,6 +54,19 @@ export function ConsultScreen() {
 
   return (
     <JourneyShell left={left}>
+      {/* Cabeçalho da consulta + avanço */}
+      <div className="flex items-center justify-between gap-4 px-1">
+        <div className="flex flex-col">
+          <Eyebrow>Consulta</Eyebrow>
+          <span className="text-body-l font-medium text-ink">
+            Marina Castro · em andamento
+          </span>
+        </div>
+        <WireButton variant="primary" onClick={onContinue}>
+          Continuar →
+        </WireButton>
+      </div>
+
       {/* Vídeo da consulta */}
       <ModuleCard className="gap-2">
         <div className="flex items-center justify-between">
