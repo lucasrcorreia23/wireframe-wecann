@@ -14,7 +14,7 @@ const DIST = 7; // distância à frente da câmera (billboard)
 // GRANDE na Home — cobrindo atrás de toda a faixa de módulos para o vidro
 // "pegar" o globo (blur estilo Casuística); nas demais telas desliza para o
 // canto superior direito, menor, alinhada ao "slot do globo" no AIDock.
-const HOME_ANCHOR = { x: 0.0, y: 0.08, scale: 1.25 };
+const HOME_ANCHOR = { x: 0.0, y: 0.2, scale: 1.05 };
 const DOCK_ANCHOR = { x: 0.6, y: 0.42, scale: 0.44 };
 
 // O globo persiste e billboarda à frente da câmera: um único globo 3D que segue
