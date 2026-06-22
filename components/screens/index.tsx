@@ -38,6 +38,8 @@ export type ScreenProps = {
   onNo?: () => void;
   onConfirm?: () => void;
   onCancel?: () => void;
+  onContinue?: () => void;
+  onGoHome?: () => void;
 };
 
 // Mapa id → componente da tela. Os ids casam com os nós do flow/graph.ts.

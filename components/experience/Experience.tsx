@@ -1,6 +1,7 @@
 "use client";
 
 import { WorldCanvasClient } from "./WorldCanvasClient";
+import { ActiveStationLayer } from "./ActiveStationLayer";
 import { MobileExperience } from "./MobileExperience";
 import { ChromeOverlay } from "@/components/chrome/ChromeOverlay";
 import { Intro } from "./Intro";
@@ -22,6 +23,9 @@ export function Experience() {
       <div className="absolute inset-0">
         <WorldCanvasClient />
       </div>
+
+      {/* Camada-tela — overlay DOM 1:1 da estação ativa (nítido) */}
+      <ActiveStationLayer />
 
       {/* Camada-chrome */}
       <ChromeOverlay />

@@ -153,6 +153,46 @@
   }
 }
 
+/* ───────────────────────── Vidro / glassmorphism ─────────────────────────
+   Os módulos flutuam sobre o mundo 3D (overlay DOM com wrapper transparente).
+   O backdrop-filter (blur gaussiano) só aparece porque o fundo é translúcido —
+   é ele que "pega" o globo Athena e a atmosfera atrás. */
+@layer utilities {
+  /* Cards de módulo "soltos no ar" — vidro azulado translúcido. */
+  .glass-panel-blue {
+    background: linear-gradient(
+      160deg,
+      rgba(255, 255, 255, 0.66),
+      rgba(232, 240, 255, 0.5)
+    );
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(22px) saturate(1.35);
+    -webkit-backdrop-filter: blur(22px) saturate(1.35);
+    box-shadow:
+      0 8px 40px rgba(28, 40, 74, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  }
+
+  /* Camada interna (listas, chips, input) — translúcido sólido, sem blur próprio. */
+  .glass-frost-inner {
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.62);
+  }
+
+  /* Esconde scrollbar mantendo o scroll. */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Texto nítido sobre o vidro (camada GPU própria + antialias). */
+  .station-sharp {
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .station-reveal,
   .panel-in-left,

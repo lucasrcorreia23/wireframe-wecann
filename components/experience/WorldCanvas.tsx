@@ -5,6 +5,7 @@ import { Canvas } from "@react-three/fiber";
 import { Atmosphere } from "./Atmosphere";
 import { CameraRig, type CameraProxy } from "./CameraRig";
 import { Stations } from "./Stations";
+import { AiGlobe } from "./AiGlobe";
 import { CAM_DIST, CAM_LIFT } from "@/lib/camera";
 import { NODES } from "@/flow/graph";
 
@@ -38,6 +39,7 @@ export function WorldCanvas() {
 
       <Atmosphere intensityRef={intensityRef} />
       <CameraRig proxyRef={proxyRef} intensityRef={intensityRef} />
+      <AiGlobe />
       <Stations />
     </Canvas>
   );
