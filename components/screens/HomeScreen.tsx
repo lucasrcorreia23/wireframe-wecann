@@ -92,8 +92,8 @@ export function HomeScreen() {
         </ul>
       </ModuleCard>
 
-      {/* ───── Centro — painel da IA (transparente; globo billboarda no meio) ───── */}
-      <div className="flex min-h-0 flex-col">
+      {/* ───── Centro — painel da IA (container de vidro único; globo desfocado atrás) ───── */}
+      <div className="glass-panel-blue backdrop-blur-lg flex min-h-0 flex-col rounded-[28px] p-6">
         {/* Boas-vindas + data */}
         <header className="flex items-start justify-between gap-4">
           <div className="flex flex-col">
@@ -137,8 +137,8 @@ export function HomeScreen() {
         {/* Espaço antes do chat */}
         <div className="flex-[0.4]" />
 
-        {/* Input de chat */}
-        <section className="glass-panel-blue flex flex-col gap-3 rounded-[24px] p-4">
+        {/* Input de chat (camada interna do container) */}
+        <section className="glass-frost-inner flex flex-col gap-3 rounded-[20px] p-4">
           <input
             type="text"
             placeholder="Pergunte à Athena ou dê instruções…"
