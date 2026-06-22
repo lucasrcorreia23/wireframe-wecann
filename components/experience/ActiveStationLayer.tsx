@@ -49,9 +49,11 @@ export function ActiveStationLayer() {
         className={cn(
           "station-sharp pointer-events-auto w-full max-w-[1240px]",
           isModular
-            ? // Fade SÓ de opacidade (sem transform) — para não criar backdrop
-              // root e preservar o backdrop-filter dos módulos sobre o canvas.
-              "station-fade bg-transparent"
+            ? // SEM animação/transform no wrapper modular: qualquer transform,
+              // opacity<1 ou camada composta num ancestral cria um "backdrop
+              // root" e mata o backdrop-filter dos módulos filhos. Por isso o
+              // wrapper modular é totalmente neutro (só os módulos têm vidro).
+              "bg-transparent"
             : cn(
                 "station-reveal",
                 "overflow-hidden rounded-[40px] border border-white/50 bg-white/55",
