@@ -43,7 +43,7 @@ export function ActiveStationLayer() {
   if (node.next) props.onContinue = () => goTo(node.next!);
 
   return (
-    <div className="pointer-events-none absolute inset-0 z-[5] flex items-center justify-center px-[3vw] py-20">
+    <div className="pointer-events-none absolute inset-0 z-[5] flex items-center justify-center px-[3vw] pt-24 pb-12">
       <div
         key={currentNode}
         className={cn(

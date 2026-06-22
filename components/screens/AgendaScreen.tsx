@@ -1,5 +1,6 @@
 import { WireButton, WireBadge, Eyebrow } from "@/components/ui";
 import { ModuleCard } from "@/components/ui/ModuleCard";
+import { BackButton } from "@/components/ui/BackButton";
 import { cn } from "@/lib/cn";
 
 // `agenda` — calendário estilo Google Calendar: mini-mês + "Criar" à esquerda,
@@ -101,6 +102,7 @@ export function AgendaScreen() {
       <ModuleCard className="gap-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
+            <BackButton />
             <WireButton variant="secondary" size="sm">Hoje</WireButton>
             <WireButton variant="ghost" size="sm">
               <i className="bx bx-chevron-left text-lg" />

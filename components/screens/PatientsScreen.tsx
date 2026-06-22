@@ -3,6 +3,7 @@
 import { useFlow } from "@/flow/store";
 import { WireBadge, Eyebrow } from "@/components/ui";
 import { ModuleCard } from "@/components/ui/ModuleCard";
+import { BackButton } from "@/components/ui/BackButton";
 
 // `patients` — Diretório de pacientes. Lista navegável; abrir leva ao Paciente 360.
 const PATIENTS: { initials: string; name: string; condition: string; last: string; pre: string; tone: "neutral" | "mid" | "hard" }[] = [
@@ -20,11 +21,14 @@ export function PatientsScreen() {
     <div className="flex w-full max-w-[920px] flex-col gap-4">
       <ModuleCard className="gap-4">
         <div className="flex items-center justify-between">
-          <div className="flex flex-col gap-1">
-            <Eyebrow>Pacientes</Eyebrow>
-            <h2 className="font-display text-title font-medium text-ink">
-              Diretório
-            </h2>
+          <div className="flex items-center gap-3">
+            <BackButton />
+            <div className="flex flex-col gap-1">
+              <Eyebrow>Pacientes</Eyebrow>
+              <h2 className="font-display text-title font-medium text-ink">
+                Diretório
+              </h2>
+            </div>
           </div>
           <div className="glass-frost-inner flex items-center gap-2 rounded-full px-4 py-2">
             <i className="bx bx-search text-base text-neutral-400" />

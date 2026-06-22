@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { WireButton, WireBadge, Stat, Eyebrow } from "@/components/ui";
 import { ModuleCard } from "@/components/ui/ModuleCard";
+import { BackButton } from "@/components/ui/BackButton";
 import { JourneyShell } from "@/components/layout/JourneyShell";
 
 // `report` — Relatório final (Pós-consulta · terminus). Outcomes e evolução ao
@@ -58,11 +59,14 @@ export function ReportScreen() {
       {/* Cabeçalho + CTA */}
       <ModuleCard>
         <div className="flex items-center justify-between gap-4">
-          <div className="flex flex-col">
-            <Eyebrow>Pós-consulta · terminus</Eyebrow>
-            <span className="font-display text-title font-medium text-ink">
-              Relatório final
-            </span>
+          <div className="flex items-center gap-3">
+            <BackButton />
+            <div className="flex flex-col">
+              <Eyebrow>Pós-consulta · terminus</Eyebrow>
+              <span className="font-display text-title font-medium text-ink">
+                Relatório final
+              </span>
+            </div>
           </div>
           {sent ? (
             <WireBadge tone="neutral">Enviado ✓</WireBadge>

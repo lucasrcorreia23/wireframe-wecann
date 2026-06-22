@@ -1,5 +1,6 @@
 import { WireButton, WireBadge, WireField, Stat, Eyebrow } from "@/components/ui";
 import { ModuleCard } from "@/components/ui/ModuleCard";
+import { BackButton } from "@/components/ui/BackButton";
 import { JourneyShell } from "@/components/layout/JourneyShell";
 import type { ScreenProps } from "./index";
 
@@ -59,6 +60,7 @@ export function PreReviewScreen({ onContinue }: ScreenProps) {
       <ModuleCard>
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
+            <BackButton />
             <span className="grid h-12 w-12 place-items-center rounded-full border border-white/50 bg-white/40 font-mono text-caption text-neutral-700">
               MC
             </span>

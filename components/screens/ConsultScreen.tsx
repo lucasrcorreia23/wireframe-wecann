@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { WireBadge, WireButton, WireField, Eyebrow } from "@/components/ui";
 import { ModuleCard } from "@/components/ui/ModuleCard";
+import { BackButton } from "@/components/ui/BackButton";
 import { JourneyShell } from "@/components/layout/JourneyShell";
 import { cn } from "@/lib/cn";
 import type { ScreenProps } from "./index";
@@ -56,11 +57,14 @@ export function ConsultScreen({ onContinue }: ScreenProps) {
     <JourneyShell left={left}>
       {/* Cabeçalho da consulta + avanço */}
       <div className="flex items-center justify-between gap-4 px-1">
-        <div className="flex flex-col">
-          <Eyebrow>Consulta</Eyebrow>
-          <span className="text-body-l font-medium text-ink">
-            Marina Castro · em andamento
-          </span>
+        <div className="flex items-center gap-3">
+          <BackButton />
+          <div className="flex flex-col">
+            <Eyebrow>Consulta</Eyebrow>
+            <span className="text-body-l font-medium text-ink">
+              Marina Castro · em andamento
+            </span>
+          </div>
         </div>
         <WireButton variant="primary" onClick={onContinue}>
           Continuar →

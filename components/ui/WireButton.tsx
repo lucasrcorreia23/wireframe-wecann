@@ -34,7 +34,7 @@ export function WireButton({
       type={type}
       onClick={onClick}
       className={cn(
-        "inline-flex items-center justify-center rounded-wire font-sans font-medium",
+        "inline-flex items-center justify-center rounded-full font-sans font-medium",
         "transition-colors duration-[180ms]",
         size === "sm" ? "h-8 px-3 text-caption" : "h-10 px-4 text-body",
         VARIANT[variant],

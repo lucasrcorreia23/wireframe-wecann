@@ -1,27 +1,20 @@
 "use client";
 
-import { useFlow, useCanBack } from "@/flow/store";
+import { useFlow } from "@/flow/store";
 import { NavMenu } from "./NavMenu";
 import { SearchBar } from "./SearchBar";
 import { cn } from "@/lib/cn";
 
-// Barra superior: [voltar] [menu] [busca] à esquerda; avatar do profissional à
-// direita. Menu abre o dropdown grande; busca abre a barra no topo.
+// Barra superior: [menu] [busca] (ghost) à esquerda; avatar à direita. O "voltar"
+// não vive aqui — fica dentro das telas, ao lado do título.
 export function TopBar() {
   const toggleMenu = useFlow((s) => s.toggleMenu);
   const toggleSearch = useFlow((s) => s.toggleSearch);
-  const back = useFlow((s) => s.back);
-  const canBack = useCanBack();
 
   return (
     <>
-      {/* Esquerda — menu + busca (+ voltar) */}
-      <div className="pointer-events-auto absolute left-4 top-5 z-20 flex items-center gap-2">
-        {canBack ? (
-          <IconButton label="Voltar" onClick={back}>
-            <i className="bx bx-arrow-back text-xl" />
-          </IconButton>
-        ) : null}
+      {/* Esquerda — menu + busca (ghost, discretos) */}
+      <div className="pointer-events-auto absolute left-3 top-4 z-20 flex items-center gap-1">
         <IconButton label="Menu" onClick={() => toggleMenu()}>
           <i className="bx bx-menu text-xl" />
         </IconButton>
@@ -60,8 +53,9 @@ function IconButton({
       onClick={onClick}
       aria-label={label}
       className={cn(
-        "grid h-10 w-10 place-items-center rounded-full border border-white/50 bg-white/45 text-body text-ink backdrop-blur",
-        "transition-colors hover:border-ink/30 hover:bg-white/60",
+        // Ghost: sem fundo/borda por padrão; hover sutil.
+        "grid h-9 w-9 place-items-center rounded-full text-ink/70",
+        "transition-colors hover:bg-white/45 hover:text-ink",
       )}
     >
       {children}

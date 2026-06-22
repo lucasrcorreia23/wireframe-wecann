@@ -3,6 +3,7 @@
 import { useFlow } from "@/flow/store";
 import { WireBadge, Eyebrow } from "@/components/ui";
 import { ModuleCard } from "@/components/ui/ModuleCard";
+import { BackButton } from "@/components/ui/BackButton";
 
 // `messages` — Mensagens: inbox das mensagens automatizadas recebidas dos
 // clientes/pacientes (confirmações, lembretes, respostas de questionário).
@@ -29,11 +30,14 @@ export function MessagesScreen() {
     <div className="flex w-full max-w-[920px] flex-col gap-4">
       <ModuleCard className="gap-4">
         <div className="flex items-center justify-between">
-          <div className="flex flex-col gap-1">
-            <Eyebrow>Mensagens</Eyebrow>
-            <h2 className="font-display text-title font-medium text-ink">
-              Caixa de entrada
-            </h2>
+          <div className="flex items-center gap-3">
+            <BackButton />
+            <div className="flex flex-col gap-1">
+              <Eyebrow>Mensagens</Eyebrow>
+              <h2 className="font-display text-title font-medium text-ink">
+                Caixa de entrada
+              </h2>
+            </div>
           </div>
           <WireBadge tone="hard">2 novas</WireBadge>
         </div>

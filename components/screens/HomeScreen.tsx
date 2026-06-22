@@ -47,17 +47,19 @@ export function HomeScreen() {
 
   return (
     <div
-      className="grid h-[min(820px,88vh)] w-full max-w-[1280px] items-stretch gap-4"
+      className="grid h-[min(820px,calc(100vh-12rem))] w-full max-w-[1280px] items-stretch gap-4"
       style={{ gridTemplateColumns: "minmax(0,1fr) minmax(0,1.5fr) minmax(0,1fr)" }}
     >
       {/* ───── Esquerda — Agenda do dia (preenchida + novo agendamento) ───── */}
       <ModuleCard
         eyebrow="Agenda do dia"
         aside={
-          <WireButton variant="secondary" size="sm">
-            <i className="bx bx-plus mr-1 text-base" />
-            Novo
-          </WireButton>
+          <button
+            aria-label="Novo agendamento"
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-neutral-300 bg-paper text-ink transition-colors hover:border-neutral-500"
+          >
+            <i className="bx bx-plus text-xl" />
+          </button>
         }
         className="min-h-0"
       >
@@ -166,7 +168,7 @@ export function HomeScreen() {
 
       {/* ───── Direita — Recentes (compacto) + Pílulas preenchendo até embaixo ───── */}
       <div className="flex min-h-0 flex-col gap-4">
-        <ModuleCard eyebrow="Recentes">
+        <ModuleCard eyebrow="Pacientes Recentes">
           <div className="flex flex-wrap gap-2">
             {RECENT.map((p) => (
               <button

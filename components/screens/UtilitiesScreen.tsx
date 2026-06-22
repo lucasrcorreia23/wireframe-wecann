@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { WireBadge, WireField, Stat, Eyebrow } from "@/components/ui";
 import { ModuleCard } from "@/components/ui/ModuleCard";
+import { BackButton } from "@/components/ui/BackButton";
 import { cn } from "@/lib/cn";
 
 // `utilities` — Utilidades: Modelos, Financeiro e Contabilidade por abas.
@@ -14,11 +15,14 @@ export function UtilitiesScreen() {
   return (
     <div className="flex w-full max-w-[920px] flex-col gap-4">
       <ModuleCard className="gap-4">
-        <div className="flex flex-col gap-1">
-          <Eyebrow>Utilidades</Eyebrow>
-          <h2 className="font-display text-title font-medium text-ink">
-            Ferramentas da plataforma
-          </h2>
+        <div className="flex items-center gap-3">
+          <BackButton />
+          <div className="flex flex-col gap-1">
+            <Eyebrow>Utilidades</Eyebrow>
+            <h2 className="font-display text-title font-medium text-ink">
+              Ferramentas da plataforma
+            </h2>
+          </div>
         </div>
 
         <div role="tablist" className="flex gap-1 border-b border-white/40">
