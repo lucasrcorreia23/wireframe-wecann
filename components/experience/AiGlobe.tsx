@@ -11,9 +11,10 @@ const RADIUS = 2.1;
 const DIST = 7; // distância à frente da câmera (billboard)
 
 // Âncoras em NDC (x,y ∈ [-1,1]) + escala relativa. A IA (Athena) fica CENTRAL e
-// grande na Home; nas demais telas desliza para o canto superior direito, menor —
-// alinhada ao "slot do globo" no AIDock.
-const HOME_ANCHOR = { x: 0.0, y: 0.14, scale: 1.0 };
+// GRANDE na Home — cobrindo atrás de toda a faixa de módulos para o vidro
+// "pegar" o globo (blur estilo Casuística); nas demais telas desliza para o
+// canto superior direito, menor, alinhada ao "slot do globo" no AIDock.
+const HOME_ANCHOR = { x: 0.0, y: 0.04, scale: 1.45 };
 const DOCK_ANCHOR = { x: 0.6, y: 0.42, scale: 0.44 };
 
 // O globo persiste e billboarda à frente da câmera: um único globo 3D que segue

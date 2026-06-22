@@ -158,18 +158,19 @@
    O backdrop-filter (blur gaussiano) só aparece porque o fundo é translúcido —
    é ele que "pega" o globo Athena e a atmosfera atrás. */
 @layer utilities {
-  /* Cards de módulo "soltos no ar" — vidro azulado translúcido. */
+  /* Cards de módulo "soltos no ar" — vidro fosco neutro (estilo Casuística):
+     blur forte (40px) + branco translúcido, para o backdrop pegar o globo 3D. */
   .glass-panel-blue {
     background: linear-gradient(
       160deg,
-      rgba(255, 255, 255, 0.66),
-      rgba(232, 240, 255, 0.5)
+      rgba(255, 255, 255, 0.55),
+      rgba(255, 255, 255, 0.48)
     );
     border: 1px solid rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(22px) saturate(1.35);
-    -webkit-backdrop-filter: blur(22px) saturate(1.35);
+    backdrop-filter: blur(40px) saturate(1.4);
+    -webkit-backdrop-filter: blur(40px) saturate(1.4);
     box-shadow:
-      0 8px 40px rgba(28, 40, 74, 0.08),
+      0 8px 40px rgba(24, 24, 26, 0.07),
       inset 0 1px 0 rgba(255, 255, 255, 0.55);
   }
 
