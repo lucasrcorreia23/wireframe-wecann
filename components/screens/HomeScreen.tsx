@@ -102,7 +102,7 @@ export function HomeScreen() {
               Pergunte à Athena…
             </span>
             <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-ink text-paper">
-              →
+              <i className="bx bx-right-arrow-alt text-lg" />
             </span>
           </div>
         </section>

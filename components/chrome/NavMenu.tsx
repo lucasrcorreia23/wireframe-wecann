@@ -6,12 +6,12 @@ import type { NodeId } from "@/flow/types";
 import { cn } from "@/lib/cn";
 
 const ITEMS: { label: string; node: NodeId; icon: string }[] = [
-  { label: "Home", node: "home", icon: "⌂" },
-  { label: "Agenda", node: "agenda", icon: "▦" },
-  { label: "Mensagens", node: "messages", icon: "✉" },
-  { label: "Pacientes", node: "patients", icon: "☻" },
-  { label: "Casuísticas", node: "casuistry", icon: "❋" },
-  { label: "Utilidades", node: "utilities", icon: "⚙" },
+  { label: "Home", node: "home", icon: "bx-home-alt" },
+  { label: "Agenda", node: "agenda", icon: "bx-calendar" },
+  { label: "Mensagens", node: "messages", icon: "bx-envelope" },
+  { label: "Pacientes", node: "patients", icon: "bx-group" },
+  { label: "Casuísticas", node: "casuistry", icon: "bx-bar-chart-alt-2" },
+  { label: "Utilidades", node: "utilities", icon: "bx-wrench" },
 ];
 
 // Dropdown grande de navegação, ancorado ao botão de menu (topo-esquerda).
@@ -54,8 +54,8 @@ export function NavMenu() {
                     : "text-neutral-700 hover:bg-white/40",
                 )}
               >
-                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/55 text-caption">
-                  {it.icon}
+                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/55">
+                  <i className={`bx ${it.icon} text-lg`} />
                 </span>
                 <span className="text-body font-medium">{it.label}</span>
               </button>
@@ -68,8 +68,8 @@ export function NavMenu() {
             onClick={() => toggleMenu(false)}
             className="flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-neutral-600 transition-colors hover:bg-white/40"
           >
-            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/55 text-caption">
-              ⏻
+            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/55">
+              <i className="bx bx-log-out text-lg" />
             </span>
             <span className="text-body font-medium">Sair</span>
           </button>

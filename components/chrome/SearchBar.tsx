@@ -54,7 +54,7 @@ export function SearchBar() {
       <div className="panel-in-right pointer-events-auto fixed inset-x-4 top-4 z-40">
         <div className="glass-panel-blue overflow-hidden rounded-[28px] p-2">
           <div className="flex items-center gap-3 px-4 py-2.5">
-            <span className="text-body text-neutral-500">⌕</span>
+            <i className="bx bx-search text-xl text-neutral-500" />
             <input
               ref={inputRef}
               value={q}

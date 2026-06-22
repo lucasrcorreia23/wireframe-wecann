@@ -27,7 +27,7 @@ export function PatientsScreen() {
             </h2>
           </div>
           <div className="glass-frost-inner flex items-center gap-2 rounded-full px-4 py-2">
-            <span className="text-neutral-400">⌕</span>
+            <i className="bx bx-search text-base text-neutral-400" />
             <span className="text-caption text-neutral-400">Buscar paciente…</span>
           </div>
         </div>

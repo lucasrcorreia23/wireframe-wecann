@@ -81,8 +81,8 @@ export function ConsultScreen({ onContinue }: ScreenProps) {
             </span>
           </div>
           <div className="absolute inset-0 grid place-items-center">
-            <span className="grid h-12 w-12 place-items-center rounded-full border border-paper/50 text-body text-paper/80">
-              ▶
+            <span className="grid h-12 w-12 place-items-center rounded-full border border-paper/50 text-paper/80">
+              <i className="bx bx-play text-2xl" />
             </span>
           </div>
           <span className="absolute bottom-3 left-3 font-mono text-micro text-paper/70">

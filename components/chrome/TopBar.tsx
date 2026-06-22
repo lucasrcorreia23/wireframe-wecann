@@ -19,14 +19,14 @@ export function TopBar() {
       <div className="pointer-events-auto absolute left-4 top-5 z-20 flex items-center gap-2">
         {canBack ? (
           <IconButton label="Voltar" onClick={back}>
-            ←
+            <i className="bx bx-arrow-back text-xl" />
           </IconButton>
         ) : null}
         <IconButton label="Menu" onClick={() => toggleMenu()}>
-          ☰
+          <i className="bx bx-menu text-xl" />
         </IconButton>
         <IconButton label="Buscar paciente" onClick={() => toggleSearch()}>
-          ⌕
+          <i className="bx bx-search text-xl" />
         </IconButton>
       </div>
 
@@ -42,7 +42,7 @@ export function TopBar() {
           <span className="hidden text-caption font-medium text-ink sm:block">
             Dra. Helena
           </span>
-          <span className="text-micro text-neutral-500">▾</span>
+          <i className="bx bx-chevron-down text-base text-neutral-500" />
         </button>
       </div>
 

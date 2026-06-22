@@ -44,15 +44,20 @@ export function AgendaScreen() {
       <div className="flex flex-col gap-4">
         <ModuleCard className="gap-4">
           <WireButton variant="primary" className="w-full">
-            + Criar
+            <i className="bx bx-plus mr-1.5 text-base" />
+            Criar
           </WireButton>
 
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <span className="text-body font-medium text-ink">Junho 2026</span>
-              <div className="flex gap-1 font-mono text-micro text-neutral-400">
-                <button className="hover:text-ink">←</button>
-                <button className="hover:text-ink">→</button>
+              <div className="flex gap-1 text-neutral-400">
+                <button className="hover:text-ink" aria-label="Mês anterior">
+                  <i className="bx bx-chevron-left text-lg" />
+                </button>
+                <button className="hover:text-ink" aria-label="Próximo mês">
+                  <i className="bx bx-chevron-right text-lg" />
+                </button>
               </div>
             </div>
             <div className="grid grid-cols-7 gap-0.5">
@@ -97,8 +102,12 @@ export function AgendaScreen() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <WireButton variant="secondary" size="sm">Hoje</WireButton>
-            <WireButton variant="ghost" size="sm">←</WireButton>
-            <WireButton variant="ghost" size="sm">→</WireButton>
+            <WireButton variant="ghost" size="sm">
+              <i className="bx bx-chevron-left text-lg" />
+            </WireButton>
+            <WireButton variant="ghost" size="sm">
+              <i className="bx bx-chevron-right text-lg" />
+            </WireButton>
             <span className="font-display text-title font-medium text-ink">
               16–22 jun
             </span>
