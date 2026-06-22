@@ -42,7 +42,7 @@ export function AIDock({ className }: { className?: string }) {
   return (
     <aside
       className={cn(
-        "glass-panel-blue flex min-h-0 flex-col gap-4 rounded-[28px] p-5",
+        "glass-panel-blue backdrop-blur-2xl flex min-h-0 flex-col gap-4 rounded-[28px] p-5",
         className,
       )}
     >

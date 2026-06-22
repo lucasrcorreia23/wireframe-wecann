@@ -51,8 +51,7 @@ export function SearchBar() {
         className="pointer-events-auto fixed inset-0 z-30"
         onClick={() => toggleSearch(false)}
       />
-      <div className="panel-in-right pointer-events-auto fixed inset-x-4 top-4 z-40">
-        <div className="glass-panel-blue overflow-hidden rounded-[28px] p-2">
+      <div className="panel-in-right glass-panel-blue backdrop-blur-2xl pointer-events-auto fixed inset-x-4 top-4 z-40 overflow-hidden rounded-[28px] p-2">
           <div className="flex items-center gap-3 px-4 py-2.5">
             <i className="bx bx-search text-xl text-neutral-500" />
             <input
@@ -96,7 +95,6 @@ export function SearchBar() {
               Nenhum paciente encontrado.
             </p>
           )}
-        </div>
       </div>
     </>
   );

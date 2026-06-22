@@ -1,8 +1,9 @@
 "use client";
 
 import { useFlow } from "@/flow/store";
-import { WireBadge, WireButton } from "@/components/ui";
+import { WireBadge } from "@/components/ui";
 import { ModuleCard } from "@/components/ui/ModuleCard";
+import { cn } from "@/lib/cn";
 
 const RECENT = [
   { initials: "MC", name: "Marina Castro" },
@@ -47,7 +48,7 @@ export function HomeScreen() {
 
   return (
     <div
-      className="grid h-[min(820px,calc(100vh-12rem))] w-full max-w-[1280px] items-stretch gap-4"
+      className="grid h-[min(820px,calc(100vh-6rem))] w-full max-w-[1280px] items-stretch gap-4"
       style={{ gridTemplateColumns: "minmax(0,1fr) minmax(0,1.5fr) minmax(0,1fr)" }}
     >
       {/* ───── Esquerda — Agenda do dia (preenchida + novo agendamento) ───── */}
@@ -63,37 +64,33 @@ export function HomeScreen() {
         }
         className="min-h-0"
       >
-        <p className="text-caption text-neutral-500">Quinta, 19 de junho · 7 compromissos</p>
-        <ul className="no-scrollbar flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
+        <ul className="no-scrollbar flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
           {AGENDA.map((item) => (
-            <li
-              key={item.time}
-              className="flex flex-col gap-1.5 border-b border-white/40 pb-3 last:border-0 last:pb-0"
-            >
-              <div className="flex items-baseline gap-2">
-                <span className="font-mono text-caption font-medium text-ink">{item.time}</span>
-                <span className="text-body font-medium text-ink">{item.name}</span>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <p className="min-w-0 flex-1 truncate text-caption text-neutral-500">
-                  {item.condition}
-                </p>
-                <WireButton
-                  variant={item.urgent ? "primary" : "secondary"}
-                  size="sm"
-                  className="shrink-0"
-                  onClick={() => goTo("pre-review")}
-                >
-                  {item.urgent ? "Revisar" : "Abrir"}
-                </WireButton>
-              </div>
+            <li key={item.time}>
+              <button
+                onClick={() => goTo("pre-review")}
+                className="group flex w-full items-center justify-between gap-3 rounded-2xl px-3 py-3 text-left transition-colors hover:bg-white/55"
+              >
+                <div className="flex min-w-0 flex-col gap-0.5">
+                  <span className="text-body font-medium text-ink">{item.name}</span>
+                  <span className="truncate text-caption text-neutral-500">
+                    {item.condition}
+                  </span>
+                </div>
+                <div className="flex shrink-0 flex-col items-end gap-1.5">
+                  <span className="font-mono text-caption font-medium text-ink">
+                    {item.time}
+                  </span>
+                  <ActionArrow urgent={item.urgent} />
+                </div>
+              </button>
             </li>
           ))}
         </ul>
       </ModuleCard>
 
       {/* ───── Centro — painel da IA (container de vidro único; globo desfocado atrás) ───── */}
-      <div className="glass-panel-blue backdrop-blur-lg flex min-h-0 flex-col rounded-[28px] p-6">
+      <div className="glass-panel-blue backdrop-blur-xl flex min-h-0 flex-col rounded-[28px] p-6">
         {/* Boas-vindas + data */}
         <header className="flex items-start justify-between gap-4">
           <div className="flex flex-col">
@@ -187,21 +184,44 @@ export function HomeScreen() {
         <ModuleCard eyebrow="Pílulas do dia" className="min-h-0 flex-1">
           <ul className="no-scrollbar flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
             {PILLS.map((pill) => (
-              <li
-                key={pill.title}
-                className="glass-frost-inner flex flex-col gap-2 rounded-[18px] p-4"
-              >
-                <div className="flex items-center justify-between">
-                  <WireBadge tone="mid">{pill.tag}</WireBadge>
-                  <span className="font-mono text-micro text-neutral-400">{pill.meta}</span>
-                </div>
-                <h4 className="text-body font-medium text-ink text-pretty">{pill.title}</h4>
-                <span className="text-caption text-neutral-500">Abrir →</span>
+              <li key={pill.title}>
+                <button className="group glass-frost-inner flex w-full flex-col gap-2 rounded-[18px] p-4 text-left transition-colors hover:bg-white/65">
+                  <div className="flex items-center justify-between gap-2">
+                    <WireBadge tone="mid">{pill.tag}</WireBadge>
+                    <span className="font-mono text-micro text-neutral-400">
+                      {pill.meta}
+                    </span>
+                  </div>
+                  <h4 className="text-body font-medium text-ink text-pretty">
+                    {pill.title}
+                  </h4>
+                  <div className="flex justify-end">
+                    <ActionArrow />
+                  </div>
+                </button>
               </li>
             ))}
           </ul>
         </ModuleCard>
       </div>
     </div>
+  );
+}
+
+// Botão de ação (ícone) com hover proprietário: a seta "acende" (preenche com
+// tinta) ao passar o mouse no item. Em itens urgentes já vem preenchida.
+function ActionArrow({ urgent = false }: { urgent?: boolean }) {
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        "grid h-8 w-8 shrink-0 place-items-center rounded-full border transition-all duration-200",
+        urgent
+          ? "border-ink bg-ink text-paper"
+          : "border-neutral-300 text-neutral-500 group-hover:border-ink group-hover:bg-ink group-hover:text-paper",
+      )}
+    >
+      <i className="bx bx-right-arrow-alt text-lg" />
+    </span>
   );
 }

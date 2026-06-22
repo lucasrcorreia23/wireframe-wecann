@@ -38,8 +38,7 @@ export function NavMenu() {
         className="pointer-events-auto fixed inset-0 z-30"
         onClick={() => toggleMenu(false)}
       />
-      <div className="panel-in-left pointer-events-auto fixed left-4 top-[68px] z-40 w-72">
-        <div className="glass-panel-blue flex flex-col gap-1 rounded-[24px] p-3">
+      <div className="panel-in-left glass-panel-blue backdrop-blur-2xl pointer-events-auto fixed left-4 top-[68px] z-40 flex w-72 flex-col gap-1 rounded-[24px] p-3">
           {ITEMS.map((it) => {
             const active = it.node === currentNode;
             return (
@@ -54,8 +53,8 @@ export function NavMenu() {
                     : "text-neutral-700 hover:bg-white/40",
                 )}
               >
-                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/55">
-                  <i className={`bx ${it.icon} text-lg`} />
+                <span className="grid h-7 w-7 shrink-0 place-items-center text-neutral-500">
+                  <i className={`bx ${it.icon} text-xl`} />
                 </span>
                 <span className="text-body font-medium">{it.label}</span>
               </button>
@@ -68,12 +67,11 @@ export function NavMenu() {
             onClick={() => toggleMenu(false)}
             className="flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-neutral-600 transition-colors hover:bg-white/40"
           >
-            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/55">
-              <i className="bx bx-log-out text-lg" />
+            <span className="grid h-7 w-7 shrink-0 place-items-center text-neutral-500">
+              <i className="bx bx-log-out text-xl" />
             </span>
             <span className="text-body font-medium">Sair</span>
           </button>
-        </div>
       </div>
     </>
   );

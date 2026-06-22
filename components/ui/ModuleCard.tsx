@@ -2,7 +2,9 @@ import { cn } from "@/lib/cn";
 import { Eyebrow } from "./Eyebrow";
 
 // Card de módulo "solto no ar": vidro translúcido que flutua sobre o mundo 3D.
-// Cabeçalho opcional (eyebrow + título + aside) e corpo livre.
+// Header: label (eyebrow/título) à ESQUERDA e ação (`aside`) à DIREITA, alinhados
+// verticalmente ao CENTRO (um em cada extremidade). Altura mínima fixa (h-9) para
+// alinhar pixel-perfect entre colunas paralelas.
 export function ModuleCard({
   eyebrow,
   title,
@@ -16,6 +18,8 @@ export function ModuleCard({
   children?: React.ReactNode;
   className?: string;
 }) {
+  const hasHeader = eyebrow || title || aside;
+
   return (
     <section
       className={cn(
@@ -23,8 +27,8 @@ export function ModuleCard({
         className,
       )}
     >
-      {eyebrow || title || aside ? (
-        <header className="flex items-start justify-between gap-3">
+      {hasHeader ? (
+        <header className="flex min-h-9 items-center justify-between gap-3">
           <div className="flex min-w-0 flex-col gap-1">
             {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
             {title ? (
