@@ -30,19 +30,13 @@ export function TopBar() {
         </IconButton>
       </div>
 
-      {/* Direita — avatar do profissional logado */}
+      {/* Direita — avatar do profissional (só o círculo, com um rosto) */}
       <div className="pointer-events-auto absolute right-4 top-5 z-20">
         <button
-          aria-label="Profissional"
-          className="flex items-center gap-2 rounded-full border border-white/50 bg-white/45 py-1.5 pl-1.5 pr-3 backdrop-blur transition-colors hover:border-ink/25"
+          aria-label="Perfil"
+          className="grid h-10 w-10 place-items-center overflow-hidden rounded-full border border-white/50 bg-white/45 text-neutral-700 backdrop-blur transition-colors hover:border-ink/30 hover:text-ink"
         >
-          <span className="grid h-8 w-8 place-items-center rounded-full bg-ink font-mono text-micro text-paper">
-            HP
-          </span>
-          <span className="hidden text-caption font-medium text-ink sm:block">
-            Dra. Helena
-          </span>
-          <i className="bx bx-chevron-down text-base text-neutral-500" />
+          <i className="bx bxs-user text-2xl" />
         </button>
       </div>
 
