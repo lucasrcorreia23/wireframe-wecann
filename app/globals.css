@@ -170,11 +170,11 @@
   .glass-panel-blue {
     background: rgba(255, 255, 255, 0.42);
     border: 1px solid rgba(255, 255, 255, 0.5);
-    backdrop-filter: blur(40px) saturate(1.4);
-    -webkit-backdrop-filter: blur(40px) saturate(1.4);
-    box-shadow:
-      0 8px 40px rgba(0, 0, 0, 0.06),
-      inset 0 1px 0 rgba(255, 255, 255, 0.55);
+    /* blur 24px (era 40px): mais leve para o backdrop-filter re-rasterizar a
+       cada frame com o globo animando atrás — reduz o lag mantendo o fosco. */
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+   
   }
 
   /* Camada interna (listas, chips, input) — translúcido sólido, sem blur próprio. */

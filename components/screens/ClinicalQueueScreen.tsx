@@ -35,6 +35,7 @@ export function ClinicalQueueScreen() {
   return (
     <ScreenShell
       zone="Pré-consulta · ramo"
+      icon="bx-list-ul"
       title="Fila de dúvidas clínicas"
       lead="Itens encaminhados pela secretária, ordenados por urgência."
       actions={<WireField label="Filtro" value="Por urgência (SLA)" className="w-56" />}

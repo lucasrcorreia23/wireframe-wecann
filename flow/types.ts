@@ -10,13 +10,6 @@ export type NodeId =
   | "clinical-queue"
   | "consult"
   | "clinical-note"
-  | "prescription"
-  | "reinforced-confirm"
-  | "closure"
-  | "clinical-safety"
-  | "immediate-contact"
-  | "prescription-renewal"
-  | "clinical-doubts-reports"
   | "casuistry"
   | "report";
 

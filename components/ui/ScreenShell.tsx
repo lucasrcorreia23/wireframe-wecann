@@ -7,13 +7,17 @@ import { BackButton } from "./BackButton";
 // tamanho do plano <Html transform> no mundo 3D (Fase 3).
 export function ScreenShell({
   zone,
+  icon,
   title,
   lead,
   actions,
   children,
   className,
 }: {
-  zone: string;
+  /** Rótulo de fase do fluxo. Opcional: telas-destino (menu) não usam. */
+  zone?: string;
+  /** Ícone boxicon sutil ao lado da zona (ex.: "bx-note"). */
+  icon?: string;
   title: string;
   lead?: string;
   actions?: React.ReactNode;
@@ -28,19 +32,19 @@ export function ScreenShell({
       )}
     >
       <header className="flex items-end justify-between gap-8 border-b border-neutral-200 pb-6">
-        <div className="flex items-end gap-4">
-          <BackButton className="mb-1" />
-          <div className="flex flex-col gap-3">
-            <Eyebrow>{zone}</Eyebrow>
-          <h1 className="font-display text-display-m font-medium text-ink text-balance">
-            {title}
-          </h1>
-            {lead ? (
-              <p className="max-w-xl text-body-l text-neutral-600 text-pretty">
-                {lead}
-              </p>
-            ) : null}
+        <div className="flex flex-col gap-3">
+          {zone ? <Eyebrow icon={icon}>{zone}</Eyebrow> : null}
+          <div className="flex items-center gap-3">
+            <BackButton />
+            <h1 className="font-display text-display-m font-medium text-ink text-balance">
+              {title}
+            </h1>
           </div>
+          {lead ? (
+            <p className="max-w-xl text-body-l text-neutral-600 text-pretty">
+              {lead}
+            </p>
+          ) : null}
         </div>
         {actions ? (
           <div className="flex shrink-0 items-center gap-2">{actions}</div>

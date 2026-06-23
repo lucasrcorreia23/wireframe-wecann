@@ -5,16 +5,11 @@ const STEP = 16;
 const SIDE = 11;
 const z = (i: number): number => -i * STEP;
 
-// Trilho com estações. Spine ao longo de −Z; forks deslocam em ±X e reentram.
+// Trilho com estações. Spine ao longo de −Z; ramos laterais a partir da home.
 //
-//  home ─ pre-review ─ consult ─ clinical-note ─ prescription ─┐
-//   │(L)                                                        │(controle especial?)
-//  clinical-queue                              reinforced-confirm(R) ─┐
-//                                                               └─ closure ─ clinical-safety ─┐
-//                                                  (grau 3?) immediate-contact(R) ┐  prescription-renewal(L) ┐
-//                                                               clinical-doubts-reports ◄──────────┴──────────┘
-//                                                                     │
-//                                                               casuistry ─ report (TERMINUS)
+//  home ─ pre-review ─ consult ─ clinical-note ─ casuistry ─ report (TERMINUS)
+//   │(L)                         (Notas clínicas: hub que resume
+//  clinical-queue                 todo o pós-consulta numa tela só)
 export const NODES: Record<NodeId, FlowNode> = {
   home: {
     id: "home",
@@ -81,75 +76,9 @@ export const NODES: Record<NodeId, FlowNode> = {
   },
   "clinical-note": {
     id: "clinical-note",
-    zone: "consulta",
-    title: "Nota clínica",
+    zone: "pos",
+    title: "Notas clínicas",
     position: [0, 0, z(3)],
-    panels: ["patient360", "copilot"],
-    next: "prescription",
-  },
-  prescription: {
-    id: "prescription",
-    zone: "consulta",
-    title: "Prescrição e conduta",
-    position: [0, 0, z(4)],
-    panels: ["patient360"],
-    next: "closure",
-    fork: {
-      question: "Controle especial?",
-      yes: { label: "Sim", to: "reinforced-confirm" },
-      no: { label: "Não", to: "closure" },
-    },
-  },
-  "reinforced-confirm": {
-    id: "reinforced-confirm",
-    zone: "consulta",
-    title: "Confirmação reforçada",
-    position: [SIDE, 0, z(4.5)],
-    panels: [],
-    next: "closure",
-  },
-  closure: {
-    id: "closure",
-    zone: "consulta",
-    title: "Encerramento",
-    position: [0, 0, z(5)],
-    panels: [],
-    next: "clinical-safety",
-  },
-  "clinical-safety": {
-    id: "clinical-safety",
-    zone: "pos",
-    title: "Segurança clínica",
-    position: [0, 0, z(6)],
-    panels: [],
-    next: "prescription-renewal",
-    fork: {
-      question: "Grau 3 (crítico)?",
-      yes: { label: "Sim", to: "immediate-contact" },
-      no: { label: "Não", to: "prescription-renewal" },
-    },
-  },
-  "immediate-contact": {
-    id: "immediate-contact",
-    zone: "pos",
-    title: "Contato e ajuste imediato",
-    position: [SIDE, 0, z(6.5)],
-    panels: [],
-    next: "clinical-doubts-reports",
-  },
-  "prescription-renewal": {
-    id: "prescription-renewal",
-    zone: "pos",
-    title: "Renovação de receitas",
-    position: [-SIDE, 0, z(6.5)],
-    panels: [],
-    next: "clinical-doubts-reports",
-  },
-  "clinical-doubts-reports": {
-    id: "clinical-doubts-reports",
-    zone: "pos",
-    title: "Dúvidas clínicas e laudos",
-    position: [0, 0, z(7.5)],
     panels: [],
     next: "casuistry",
   },
@@ -157,7 +86,7 @@ export const NODES: Record<NodeId, FlowNode> = {
     id: "casuistry",
     zone: "pos",
     title: "Casuística e evolução",
-    position: [0, 0, z(8.5)],
+    position: [0, 0, z(4)],
     panels: [],
     next: "report",
   },
@@ -165,7 +94,7 @@ export const NODES: Record<NodeId, FlowNode> = {
     id: "report",
     zone: "pos",
     title: "Relatório final",
-    position: [0, 0, z(9.5)],
+    position: [0, 0, z(5)],
     panels: [],
     terminus: true,
   },
@@ -177,13 +106,6 @@ export const GOLDEN_PATH: NodeId[] = [
   "pre-review",
   "consult",
   "clinical-note",
-  "prescription",
-  "reinforced-confirm",
-  "closure",
-  "clinical-safety",
-  "immediate-contact",
-  "prescription-renewal",
-  "clinical-doubts-reports",
   "casuistry",
   "report",
 ];

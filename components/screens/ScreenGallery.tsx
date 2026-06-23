@@ -10,18 +10,11 @@ const ORDER = [
   "clinical-queue",
   "consult",
   "clinical-note",
-  "prescription",
-  "reinforced-confirm",
-  "closure",
-  "clinical-safety",
-  "immediate-contact",
-  "prescription-renewal",
-  "clinical-doubts-reports",
   "casuistry",
   "report",
 ] as const;
 
-// Galeria estática (Fase 1): empilha as 14 telas para travar fidelidade de
+// Galeria estática (Fase 1): empilha as telas para travar fidelidade de
 // conteúdo, grayscale e escala tipográfica antes do 3D. Persistida em /gallery.
 export function ScreenGallery() {
   return (

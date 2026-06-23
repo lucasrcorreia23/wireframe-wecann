@@ -1,6 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
+// Filtra o warning de depreciação do THREE.Clock disparado pelo @react-three/fiber.
+import "@/lib/silence-three-deprecations";
 
 // Regra de ouro do canvas no App Router (§armadilha 1): `dynamic(..., {ssr:false})`
 // SÓ é permitido em Client Component. Este wrapper "use client" carrega o

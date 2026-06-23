@@ -18,9 +18,18 @@ export function TopBar() {
         <IconButton label="Menu" onClick={() => toggleMenu()}>
           <i className="bx bx-menu text-xl" />
         </IconButton>
-        <IconButton label="Buscar paciente" onClick={() => toggleSearch()}>
+        {/* Busca com label visível ao lado do menu (ghost). */}
+        <button
+          onClick={() => toggleSearch()}
+          aria-label="Buscar paciente 360"
+          className={cn(
+            "flex h-9 items-center gap-2 rounded-full pl-2.5 pr-3.5 text-ink/70",
+            "transition-colors hover:bg-white/45 hover:text-ink",
+          )}
+        >
           <i className="bx bx-search text-xl" />
-        </IconButton>
+        
+        </button>
       </div>
 
       {/* Direita — avatar do profissional (só o círculo, com um rosto) */}

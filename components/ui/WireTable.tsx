@@ -11,13 +11,17 @@ export type WireColumn = {
 export type WireRow = Record<string, React.ReactNode>;
 
 // Tabela wireframe: cabeçalho mono uppercase, linhas hairline, números tabulares.
+// `onRowClick` (opcional) torna as linhas clicáveis (cursor + hover) — usado para
+// abrir painéis de detalhe a partir de uma linha.
 export function WireTable({
   columns,
   rows,
+  onRowClick,
   className,
 }: {
   columns: WireColumn[];
   rows: WireRow[];
+  onRowClick?: (row: WireRow, index: number) => void;
   className?: string;
 }) {
   return (
@@ -43,7 +47,11 @@ export function WireTable({
           {rows.map((row, ri) => (
             <tr
               key={ri}
-              className="border-b border-neutral-200 last:border-0 hover:bg-paper-50"
+              onClick={onRowClick ? () => onRowClick(row, ri) : undefined}
+              className={cn(
+                "border-b border-neutral-200 last:border-0 hover:bg-paper-50",
+                onRowClick && "cursor-pointer",
+              )}
             >
               {columns.map((c) => (
                 <td

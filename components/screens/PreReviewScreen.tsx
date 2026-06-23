@@ -1,4 +1,4 @@
-import { WireButton, WireBadge, WireField, Stat, Eyebrow } from "@/components/ui";
+import { WireButton, WireBadge, Stat, Eyebrow } from "@/components/ui";
 import { ModuleCard } from "@/components/ui/ModuleCard";
 import { BackButton } from "@/components/ui/BackButton";
 import { JourneyShell } from "@/components/layout/JourneyShell";
@@ -22,14 +22,26 @@ const HISTORY = [
 export function PreReviewScreen({ onContinue }: ScreenProps) {
   const left = (
     <>
-      <ModuleCard eyebrow="Resumo" title="Motivo e queixa" aside={<WireBadge tone="mid">Revisar</WireBadge>}>
-        <p className="text-caption text-neutral-700">
-          Dor lombar refratária há 14 meses · interfere no sono e no trabalho ·
-          busca reduzir opioides.
-        </p>
+      <ModuleCard icon="bx-plus-medical" title="Condições e alergias">
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1.5">
+            <Eyebrow>Condições</Eyebrow>
+            <div className="flex flex-wrap gap-1.5">
+              <WireBadge>Fibromialgia</WireBadge>
+              <WireBadge>Dor crônica</WireBadge>
+              <WireBadge>Ansiedade</WireBadge>
+            </div>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Eyebrow>Alergias</Eyebrow>
+            <div className="flex flex-wrap gap-1.5">
+              <WireBadge>Dipirona</WireBadge>
+            </div>
+          </div>
+        </div>
       </ModuleCard>
 
-      <ModuleCard eyebrow="Anexos" title="Exames">
+      <ModuleCard icon="bx-paperclip" title="Exames">
         <div className="flex flex-col gap-2">
           {["Ressonância lombar", "Hemograma", "Perfil hepático"].map((exam) => (
             <div
@@ -45,7 +57,7 @@ export function PreReviewScreen({ onContinue }: ScreenProps) {
         </div>
       </ModuleCard>
 
-      <ModuleCard eyebrow="Resumo" title="Indicadores">
+      <ModuleCard icon="bx-bar-chart-alt-2" title="Indicadores">
         <div className="flex flex-col gap-4">
           <Stat value="12" label="Consultas" hint="desde ago/2025" />
           <Stat value="86%" label="Aderência" hint="últimos 6 meses" />
@@ -56,47 +68,80 @@ export function PreReviewScreen({ onContinue }: ScreenProps) {
 
   return (
     <JourneyShell left={left}>
-      {/* Identidade + CTA único */}
+      {/* Identidade + CTA único. Padrão da app: o VOLTAR vive ao lado do título
+          (serifado, principal), como na tela de consulta. Avatar + nome/metadados
+          em coluna, CTA à direita sem quebrar. */}
       <ModuleCard>
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <BackButton />
-            <span className="grid h-12 w-12 place-items-center rounded-full border border-white/50 bg-white/40 font-mono text-caption text-neutral-700">
-              MC
+        <div className="flex items-center gap-4">
+          <BackButton />
+
+          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full border border-white/50 bg-white/40 font-display text-title font-medium text-ink">
+            MC
+          </span>
+          <div className="flex min-w-0 flex-col gap-1">
+            <span className="font-display text-title font-medium leading-tight text-ink">
+              Marina Castro
             </span>
-            <div className="flex flex-col">
-              <span className="text-body-l font-medium text-ink">Marina Castro</span>
-              <span className="text-caption text-neutral-500">
-                34 anos · dor crônica refratária · desde ago/2025
-              </span>
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-caption text-neutral-500">
+              <span>34 anos</span>
+              <span aria-hidden className="text-neutral-300">·</span>
+              <span>dor crônica refratária</span>
+              <span aria-hidden className="text-neutral-300">·</span>
+              <span>desde ago/2025</span>
             </div>
           </div>
-          <WireButton variant="primary" onClick={onContinue}>
+
+          <WireButton
+            variant="primary"
+            onClick={onContinue}
+            className="ml-auto shrink-0 whitespace-nowrap"
+          >
             Ir para a consulta
           </WireButton>
         </div>
       </ModuleCard>
 
-      <ModuleCard eyebrow="Clínico" title="Condições e alergias">
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-col gap-1.5">
-            <Eyebrow>Condições</Eyebrow>
-            <div className="flex flex-wrap gap-1.5">
-              <WireBadge>Fibromialgia</WireBadge>
-              <WireBadge>Dor crônica</WireBadge>
-              <WireBadge>Ansiedade</WireBadge>
+      <ModuleCard
+        icon="bx-detail"
+        title="Motivo e queixa"
+        aside={<WireBadge tone="mid">Revisar</WireBadge>}
+      >
+        <div className="flex flex-col gap-4">
+          <p className="text-body text-neutral-700">
+            Dor lombar refratária há 14 meses, com irradiação para o membro inferior
+            direito. Interfere no sono e no trabalho; a paciente busca reduzir o uso
+            de opioides e recuperar a funcionalidade no dia a dia.
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="glass-frost-inner flex flex-col gap-1 rounded-xl px-3 py-2.5">
+              <Eyebrow icon="bx-time-five">Início e curso</Eyebrow>
+              <span className="text-caption text-neutral-700">
+                Há 14 meses · progressiva
+              </span>
             </div>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Eyebrow>Alergias</Eyebrow>
-            <div className="flex flex-wrap gap-1.5">
-              <WireBadge tone="hard">Dipirona</WireBadge>
+            <div className="glass-frost-inner flex flex-col gap-1 rounded-xl px-3 py-2.5">
+              <Eyebrow icon="bx-pulse">Intensidade</Eyebrow>
+              <span className="text-caption text-neutral-700">
+                EVA 7/10 · pior à noite
+              </span>
+            </div>
+            <div className="glass-frost-inner flex flex-col gap-1 rounded-xl px-3 py-2.5">
+              <Eyebrow icon="bx-band-aid">Impacto</Eyebrow>
+              <span className="text-caption text-neutral-700">
+                Sono fragmentado · afastamento parcial
+              </span>
+            </div>
+            <div className="glass-frost-inner flex flex-col gap-1 rounded-xl px-3 py-2.5">
+              <Eyebrow icon="bx-target-lock">Objetivo</Eyebrow>
+              <span className="text-caption text-neutral-700">
+                Reduzir opioides · recuperar função
+              </span>
             </div>
           </div>
         </div>
       </ModuleCard>
 
-      <ModuleCard eyebrow="Medicações" title="Em uso">
+      <ModuleCard icon="bx-capsule" title="Medicações em uso">
         <ul className="flex flex-col divide-y divide-white/40">
           {MEDS.map(([k, v]) => (
             <li key={k} className="flex items-center justify-between gap-4 py-2">
@@ -107,7 +152,7 @@ export function PreReviewScreen({ onContinue }: ScreenProps) {
         </ul>
       </ModuleCard>
 
-      <ModuleCard eyebrow="Histórico" title="Consultas anteriores">
+      <ModuleCard icon="bx-history" title="Consultas anteriores">
         <ul className="flex flex-col gap-3">
           {HISTORY.map(([date, type, outcome]) => (
             <li key={date} className="flex gap-4">

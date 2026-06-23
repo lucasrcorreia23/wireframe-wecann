@@ -24,12 +24,18 @@ const INSIGHTS: Record<string, Insight[]> = {
     { tag: "Evolução", text: "Sono (PSQI) estável; ansiedade ↓." },
     { tag: "Pesquisa", text: "Caso elegível p/ coorte (LGPD)." },
   ],
+  casuistry: [
+    { tag: "Outcome", text: "73% de resposta favorável em 128 casos." },
+    { tag: "Escalas", text: "Dor (BPI) −41% · sono (PSQI) −28%." },
+    { tag: "Pesquisa", text: "Coorte elegível p/ exportação (LGPD)." },
+  ],
 };
 
 const PROMPT: Record<string, string> = {
   "pre-review": "Pergunte à Athena sobre o paciente…",
   consult: "Pergunte à Athena sobre a consulta…",
   report: "Pergunte à Athena sobre o relatório…",
+  casuistry: "Pergunte à Athena sobre a casuística…",
 };
 
 // Companheiro de IA docado à direita: slot do globo (o globo 3D billboarda
@@ -42,7 +48,7 @@ export function AIDock({ className }: { className?: string }) {
   return (
     <aside
       className={cn(
-        "glass-panel-blue backdrop-blur-2xl flex min-h-0 flex-col gap-4 rounded-[28px] p-5",
+        "glass-panel-blue backdrop-blur-2xl flex flex-col gap-4 rounded-[28px] p-5",
         className,
       )}
     >
@@ -54,8 +60,9 @@ export function AIDock({ className }: { className?: string }) {
         </div>
       </div>
 
-      {/* Insights contextuais por tela. */}
-      <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto no-scrollbar">
+      {/* Insights contextuais por tela. Fluem na superfície de scroll única
+          (sem scroll interno próprio — tudo rola junto). */}
+      <div className="flex flex-col gap-2">
         <Eyebrow>Insights</Eyebrow>
         <ul className="flex flex-col gap-2">
           {insights.map((it) => (
@@ -73,7 +80,7 @@ export function AIDock({ className }: { className?: string }) {
       </div>
 
       {/* Chat (mock). */}
-      <div className="glass-frost-inner mt-auto flex items-center gap-2 rounded-full py-2 pl-4 pr-2">
+      <div className="glass-frost-inner flex items-center gap-2 rounded-full py-2 pl-4 pr-2">
         <span className="flex-1 truncate text-caption text-neutral-400">
           {prompt}
         </span>

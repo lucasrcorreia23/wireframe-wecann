@@ -27,13 +27,13 @@ export function MessagesScreen() {
   const goTo = useFlow((s) => s.goTo);
 
   return (
-    <div className="flex w-full max-w-[920px] flex-col gap-4">
+    <div className="orbit-pane flex w-full max-w-[920px] flex-col gap-4">
       <ModuleCard className="gap-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <BackButton />
             <div className="flex flex-col gap-1">
-              <Eyebrow>Mensagens</Eyebrow>
+              <Eyebrow icon="bx-message">Mensagens</Eyebrow>
               <h2 className="font-display text-title font-medium text-ink">
                 Caixa de entrada
               </h2>

@@ -21,10 +21,7 @@ export function MobileExperience() {
     props.onYes = () => goTo(node.fork!.yes.to);
     props.onNo = () => goTo(node.fork!.no.to);
   }
-  if (node.id === "reinforced-confirm") {
-    props.onConfirm = () => node.next && goTo(node.next);
-    props.onCancel = () => back();
-  }
+  if (node.next) props.onContinue = () => goTo(node.next!);
 
   return (
     <div className="flex h-screen flex-col bg-neutral-100">

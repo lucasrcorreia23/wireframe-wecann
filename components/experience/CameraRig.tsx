@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { gsap } from "@/lib/gsap";
@@ -8,6 +8,11 @@ import { useFlow } from "@/flow/store";
 import { NODES } from "@/flow/graph";
 import { cameraTargetFor } from "@/lib/camera";
 import { DURATION, EASE, prefersReducedMotion } from "@/lib/motion";
+import { viewScroll } from "@/lib/viewScroll";
+
+// Quanto a câmera "desce" (unidades de mundo) quando o prontuário rola até a base.
+// Move grid/partículas/névoa (fixos no mundo) → parallax de descida.
+const SCROLL_PAN = 2.6;
 
 // Proxy de câmera (§3.3): nunca tweenamos a câmera direto contra o loop do R3F.
 // Mantemos { px,py,pz, tx,ty,tz }; um timeline GSAP tweena o proxy e, em useFrame,
@@ -46,72 +51,91 @@ export function CameraRig({
   const currentNode = useFlow((s) => s.currentNode);
   const travelToken = useFlow((s) => s.travelToken);
   const target = useRef(cameraTargetFor(NODES.home.position));
+  const reduce = useMemo(() => prefersReducedMotion(), []);
+  // Offset Y amortecido dirigido pelo scroll do prontuário (viewScroll.progress).
+  const scrollY = useRef(0);
 
-  // Intro (1º load): inicializa o proxy no enquadramento de repouso da home.
-  // A câmera "voa" de longe via damping no useFrame (não-GSAP) durante os
-  // primeiros frames — robusto e independente do ticker do GSAP. Roda uma vez.
+  // Intro (1º load): a câmera nasce JÁ em repouso na home — sem fly-in. O único
+  // movimento cinematográfico da abertura é o globo se aproximando do fundo
+  // (AiGlobe, orquestrado por introPhase). O fly-in das NAVEGAÇÕES entre
+  // estações (travelToken > 0) segue inalterado abaixo.
   const intro = useRef({ active: false, t: 0 });
   useEffect(() => {
     const t = cameraTargetFor(NODES.home.position);
     target.current = t;
-    // `?still` (ou reduced-motion) inicia já no repouso, sem fly-in.
-    const still =
-      typeof window !== "undefined" &&
-      new URLSearchParams(window.location.search).has("still");
-    const reduce = prefersReducedMotion() || still;
-
-    // Inicialização do proxy (fora do render — regras de refs). Com movimento,
-    // começa um pouco atrás/acima e o useFrame amortece até o repouso.
+    // Inicialização do proxy (fora do render — regras de refs), em repouso.
     proxyRef.current = {
-      px: t.pos[0],
-      py: t.pos[1] + (reduce ? 0 : 5),
-      pz: t.pos[2] + (reduce ? 0 : 26),
-      tx: t.look[0],
-      ty: t.look[1],
-      tz: t.look[2],
-    };
-    intro.current = { active: !reduce, t: 0 };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // goTo: cada navegação (travelToken > 0) dispara um timeline que tweena o proxy
-  // até o alvo do nó. Forks laterais usam duração maior (offset + reentrada).
-  useEffect(() => {
-    if (travelToken === 0) return; // intro cuida do enquadramento inicial
-    const p = proxyRef.current;
-    if (!p) return;
-
-    const node = NODES[currentNode];
-    const t = cameraTargetFor(node.position);
-    target.current = t;
-
-    gsap.killTweensOf(p);
-
-    if (prefersReducedMotion()) {
-      // Fallback: sem dolly; o cross-fade dos planos cobre a troca (§6).
-      setProxy(p, t.pos, t.look);
-      return;
-    }
-
-    // Ramo lateral: a estação está deslocada em X em relação ao trilho.
-    const lateral = Math.abs(t.look[0]) > 0.5;
-    const duration = lateral ? DURATION.fork : DURATION.travel;
-
-    const tl = gsap.timeline();
-    tl.to(p, {
       px: t.pos[0],
       py: t.pos[1],
       pz: t.pos[2],
       tx: t.look[0],
       ty: t.look[1],
       tz: t.look[2],
-      duration,
+    };
+    intro.current = { active: false, t: 0 };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // goTo: cada navegação (travelToken > 0) NÃO viaja mais pelo trilho −Z. A
+  // câmera fica num enquadramento fixo (home) e dá só um "seek" sutil na direção
+  // da diagonal da tela entrante, voltando ao repouso — uma vida de câmera sem
+  // mover o mundo. Quem se move agora são as telas (ActiveStationLayer). Em
+  // paralelo, pulsamos a intensidade da atmosfera para marcar a transição.
+  useEffect(() => {
+    if (travelToken === 0) return; // intro cuida do enquadramento inicial
+    const p = proxyRef.current;
+    if (!p) return;
+
+    const home = cameraTargetFor(NODES.home.position);
+    target.current = home;
+
+    gsap.killTweensOf(p);
+
+    if (prefersReducedMotion()) {
+      // Fallback: sem dolly nem pulso; o cross-fade das telas cobre a troca.
+      setProxy(p, home.pos, home.look);
+      intensityRef.current = 0;
+      return;
+    }
+
+    // Direção da diagonal: forward empurra +X, back espelha em −X.
+    const dir = useFlow.getState().lastNav === "back" ? -1 : 1;
+    const pulse = { v: 0 };
+    const writeIntensity = () => {
+      intensityRef.current = pulse.v;
+    };
+
+    const tl = gsap.timeline();
+    // 1) Seek: pequeno nudge de dolly/pan rumo à tela entrante.
+    tl.to(p, {
+      px: home.pos[0] + dir * 0.6,
+      py: home.pos[1] + 0.1,
+      pz: home.pos[2] - 0.5,
+      tx: home.look[0] + dir * 0.25,
+      ty: home.look[1],
+      tz: home.look[2],
+      duration: DURATION.travel * 0.45,
+      ease: EASE.panel,
+    });
+    // 2) Retorno suave ao enquadramento de repouso.
+    tl.to(p, {
+      px: home.pos[0],
+      py: home.pos[1],
+      pz: home.pos[2],
+      tx: home.look[0],
+      ty: home.look[1],
+      tz: home.look[2],
+      duration: DURATION.travel * 0.7,
       ease: travelEase(),
     });
+    // Pulso da atmosfera acompanhando a transição (sobe e volta a 0).
+    tl.to(pulse, { v: 0.6, duration: DURATION.travel * 0.4, ease: EASE.panel, onUpdate: writeIntensity }, 0);
+    tl.to(pulse, { v: 0, duration: DURATION.travel * 0.7, ease: "power2.inOut", onUpdate: writeIntensity }, ">");
+
     return () => {
       tl.kill();
     };
-  }, [travelToken, currentNode, proxyRef]);
+  }, [travelToken, currentNode, proxyRef, intensityRef]);
 
   useFrame((_, dt) => {
     const p = proxyRef.current;
@@ -133,16 +157,17 @@ export function CameraRig({
         intro.current.active = false;
       }
     }
-    // Intensidade da atmosfera ∝ distância restante até o alvo (sobe no trânsito).
-    const remaining = Math.hypot(
-      t.pos[0] - p.px,
-      t.pos[1] - p.py,
-      t.pos[2] - p.pz,
-    );
-    intensityRef.current = THREE.MathUtils.clamp(remaining / 12, 0, 1);
+    // A intensidade da atmosfera agora é dirigida pelo pulso da timeline de
+    // navegação (não mais pela distância percorrida — a câmera quase não viaja).
 
-    camera.position.set(p.px, p.py, p.pz);
-    camera.lookAt(p.tx, p.ty, p.tz);
+    // Pan vertical por scroll (imersão "descendo a câmera"): desce posição E alvo
+    // juntos (pan, não tilt) por progress*SCROLL_PAN, amortecido. Em telas sem
+    // prontuário o progress é 0 → volta suave ao repouso. Reduced-motion: sem pan.
+    const targetScrollY = reduce ? 0 : -viewScroll.progress * SCROLL_PAN;
+    scrollY.current = THREE.MathUtils.damp(scrollY.current, targetScrollY, 4, dt);
+
+    camera.position.set(p.px, p.py + scrollY.current, p.pz);
+    camera.lookAt(p.tx, p.ty + scrollY.current, p.tz);
   });
 
   return null;

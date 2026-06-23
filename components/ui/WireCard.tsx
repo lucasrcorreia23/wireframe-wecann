@@ -7,6 +7,7 @@ import { Eyebrow } from "./Eyebrow";
 export function WireCard({
   children,
   eyebrow,
+  icon,
   title,
   aside,
   emphasis = false,
@@ -14,6 +15,8 @@ export function WireCard({
 }: {
   children?: React.ReactNode;
   eyebrow?: string;
+  /** Ícone boxicon sutil ao lado do eyebrow (ex.: "bx-file"). */
+  icon?: string;
   title?: React.ReactNode;
   aside?: React.ReactNode;
   emphasis?: boolean;
@@ -33,9 +36,12 @@ export function WireCard({
       {(eyebrow || title || aside) && (
         <header className="mb-4 flex items-start justify-between gap-4">
           <div className="flex flex-col gap-1.5">
-            {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
+            {eyebrow ? <Eyebrow icon={icon}>{eyebrow}</Eyebrow> : null}
             {title ? (
-              <h3 className="text-title font-medium text-ink text-pretty">
+              <h3 className="flex items-center gap-2 text-title font-medium text-ink text-pretty">
+                {!eyebrow && icon ? (
+                  <i className={cn("bx shrink-0 text-base text-neutral-400", icon)} />
+                ) : null}
                 {title}
               </h3>
             ) : null}
