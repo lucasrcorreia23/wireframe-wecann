@@ -48,7 +48,10 @@ export function SlideOverPanel({
       }
       gsap.to(el, { ...to, duration: 0.5, ease: "power2.out" });
     },
-    { dependencies: [open] },
+    // `mounted` entra nas deps p/ o efeito re-rodar quando o portal monta: aí o
+    // panelRef já existe e o estado inicial (fechado) é fixado no elemento real;
+    // sem isso, a 1ª abertura caía no branch de init e aparecia sem deslizar.
+    { dependencies: [open, mounted] },
   );
 
   // Portal client-only (SSR e 1ª hidratação retornam null; monta depois).
