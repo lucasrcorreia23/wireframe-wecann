@@ -5,15 +5,11 @@ import { gsap, useGSAP, SplitText } from "@/lib/gsap";
 import { useFlow } from "@/flow/store";
 import { prefersReducedMotion } from "@/lib/motion";
 
-// Abertura editorial (§6) orquestrada pela máquina de estados `introPhase`:
-//   text   → card de texto sobre vidro fosco, fade-in
-//   (~2.5s)→ card faz fade-out
-//   globe  → o globo entra vindo do fundo (lógica no AiGlobe)
-//   modules→ as colunas da Home entram em stagger (lógica no HomeScreen)
-//   ready  → estado de repouso
-// Animações do card são opacity-only no PRÓPRIO card (o reveal por linha usa
-// transform só em spans DESCENDENTES — não quebra o backdrop-filter do card,
-// que é regido por ancestrais). O "globo vindo do fundo" é WebGL.
+// Abertura editorial: card de texto sobre vidro fosco. Máquina simplificada
+// (pós-2D): text → (fade-in, hold, fade-out) → ready. As fases globe/modules
+// foram aposentadas com o mundo 3D. Animações do card são opacity-only no
+// PRÓPRIO card (o reveal por linha usa transform só em spans DESCENDENTES — não
+// quebra o backdrop-filter, regido por ancestrais).
 export function Intro() {
   const root = useRef<HTMLDivElement>(null);
   const setIntroPhase = useFlow((s) => s.setIntroPhase);
@@ -54,14 +50,11 @@ export function Intro() {
           },
           "-=0.3",
         )
-        // Fase 2 — segura ~2.5s no total e faz fade-out (opacity).
-        .to(".intro-card", { opacity: 0, duration: 0.7, delay: 0.9 })
-        // Fase 3 — libera o globo vindo do fundo (~1.5s no AiGlobe).
-        .call(() => setIntroPhase("globe"))
-        // Fase 4 — colunas entram em stagger (HomeScreen).
-        .call(() => setIntroPhase("modules"), undefined, "+=1.5")
-        // Repouso.
-        .call(() => setIntroPhase("ready"), undefined, "+=0.9");
+        // Fase 2 — segura e faz fade-out (opacity); depois repousa. Sem fases de
+        // globo/módulos: o mundo agora é 2D e o CENTRO entra com seu próprio fade
+        // (CenterStage), enquanto o globo vive contido no AthenaPanel.
+        .to(".intro-card", { opacity: 0, duration: 0.7, delay: 1.2 })
+        .call(() => setIntroPhase("ready"));
       return () => {
         split.revert();
       };

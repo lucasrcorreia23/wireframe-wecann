@@ -3,7 +3,6 @@
 import { useFlow } from "@/flow/store";
 import { WireBadge, Eyebrow } from "@/components/ui";
 import { ModuleCard } from "@/components/ui/ModuleCard";
-import { BackButton } from "@/components/ui/BackButton";
 
 // `messages` — Mensagens: inbox das mensagens automatizadas recebidas dos
 // clientes/pacientes (confirmações, lembretes, respostas de questionário).
@@ -23,21 +22,19 @@ const TONE: Record<Status, "neutral" | "mid" | "hard"> = {
   respondida: "neutral",
 };
 
-export function MessagesScreen() {
+// CENTRO — caixa de entrada (foco principal).
+export function MessagesCenter() {
   const goTo = useFlow((s) => s.goTo);
 
   return (
-    <div className="orbit-pane flex w-full max-w-[920px] flex-col gap-4">
-      <ModuleCard className="gap-4">
+    <div className="no-scrollbar flex h-full flex-col overflow-y-auto">
+      <ModuleCard size="lg" className="gap-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <BackButton />
-            <div className="flex flex-col gap-1">
-              <Eyebrow icon="bx-message">Mensagens</Eyebrow>
-              <h2 className="font-display text-title font-medium text-ink">
-                Caixa de entrada
-              </h2>
-            </div>
+          <div className="flex flex-col gap-1">
+            <Eyebrow icon="bx-message">Mensagens</Eyebrow>
+            <h2 className="font-display text-title font-medium text-ink">
+              Caixa de entrada
+            </h2>
           </div>
           <WireBadge tone="hard">2 novas</WireBadge>
         </div>
@@ -46,7 +43,7 @@ export function MessagesScreen() {
           {THREADS.map((t) => (
             <li key={t.name}>
               <button
-                onClick={() => goTo("pre-review")}
+                onClick={() => goTo("consult")}
                 className="glass-frost-inner flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition-colors hover:border-ink/20"
               >
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/50 bg-white/40 font-mono text-micro text-neutral-700">
@@ -66,6 +63,35 @@ export function MessagesScreen() {
             </li>
           ))}
         </ul>
+      </ModuleCard>
+    </div>
+  );
+}
+
+// ESQUERDA — resumo da caixa (alimentado pela IA).
+export function MessagesLeft() {
+  return (
+    <div className="flex h-full flex-col gap-4">
+      <ModuleCard eyebrow="Resumo · Athena" icon="bx-message" size="sm">
+        <ul className="flex flex-col gap-2 text-caption text-neutral-700">
+          <li className="flex items-center justify-between">
+            <span>Novas</span>
+            <WireBadge tone="hard">2</WireBadge>
+          </li>
+          <li className="flex items-center justify-between">
+            <span>Automáticas</span>
+            <WireBadge tone="mid">2</WireBadge>
+          </li>
+          <li className="flex items-center justify-between">
+            <span>Respondidas</span>
+            <WireBadge>1</WireBadge>
+          </li>
+        </ul>
+      </ModuleCard>
+      <ModuleCard eyebrow="Sugestão" icon="bx-bulb" size="sm">
+        <p className="text-caption text-neutral-700 text-pretty">
+          Resposta-modelo pronta para a dúvida de posologia de Júlia Tavares.
+        </p>
       </ModuleCard>
     </div>
   );

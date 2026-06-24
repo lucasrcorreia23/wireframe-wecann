@@ -74,7 +74,7 @@ export function SearchBar() {
               {results.map((p) => (
                 <li key={p.name}>
                   <button
-                    onClick={() => goTo("pre-review")}
+                    onClick={() => goTo("consult")}
                     className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-white/45"
                   >
                     <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/50 bg-white/40 font-mono text-micro text-neutral-700">

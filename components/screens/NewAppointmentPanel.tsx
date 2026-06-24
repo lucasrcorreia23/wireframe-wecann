@@ -3,11 +3,12 @@
 import { useState } from "react";
 import { WireButton } from "@/components/ui";
 import { Eyebrow } from "@/components/ui/Eyebrow";
+import { SlideOverPanel } from "@/components/ui/SlideOverPanel";
 import { cn } from "@/lib/cn";
 
-// Painel "Novo agendamento" — overlay local da Home (wireframe, sem submit real).
-// É o próprio vidro (backdrop-filter próprio); entra pela direita enquanto os
-// módulos da Home recuam para o lado. Campos espelham a referência da imagem.
+// Painel "Novo agendamento" — overlay da Home. Usa o SlideOverPanel (padrão da
+// pílula: desliza da direita, GSAP 0.5s power2.out, vidro + rounded-[28px]).
+// Campos espelham a referência da imagem.
 export function NewAppointmentPanel({
   open,
   onClose,
@@ -20,13 +21,7 @@ export function NewAppointmentPanel({
   );
 
   return (
-    <div
-      className={cn(
-        "new-appt-panel glass-panel-blue backdrop-blur-2xl absolute inset-y-0 right-0 flex w-full max-w-[760px] flex-col rounded-[28px] p-7 opacity-0",
-        open ? "pointer-events-auto" : "pointer-events-none",
-      )}
-      aria-hidden={!open}
-    >
+    <SlideOverPanel open={open} onClose={onClose} className="max-w-[760px]" label="Novo agendamento">
       {/* Header */}
       <header className="flex items-center gap-3">
         <span className="glass-frost-inner grid h-10 w-10 shrink-0 place-items-center rounded-full text-ink">
@@ -143,7 +138,7 @@ export function NewAppointmentPanel({
           Agendar
         </WireButton>
       </footer>
-    </div>
+    </SlideOverPanel>
   );
 }
 

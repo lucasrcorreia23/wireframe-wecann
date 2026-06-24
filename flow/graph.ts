@@ -18,7 +18,6 @@ export const NODES: Record<NodeId, FlowNode> = {
     position: [0, 0, z(0)],
     panels: [],
     next: "pre-review",
-    branch: "clinical-queue",
   },
   agenda: {
     id: "agenda",
@@ -72,7 +71,16 @@ export const NODES: Record<NodeId, FlowNode> = {
     title: "Tela de consulta",
     position: [0, 0, z(2)],
     panels: ["patient360", "transcription"],
-    next: "clinical-note",
+    next: "analise",
+  },
+  // Análise pós-chamada: o médico revisa/valida o que a Athena preencheu durante
+  // a consulta (síntese + abas). Alcançada ao ENCERRAR a vídeo-chamada (consult.next).
+  analise: {
+    id: "analise",
+    zone: "pos",
+    title: "Análise",
+    position: [0, 0, z(2.5)],
+    panels: [],
   },
   "clinical-note": {
     id: "clinical-note",
@@ -100,15 +108,8 @@ export const NODES: Record<NodeId, FlowNode> = {
   },
 };
 
-/** Ordem do caminho-ouro (travessia padrão) para o stepper e prefetch de vizinhos. */
-export const GOLDEN_PATH: NodeId[] = [
-  "home",
-  "pre-review",
-  "consult",
-  "clinical-note",
-  "casuistry",
-  "report",
-];
+/** Ordem do caminho vivo (pós-redução para 2D). Os nós desativados saem daqui. */
+export const GOLDEN_PATH: NodeId[] = ["home", "consult", "analise"];
 
 export const ALL_NODE_IDS = Object.keys(NODES) as NodeId[];
 

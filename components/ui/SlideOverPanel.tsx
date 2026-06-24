@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { gsap, useGSAP } from "@/lib/gsap";
 import { cn } from "@/lib/cn";
 
@@ -9,9 +10,9 @@ import { cn } from "@/lib/cn";
 // painel de pílula da Home. O transform vive no PRÓPRIO painel (vidro) — seguro
 // p/ o backdrop-filter (só transform em ANCESTRAL mataria o blur).
 //
-// `backdrop`: quando true, mostra um scrim que escurece o fundo (telas cujo fundo
-// NÃO recua — JourneyShell). Quando false, o host recua os cards (Home/Agenda) e o
-// scrim é dispensado. `className` define a largura (ex.: "max-w-[560px]").
+// É renderizado num PORTAL (document.body) cobrindo a viewport inteira, com um
+// SCRIM DESFOCADO (backdrop-blur) atrás — o "overlay desfocado". `backdrop=false`
+// dispensa o scrim. `className` define a largura (ex.: "max-w-[560px]").
 export function SlideOverPanel({
   open,
   onClose,
@@ -29,6 +30,10 @@ export function SlideOverPanel({
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
   const inited = useRef(false);
+  // Portal só após o mount: o 1º render do cliente bate com o do servidor (null),
+  // evitando hydration mismatch; depois re-renderiza com o portal em document.body.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   useGSAP(
     () => {
@@ -46,15 +51,18 @@ export function SlideOverPanel({
     { dependencies: [open] },
   );
 
-  return (
-    <>
+  // Portal client-only (SSR e 1ª hidratação retornam null; monta depois).
+  if (!mounted) return null;
+
+  return createPortal(
+    <div className="pointer-events-none fixed inset-0 z-[60]">
       {backdrop ? (
         <div
           onClick={onClose}
           aria-hidden
           className={cn(
-            "absolute inset-0 z-20 rounded-[24px] bg-[#e6e6e4]/45 transition-opacity duration-500",
-            open ? "opacity-100" : "pointer-events-none opacity-0",
+            "absolute inset-0 bg-[#e6e6e4]/40 backdrop-blur-md transition-opacity duration-500",
+            open ? "pointer-events-auto opacity-100" : "opacity-0",
           )}
         />
       ) : null}
@@ -66,13 +74,14 @@ export function SlideOverPanel({
         aria-label={label}
         aria-hidden={!open}
         className={cn(
-          "glass-panel-blue backdrop-blur-2xl absolute inset-y-0 right-0 z-30 my-auto flex h-fit max-h-full w-full flex-col rounded-[28px] p-7 opacity-0",
+          "glass-panel-blue backdrop-blur-2xl absolute inset-y-0 right-0 my-auto flex h-fit max-h-full w-full flex-col rounded-[28px] p-7 opacity-0",
           open ? "pointer-events-auto" : "pointer-events-none",
           className,
         )}
       >
         {children}
       </div>
-    </>
+    </div>,
+    document.body,
   );
 }

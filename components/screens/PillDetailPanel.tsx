@@ -3,7 +3,7 @@
 import { WireButton } from "@/components/ui";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { ScrollFade } from "@/components/ui/ScrollFade";
-import { cn } from "@/lib/cn";
+import { SlideOverPanel } from "@/components/ui/SlideOverPanel";
 
 export type Pill = {
   tag: string;
@@ -14,10 +14,8 @@ export type Pill = {
   source: string;
 };
 
-// Painel "Pílula do dia" — overlay local da Home (wireframe). Espelha a casca do
-// NewAppointmentPanel: é o próprio vidro (backdrop-filter próprio), entra pela
-// direita enquanto os módulos da Home recuam. Animação fica no HomeScreen via a
-// classe .pill-detail-panel.
+// Painel "Pílula do dia" — overlay da Home. Usa o SlideOverPanel (padrão da
+// pílula: desliza da direita, GSAP 0.5s power2.out, vidro + rounded-[28px]).
 export function PillDetailPanel({
   pill,
   onClose,
@@ -26,12 +24,11 @@ export function PillDetailPanel({
   onClose: () => void;
 }) {
   return (
-    <div
-      className={cn(
-        "pill-detail-panel glass-panel-blue backdrop-blur-2xl absolute inset-y-0 right-0 my-auto flex h-fit max-h-full w-full max-w-[1080px] flex-col rounded-[28px] p-7 opacity-0",
-        pill ? "pointer-events-auto" : "pointer-events-none",
-      )}
-      aria-hidden={!pill}
+    <SlideOverPanel
+      open={pill !== null}
+      onClose={onClose}
+      className="max-w-[1080px]"
+      label="Pílula do dia"
     >
       {/* Header */}
       <header className="flex items-start gap-3">
@@ -102,6 +99,6 @@ export function PillDetailPanel({
           Marcar como lida
         </WireButton>
       </footer>
-    </div>
+    </SlideOverPanel>
   );
 }
