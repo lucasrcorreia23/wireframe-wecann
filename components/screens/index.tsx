@@ -3,7 +3,7 @@ import { HomeCenter } from "./HomeScreen";
 import { MessagesCenter } from "./MessagesScreen";
 import { PatientsCenter } from "./PatientsScreen";
 import { ConsultCenter } from "./ConsultScreen";
-import { AnaliseCenter } from "./AnaliseScreen";
+import { ClinicalNoteCenter } from "./ClinicalNoteScreen";
 
 // Props que uma Screen pode receber. Forks usam onYes/onNo; a confirmação
 // reforçada usa onConfirm/onCancel. Todas opcionais — ligadas ao store.
@@ -26,5 +26,5 @@ export const SCREENS: Record<string, ComponentType<ScreenProps>> = {
   messages: MessagesCenter,
   patients: PatientsCenter,
   consult: ConsultCenter,
-  analise: AnaliseCenter,
+  "clinical-note": ClinicalNoteCenter,
 };

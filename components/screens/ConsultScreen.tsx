@@ -5,7 +5,6 @@ import { createPortal } from "react-dom";
 import { WireBadge, WireButton } from "@/components/ui";
 import { ModuleCard } from "@/components/ui/ModuleCard";
 import { BackButton } from "@/components/ui/BackButton";
-import { ScrollFade } from "@/components/ui/ScrollFade";
 import { cn } from "@/lib/cn";
 import { gsap, useGSAP } from "@/lib/gsap";
 import { DURATION, EASE, prefersReducedMotion } from "@/lib/motion";
@@ -26,7 +25,7 @@ const CALL_FADE =
 // ESQUERDA — contexto do paciente + anamnese da sessão (resumo alimentado pela IA).
 export function ConsultLeft() {
   return (
-    <div className="flex h-full min-h-0 min-w-0 flex-col gap-4">
+    <div className="no-scrollbar flex h-full min-h-0 min-w-0 flex-col gap-4 overflow-y-auto pt-[88px] pb-6">
       <PatientHeader />
       <Anamnese />
     </div>
@@ -36,7 +35,7 @@ export function ConsultLeft() {
 // CENTRO — chamada em foco + notas do médico.
 export function ConsultCenter({ onContinue }: ScreenProps) {
   return (
-    <div className="flex h-full min-h-0 min-w-0 flex-col gap-4">
+    <div className="flex h-full min-h-0 min-w-0 flex-col gap-4 pt-[88px] pb-6">
       <CallScreen onEnd={onContinue} />
       <NotesBox />
     </div>
@@ -49,7 +48,7 @@ export function ConsultCenter({ onContinue }: ScreenProps) {
 // presença — avatar e nome ampliados.
 function PatientHeader() {
   return (
-    <ModuleCard className="shrink-0 gap-3.5 px-5 pb-5 pt-4">
+    <ModuleCard className="gap-3.5 px-5 pb-5 pt-4">
       <div className="flex items-start gap-3.5">
         <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full border border-white/50 bg-paper/60 font-display text-title font-medium text-ink">
           MC
@@ -84,9 +83,9 @@ function Anamnese() {
   );
 
   return (
-    <ModuleCard title="Anamnese da sessão" className="min-h-0 flex-1">
+    <ModuleCard title="Anamnese da sessão">
       {/* Toggle segmentado full-width. */}
-      <div className="grid shrink-0 grid-cols-2 gap-1 rounded-full bg-white/40 p-1">
+      <div className="grid grid-cols-2 gap-1 rounded-full bg-white/40 p-1">
         {ANAMNESE_VIEWS.map((v) => (
           <button
             key={v.key}
@@ -105,11 +104,8 @@ function Anamnese() {
         ))}
       </div>
 
-      {/* Conteúdo rolável com esvanecer (rows são texto/glass-frost — seguro).
-          driveOrb: rolar o prontuário move a orb 3D atrás (chamada fica fixa). */}
-      <ScrollFade watch={view} driveOrb className="min-h-0 flex-1">
-        {view === "anamnese" ? <AnamneseContent /> : <ExameFisicoContent />}
-      </ScrollFade>
+      {/* A coluna inteira rola (nada fixo); o conteúdo da anamnese empilha aqui. */}
+      {view === "anamnese" ? <AnamneseContent /> : <ExameFisicoContent />}
     </ModuleCard>
   );
 }

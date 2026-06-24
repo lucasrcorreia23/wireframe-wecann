@@ -18,7 +18,7 @@ export function PatientsCenter() {
   const goTo = useFlow((s) => s.goTo);
 
   return (
-    <div className="no-scrollbar flex h-full flex-col overflow-y-auto">
+    <div className="no-scrollbar flex h-full flex-col overflow-y-auto pt-[88px] pb-6">
       <ModuleCard size="lg" className="gap-4">
         <div className="flex items-center justify-between">
           <div className="flex flex-col gap-1">
@@ -65,8 +65,8 @@ export function PatientsCenter() {
 // ESQUERDA — resumo da coorte (alimentado pela IA).
 export function PatientsLeft() {
   return (
-    <div className="flex h-full flex-col gap-4">
-      <ModuleCard eyebrow="Resumo · Athena" icon="bx-group" size="sm">
+    <div className="no-scrollbar flex h-full min-h-0 flex-col gap-4 overflow-y-auto pt-[88px] pb-6">
+      <ModuleCard eyebrow="Resumo" icon="bx-group" size="sm">
         <ul className="flex flex-col gap-2 text-caption text-neutral-700">
           <li className="flex items-center justify-between">
             <span>Ativos</span>

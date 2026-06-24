@@ -1,10 +1,13 @@
 import type { ComponentType } from "react";
 import type { ScreenProps } from "./index";
-import { HomeCenter, HomeLeft } from "./HomeScreen";
+import { HomeCenter } from "./HomeScreen";
 import { MessagesCenter, MessagesLeft } from "./MessagesScreen";
 import { PatientsCenter, PatientsLeft } from "./PatientsScreen";
+import { ConsultIntroCenter } from "./ConsultIntroScreen";
 import { ConsultCenter, ConsultLeft } from "./ConsultScreen";
-import { AnaliseCenter, AnaliseLeft } from "./AnaliseScreen";
+import { AgendaCenter, AgendaLeft } from "./AgendaScreen";
+import { PreReviewCenter, PreReviewLeft } from "./PreReviewScreen";
+import { ClinicalNoteCenter, ClinicalNoteLeft } from "./ClinicalNoteScreen";
 
 // Cada módulo fornece o conteúdo do CENTRO (foco) e, opcionalmente, da ESQUERDA
 // (resumos alimentados pela IA). A coluna DIREITA é sempre o AthenaPanel
@@ -15,9 +18,12 @@ export type ModuleView = {
 };
 
 export const MODULES: Record<string, ModuleView> = {
-  home: { Center: HomeCenter, Left: HomeLeft },
+  home: { Center: HomeCenter },
+  agenda: { Center: AgendaCenter, Left: AgendaLeft },
   messages: { Center: MessagesCenter, Left: MessagesLeft },
   patients: { Center: PatientsCenter, Left: PatientsLeft },
+  "pre-review": { Center: PreReviewCenter, Left: PreReviewLeft },
+  "consult-intro": { Center: ConsultIntroCenter },
   consult: { Center: ConsultCenter, Left: ConsultLeft },
-  analise: { Center: AnaliseCenter, Left: AnaliseLeft },
+  "clinical-note": { Center: ClinicalNoteCenter, Left: ClinicalNoteLeft },
 };

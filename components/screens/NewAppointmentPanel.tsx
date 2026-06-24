@@ -21,7 +21,23 @@ export function NewAppointmentPanel({
   );
 
   return (
-    <SlideOverPanel open={open} onClose={onClose} className="max-w-[760px]" label="Novo agendamento">
+    <SlideOverPanel
+      open={open}
+      onClose={onClose}
+      className="max-w-[760px]"
+      label="Novo agendamento"
+      footer={
+        <>
+          <WireButton variant="ghost" onClick={onClose}>
+            Cancelar
+          </WireButton>
+          <WireButton variant="primary" onClick={onClose} className="gap-2">
+            <i className="bx bx-calendar-check text-lg" />
+            Agendar
+          </WireButton>
+        </>
+      }
+    >
       {/* Header */}
       <header className="flex items-center gap-3">
         <span className="glass-frost-inner grid h-10 w-10 shrink-0 place-items-center rounded-full text-ink">
@@ -40,8 +56,8 @@ export function NewAppointmentPanel({
         </button>
       </header>
 
-      {/* Campos */}
-      <div className="no-scrollbar mt-6 flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto">
+      {/* Campos — pb p/ o último campo não ficar sob o CTA fixo (rola atrás dele). */}
+      <div className="no-scrollbar mt-6 flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto pb-24">
         <Field label="Paciente *">
           <div className="glass-frost-inner flex items-center gap-2 rounded-2xl px-4 py-3">
             <i className="bx bx-search text-lg text-neutral-400" />
@@ -127,17 +143,6 @@ export function NewAppointmentPanel({
           </Field>
         </div>
       </div>
-
-      {/* Footer */}
-      <footer className="mt-6 flex items-center justify-end gap-3 border-t border-white/50 pt-5">
-        <WireButton variant="ghost" onClick={onClose}>
-          Cancelar
-        </WireButton>
-        <WireButton variant="primary" onClick={onClose} className="gap-2">
-          <i className="bx bx-calendar-check text-lg" />
-          Agendar
-        </WireButton>
-      </footer>
     </SlideOverPanel>
   );
 }

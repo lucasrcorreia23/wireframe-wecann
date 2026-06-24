@@ -34,6 +34,17 @@ export function CasuistryDetailPanel({
       onClose={onClose}
       className="max-w-[860px]"
       label="Detalhe da casuística"
+      footer={
+        <>
+          <WireButton variant="ghost" onClick={onClose}>
+            Fechar
+          </WireButton>
+          <WireButton variant="primary" onClick={onClose} className="gap-2">
+            <i className="bx bx-bar-chart-alt-2 text-lg" />
+            Ver coorte
+          </WireButton>
+        </>
+      }
     >
         <header className="flex items-start gap-3">
           <span className="glass-frost-inner grid h-10 w-10 shrink-0 place-items-center rounded-full text-ink">
@@ -63,7 +74,7 @@ export function CasuistryDetailPanel({
           </button>
         </header>
 
-        <ScrollFade className="mt-6 min-h-0 flex-1" watch={detail?.title}>
+        <ScrollFade className="mt-6 min-h-0 flex-1 pb-24" watch={detail?.title}>
           <div className="flex flex-col gap-6">
             <section className="flex flex-col gap-2">
               <Eyebrow>Na sua coorte</Eyebrow>
@@ -90,16 +101,6 @@ export function CasuistryDetailPanel({
             </section>
           </div>
         </ScrollFade>
-
-        <footer className="mt-6 flex items-center justify-end gap-3 border-t border-white/50 pt-5">
-          <WireButton variant="ghost" onClick={onClose}>
-            Fechar
-          </WireButton>
-          <WireButton variant="primary" onClick={onClose} className="gap-2">
-            <i className="bx bx-bar-chart-alt-2 text-lg" />
-            Ver coorte
-          </WireButton>
-        </footer>
     </SlideOverPanel>
   );
 }

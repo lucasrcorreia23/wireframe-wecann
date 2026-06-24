@@ -21,12 +21,15 @@ type FlowState = {
   travelToken: number;
   /** Fase atual da intro (orquestra globo + módulos + card de texto). */
   introPhase: IntroPhase;
+  /** Athena (coluna direita) recolhida no orbe do canto inferior direito. */
+  athenaCollapsed: boolean;
 
   goTo: (id: NodeId) => void;
   back: () => void;
   toggleMenu: (open?: boolean) => void;
   toggleSearch: (open?: boolean) => void;
   setIntroPhase: (phase: IntroPhase) => void;
+  toggleAthena: (collapsed?: boolean) => void;
 };
 
 export const useFlow = create<FlowState>((set, get) => ({
@@ -41,6 +44,7 @@ export const useFlow = create<FlowState>((set, get) => ({
   // (sem divergência de hidratação). O driver (Intro) salta p/ "ready" se
   // reduced-motion, ou avança as fases na timeline.
   introPhase: "text",
+  athenaCollapsed: false,
 
   goTo: (id) => {
     const { currentNode } = get();
@@ -57,6 +61,10 @@ export const useFlow = create<FlowState>((set, get) => ({
       travelToken: s.travelToken + 1,
       menuOpen: false,
       searchOpen: false,
+      // Ao SAIR da Home, a Athena nasce recolhida (orbe) nas outras telas — o
+      // globo "voa" do centro da Home para o canto. (Expandir depois é opção.)
+      athenaCollapsed:
+        currentNode === "home" && id !== "home" ? true : s.athenaCollapsed,
     }));
   },
 
@@ -72,6 +80,8 @@ export const useFlow = create<FlowState>((set, get) => ({
       travelToken: s.travelToken + 1,
       menuOpen: false,
       searchOpen: false,
+      athenaCollapsed:
+        currentNode === "home" && prev !== "home" ? true : s.athenaCollapsed,
     }));
   },
 
@@ -88,6 +98,9 @@ export const useFlow = create<FlowState>((set, get) => ({
     }),
 
   setIntroPhase: (phase) => set({ introPhase: phase }),
+
+  toggleAthena: (collapsed) =>
+    set((s) => ({ athenaCollapsed: collapsed ?? !s.athenaCollapsed })),
 }));
 
 // ───────────────────────── Selectors derivados ─────────────────────────

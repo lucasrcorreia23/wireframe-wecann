@@ -1,29 +1,6 @@
 import type { Metadata } from "next";
-import { Fraunces, Geist, Geist_Mono } from "next/font/google";
 import "boxicons/css/boxicons.min.css";
 import "./globals.css";
-
-// Display — serifada editorial óptica. Usada com restrição, em tamanhos grandes.
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
-  subsets: ["latin"],
-  axes: ["opsz", "SOFT", "WONK"],
-  display: "swap",
-});
-
-// Body/UI — grotesca neutra e precisa.
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-// Utility/Dados — CID, doses, SLA, métricas, timestamps.
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "WeCann — Fluxo de atendimento",
@@ -37,10 +14,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="pt-BR"
-      className={`${fraunces.variable} ${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
+    <html lang="pt-BR" className="h-full antialiased">
+      <head>
+        {/*
+          Tipografia via Adobe Fonts (Typekit):
+            • Late Serif Variable  → display/serifada  (--font-display)
+            • Config Mono Variable → corpo + dados     (--font-sans / --font-mono)
+          Passo único pendente: criar um Web Project em fonts.adobe.com com AS DUAS
+          famílias e trocar KIT_ID pelo id do seu kit. Confirme também os nomes de
+          font-family no painel "How to use" e ajuste-os em app/globals.css se diferirem.
+        */}
+        <link rel="stylesheet" href="https://use.typekit.net/jir2fmf.css" />
+      </head>
       <body className="min-h-full bg-paper text-ink font-sans">{children}</body>
     </html>
   );

@@ -29,6 +29,17 @@ export function PillDetailPanel({
       onClose={onClose}
       className="max-w-[1080px]"
       label="Pílula do dia"
+      footer={
+        <>
+          <WireButton variant="ghost" onClick={onClose}>
+            Fechar
+          </WireButton>
+          <WireButton variant="primary" onClick={onClose} className="gap-2">
+            <i className="bx bx-check text-lg" />
+            Marcar como lida
+          </WireButton>
+        </>
+      }
     >
       {/* Header */}
       <header className="flex items-start gap-3">
@@ -53,8 +64,9 @@ export function PillDetailPanel({
         </button>
       </header>
 
-      {/* Conteúdo — vídeo à esquerda, resumo + pontos-chave na lateral. */}
-      <ScrollFade className="mt-6 min-h-0 flex-1">
+      {/* Conteúdo — vídeo à esquerda, resumo + pontos-chave na lateral. pb p/ rolar
+          atrás do CTA fixo. */}
+      <ScrollFade className="mt-6 min-h-0 flex-1 pb-24">
         <div className="grid grid-cols-[1.3fr_1fr] items-start gap-7">
           {/* Esquerda — vídeo. */}
           <div className="glass-frost-inner grid aspect-[16/9] w-full place-items-center rounded-2xl">
@@ -88,17 +100,6 @@ export function PillDetailPanel({
           </div>
         </div>
       </ScrollFade>
-
-      {/* Footer */}
-      <footer className="mt-6 flex items-center justify-end gap-3 border-t border-white/50 pt-5">
-        <WireButton variant="ghost" onClick={onClose}>
-          Fechar
-        </WireButton>
-        <WireButton variant="primary" onClick={onClose} className="gap-2">
-          <i className="bx bx-check text-lg" />
-          Marcar como lida
-        </WireButton>
-      </footer>
     </SlideOverPanel>
   );
 }

@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { WireBadge, WireButton } from "@/components/ui";
+import { WireBadge, WireButton, Segmented } from "@/components/ui";
 import { ModuleCard } from "@/components/ui/ModuleCard";
 import { CollapsibleCard } from "@/components/ui/CollapsibleCard";
 import { AthenaTag } from "@/components/ui/AthenaTag";
 import { SendToPatientPanel } from "./SendToPatientPanel";
 import { cn } from "@/lib/cn";
+import type { ScreenProps } from "./index";
 
 // `analise` — Análise pós-chamada (módulo "Consulta e Análise"). Alcançada ao
 // ENCERRAR a vídeo-chamada: o médico revisa e VALIDA o que a Athena preencheu
@@ -15,37 +16,6 @@ import { cn } from "@/lib/cn";
 // O conteúdo clínico usa a paciente da referência (Cláudia).
 
 /* ------------------------------ primitivos ------------------------------ */
-
-function Segmented<T extends string>({
-  options,
-  value,
-  onChange,
-}: {
-  options: { key: T; label: React.ReactNode }[];
-  value: T;
-  onChange: (k: T) => void;
-}) {
-  return (
-    <div className="inline-grid auto-cols-fr grid-flow-col gap-1 rounded-full bg-white/40 p-1">
-      {options.map((o) => (
-        <button
-          key={o.key}
-          type="button"
-          onClick={() => onChange(o.key)}
-          aria-pressed={value === o.key}
-          className={cn(
-            "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-caption transition-colors duration-[180ms]",
-            value === o.key
-              ? "bg-paper font-medium text-ink shadow-sm"
-              : "text-neutral-500 hover:text-neutral-700",
-          )}
-        >
-          {o.label}
-        </button>
-      ))}
-    </div>
-  );
-}
 
 function TabBar({
   tabs,
@@ -209,7 +179,13 @@ const VISIT_TYPES = [
   { key: "evento", label: "Evento" },
 ] as const;
 
-function AnamneseExameCard({ onSend }: { onSend: () => void }) {
+function AnamneseExameCard({
+  onSend,
+  onContinue,
+}: {
+  onSend: () => void;
+  onContinue?: () => void;
+}) {
   const [tab, setTab] = useState<string>("anamnese");
   const [visit, setVisit] = useState<(typeof VISIT_TYPES)[number]["key"]>("primeira");
 
@@ -356,11 +332,17 @@ function AnamneseExameCard({ onSend }: { onSend: () => void }) {
                 <WireBadge tone="mid">Controle especial</WireBadge>
               </div>
             </div>
-            <div className="flex justify-end border-t border-white/50 pt-4">
-              <WireButton variant="primary" onClick={onSend} className="gap-2">
+            <div className="flex flex-wrap items-center justify-end gap-2 border-t border-white/50 pt-4">
+              <WireButton variant="secondary" onClick={onSend} className="gap-2">
                 <i className="bx bx-send text-lg" />
                 Revisar e enviar ao paciente
               </WireButton>
+              {onContinue ? (
+                <WireButton variant="primary" onClick={onContinue} className="gap-2">
+                  <i className="bx bx-check-double text-lg" />
+                  Encerrar e conferir
+                </WireButton>
+              ) : null}
             </div>
           </div>
         )}
@@ -371,15 +353,16 @@ function AnamneseExameCard({ onSend }: { onSend: () => void }) {
 
 /* ------------------------------- exports -------------------------------- */
 
-// CENTRO — análise pós-chamada (foco principal).
-export function AnaliseCenter() {
+// CENTRO — análise pós-chamada (foco principal). `onContinue` (do grafo) encerra a
+// validação e evolui para a Conferência (Documentos · T-11).
+export function AnaliseCenter({ onContinue }: ScreenProps) {
   const [sendOpen, setSendOpen] = useState(false);
 
   return (
     <div className="relative h-full">
-      <div className="no-scrollbar flex h-full flex-col gap-4 overflow-y-auto">
+      <div className="no-scrollbar flex h-full flex-col gap-4 overflow-y-auto pt-[88px] pb-6">
         <PreConsultaCard />
-        <AnamneseExameCard onSend={() => setSendOpen(true)} />
+        <AnamneseExameCard onSend={() => setSendOpen(true)} onContinue={onContinue} />
       </div>
 
       <SendToPatientPanel open={sendOpen} onClose={() => setSendOpen(false)} />
@@ -390,7 +373,7 @@ export function AnaliseCenter() {
 // ESQUERDA — resumo do paciente (alimentado pela IA).
 export function AnaliseLeft() {
   return (
-    <div className="flex h-full flex-col gap-4">
+    <div className="no-scrollbar flex h-full min-h-0 flex-col gap-4 overflow-y-auto pt-[88px] pb-6">
       <ModuleCard size="sm">
         <div className="flex items-start gap-3">
           <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full border border-white/50 bg-paper/60 font-display text-body-l font-medium text-ink">

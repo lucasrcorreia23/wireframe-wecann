@@ -5,42 +5,58 @@ import { NavMenu } from "./NavMenu";
 import { SearchBar } from "./SearchBar";
 import { cn } from "@/lib/cn";
 
-// Barra superior: [menu] [busca] (ghost) à esquerda; avatar à direita. O "voltar"
-// não vive aqui — fica dentro das telas, ao lado do título.
-export function TopBar() {
+// Barra superior (header auto-hide): [menu] [busca] à esquerda; avatar à direita.
+// - Por padrão (topo): visível e SEM fundo.
+// - Rolando para baixo: sobe e some (translateY), liberando todo o conteúdo.
+// - Rolando para cima: reaparece com fundo SÓ de blur (sem cor sólida).
+// NavMenu/SearchBar ficam FORA do header (overlays fixos) — o translate do header
+// criaria um containing block e os arrastaria junto. O "voltar" vive nas telas.
+export function TopBar({
+  headerHidden = false,
+  headerBlur = false,
+}: {
+  headerHidden?: boolean;
+  headerBlur?: boolean;
+}) {
   const toggleMenu = useFlow((s) => s.toggleMenu);
   const toggleSearch = useFlow((s) => s.toggleSearch);
 
   return (
     <>
-      {/* Esquerda — menu + busca (ghost, discretos) */}
-      <div className="pointer-events-auto absolute left-3 top-4 z-20 flex items-center gap-1">
-        <IconButton label="Menu" onClick={() => toggleMenu()}>
-          <i className="bx bx-menu text-xl" />
-        </IconButton>
-        {/* Busca com label visível ao lado do menu (ghost). */}
-        <button
-          onClick={() => toggleSearch()}
-          aria-label="Buscar paciente 360"
+      <header
+        className={cn(
+          // pointer-events-none: a faixa transparente não bloqueia cliques no
+          // conteúdo atrás; só os botões reativam os eventos.
+          "pointer-events-none absolute inset-x-0 top-0 z-20 h-16",
+          // Slide alinhado ao token de painel da plataforma (~420ms, power2.out).
+          "transition-transform duration-[420ms] ease-out motion-reduce:transition-none",
+          headerHidden ? "-translate-y-full" : "translate-y-0",
+        )}
+      >
+        {/* Fundo SÓ de blur (sem cor), aparece no scroll reverso; ausente no topo.
+            Fade por opacidade (suave) + hairline para definição. */}
+        <div
           className={cn(
-            "flex h-9 items-center gap-2 rounded-full pl-2.5 pr-3.5 text-ink/70",
-            "transition-colors hover:bg-white/45 hover:text-ink",
+            "pointer-events-none absolute inset-0 border-b border-white/30 backdrop-blur-2xl",
+            "transition-opacity duration-300 motion-reduce:transition-none",
+            headerBlur ? "opacity-100" : "opacity-0",
           )}
-        >
-          <i className="bx bx-search text-xl" />
-        
-        </button>
-      </div>
+        />
 
-      {/* Direita — avatar do profissional (só o círculo, com um rosto) */}
-      <div className="pointer-events-auto absolute right-4 top-5 z-20">
-        <button
-          aria-label="Perfil"
-          className="grid h-10 w-10 place-items-center overflow-hidden rounded-full border border-white/50 bg-white/45 text-neutral-700 backdrop-blur transition-colors hover:border-ink/30 hover:text-ink"
-        >
-          <i className="bx bxs-user text-2xl" />
-        </button>
-      </div>
+        {/* Esquerda — só o menu (ghost). O perfil agora vive dentro do menu. */}
+        <div className="pointer-events-auto absolute left-3 top-4 flex items-center gap-1">
+          <IconButton label="Menu" onClick={() => toggleMenu()}>
+            <i className="bx bx-menu text-xl" />
+          </IconButton>
+        </div>
+
+        {/* Direita — busca (onde antes ficava o avatar do perfil) */}
+        <div className="pointer-events-auto absolute right-3 top-4">
+          <IconButton label="Buscar paciente" onClick={() => toggleSearch()}>
+            <i className="bx bx-search text-xl" />
+          </IconButton>
+        </div>
+      </header>
 
       <NavMenu />
       <SearchBar />

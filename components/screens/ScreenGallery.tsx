@@ -1,6 +1,6 @@
 import { SCREENS } from "./index";
 
-const ORDER = ["home", "messages", "patients", "consult", "analise"] as const;
+const ORDER = ["home", "messages", "patients", "consult", "clinical-note"] as const;
 
 // Galeria estática (Fase 1): empilha as telas para travar fidelidade de
 // conteúdo, grayscale e escala tipográfica antes do 3D. Persistida em /gallery.

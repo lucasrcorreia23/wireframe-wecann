@@ -27,7 +27,7 @@ export function MessagesCenter() {
   const goTo = useFlow((s) => s.goTo);
 
   return (
-    <div className="no-scrollbar flex h-full flex-col overflow-y-auto">
+    <div className="no-scrollbar flex h-full flex-col overflow-y-auto pt-[88px] pb-6">
       <ModuleCard size="lg" className="gap-4">
         <div className="flex items-center justify-between">
           <div className="flex flex-col gap-1">
@@ -69,8 +69,8 @@ export function MessagesCenter() {
 // ESQUERDA — resumo da caixa (alimentado pela IA).
 export function MessagesLeft() {
   return (
-    <div className="flex h-full flex-col gap-4">
-      <ModuleCard eyebrow="Resumo · Athena" icon="bx-message" size="sm">
+    <div className="no-scrollbar flex h-full min-h-0 flex-col gap-4 overflow-y-auto pt-[88px] pb-6">
+      <ModuleCard eyebrow="Resumo" icon="bx-message" size="sm">
         <ul className="flex flex-col gap-2 text-caption text-neutral-700">
           <li className="flex items-center justify-between">
             <span>Novas</span>

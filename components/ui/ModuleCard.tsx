@@ -54,7 +54,7 @@ export function ModuleCard({
       )}
     >
       {hasHeader ? (
-        <header className="flex min-h-9 items-center justify-between gap-3">
+        <header className="flex pl-1 min-h-9 items-center justify-between gap-3">
           <div className="flex min-w-0 flex-col gap-1">
             {eyebrow ? <Eyebrow icon={icon}>{eyebrow}</Eyebrow> : null}
             {title ? (

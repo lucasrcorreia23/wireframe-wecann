@@ -9,7 +9,8 @@ const ITEMS: { label: string; node: NodeId; icon: string }[] = [
   { label: "Home", node: "home", icon: "bx-home-alt" },
   { label: "Mensagens", node: "messages", icon: "bx-envelope" },
   { label: "Pacientes", node: "patients", icon: "bx-group" },
-  { label: "Consulta e Análise", node: "consult", icon: "bx-plus-medical" },
+  { label: "Consulta", node: "consult-intro", icon: "bx-pulse" },
+  { label: "Documentos", node: "clinical-note", icon: "bx-file" },
 ];
 
 // Dropdown grande de navegação, ancorado ao botão de menu (topo-esquerda).

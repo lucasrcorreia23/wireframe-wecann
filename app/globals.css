@@ -24,9 +24,10 @@
   --color-state-hard: #2a2a28; /* crítico    */
 
   /* ───────────────────────── Tipografia ───────────────────────── */
-  --font-display: var(--font-fraunces);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Adobe Fonts (Typekit · kit jir2fmf) — font-family conferidos no CSS do kit. */
+  --font-display: "late-serif-variable", Georgia, serif; /* serifada editorial (display) */
+  --font-sans: "config-mono-vf", ui-monospace, monospace; /* corpo/UI = mono variável */
+  --font-mono: "config-mono-vf", ui-monospace, monospace; /* dados/métricas */
 
   /* Escala modular ~1.25 (rem). */
   --text-display-xl: 3.815rem;
@@ -73,7 +74,7 @@
   }
 
   html {
-    /* Fraunces fica ótica/serifada via --font-display; opsz definido por uso. */
+    /* Late Serif (serifada) via --font-display; Config Mono no corpo (--font-sans). */
     text-rendering: optimizeLegibility;
   }
 

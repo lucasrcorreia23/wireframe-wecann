@@ -37,6 +37,28 @@ export function SendToPatientPanel({
       onClose={onClose}
       className="max-w-[680px]"
       label="Enviar ao paciente"
+      footer={
+        sent ? (
+          <span className="flex items-center gap-2 font-mono text-micro uppercase tracking-[0.12em] text-ink">
+            <i className="bx bx-check-circle text-lg" />
+            Enviado ao paciente
+          </span>
+        ) : (
+          <>
+            <WireButton variant="ghost" onClick={onClose}>
+              Cancelar
+            </WireButton>
+            <WireButton
+              variant="primary"
+              onClick={() => signed && setSent(true)}
+              className={cn("gap-2", !signed && "pointer-events-none opacity-40")}
+            >
+              <i className="bx bx-send text-lg" />
+              Assinar e enviar
+            </WireButton>
+          </>
+        )
+      }
     >
         <header className="flex items-start gap-3">
           <span className="glass-frost-inner grid h-10 w-10 shrink-0 place-items-center rounded-full text-ink">
@@ -58,7 +80,7 @@ export function SendToPatientPanel({
           </button>
         </header>
 
-        <ScrollFade className="mt-6 min-h-0 flex-1">
+        <ScrollFade className="mt-6 min-h-0 flex-1 pb-24">
           <div className="flex flex-col gap-6">
             <section className="flex flex-col gap-3">
               <Eyebrow>Documentos a enviar</Eyebrow>
@@ -114,29 +136,6 @@ export function SendToPatientPanel({
             </section>
           </div>
         </ScrollFade>
-
-        <footer className="mt-6 flex items-center justify-end gap-3 border-t border-white/50 pt-5">
-          {sent ? (
-            <span className="flex items-center gap-2 font-mono text-micro uppercase tracking-[0.12em] text-ink">
-              <i className="bx bx-check-circle text-lg" />
-              Enviado ao paciente
-            </span>
-          ) : (
-            <>
-              <WireButton variant="ghost" onClick={onClose}>
-                Cancelar
-              </WireButton>
-              <WireButton
-                variant="primary"
-                onClick={() => signed && setSent(true)}
-                className={cn("gap-2", !signed && "pointer-events-none opacity-40")}
-              >
-                <i className="bx bx-send text-lg" />
-                Assinar e enviar
-              </WireButton>
-            </>
-          )}
-        </footer>
     </SlideOverPanel>
   );
 }
