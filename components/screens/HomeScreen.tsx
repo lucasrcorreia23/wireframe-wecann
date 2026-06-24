@@ -17,12 +17,12 @@ const RECENT = [
 ];
 
 const AGENDA = [
-  { time: "09:30", name: "Marina Castro", condition: "Dor crônica · pré 40%", type: "Pré-consulta", duration: "30 min", convenio: "Unimed Nacional", modality: "presencial", urgent: true },
-  { time: "10:15", name: "André Lobo", condition: "Fibromialgia · retorno", type: "Retorno", duration: "20 min", convenio: "Bradesco Saúde", modality: "teleconsulta", urgent: false },
-  { time: "11:00", name: "Júlia Tavares", condition: "Insônia · 1ª consulta", type: "1ª consulta", duration: "50 min", convenio: "Particular", modality: "presencial", urgent: false },
-  { time: "13:30", name: "Rui Salgado", condition: "Dor neuropática · controle", type: "Controle especial", duration: "30 min", convenio: "SulAmérica", modality: "presencial", urgent: false },
-  { time: "14:15", name: "Helena Pires", condition: "Ansiedade · retorno", type: "Retorno", duration: "20 min", convenio: "Unimed Nacional", modality: "teleconsulta", urgent: false },
-  { time: "15:00", name: "Bruno Antunes", condition: "Avaliação inicial", type: "Avaliação", duration: "40 min", convenio: "Particular", modality: "presencial", urgent: false },
+  { time: "09:30", name: "Marina Castro", type: "Pré-consulta", duration: "30 min", convenio: "Unimed Nacional", modality: "presencial", urgent: true },
+  { time: "10:15", name: "André Lobo", type: "Retorno", duration: "20 min", convenio: "Bradesco Saúde", modality: "teleconsulta", urgent: false },
+  { time: "11:00", name: "Júlia Tavares", type: "1ª consulta", duration: "50 min", convenio: "Particular", modality: "presencial", urgent: false },
+  { time: "13:30", name: "Rui Salgado", type: "Controle especial", duration: "30 min", convenio: "SulAmérica", modality: "presencial", urgent: false },
+  { time: "14:15", name: "Helena Pires", type: "Retorno", duration: "20 min", convenio: "Unimed Nacional", modality: "teleconsulta", urgent: false },
+  { time: "15:00", name: "Bruno Antunes", type: "Avaliação", duration: "40 min", convenio: "Particular", modality: "presencial", urgent: false },
 ];
 
 const PILLS: Pill[] = [
@@ -173,9 +173,6 @@ export function HomeCenter() {
                         {item.type}
                       </WireBadge>
                     </div>
-                    <span className="truncate text-caption text-neutral-500">
-                      {item.condition}
-                    </span>
                     <div className="flex items-center gap-2 overflow-hidden font-mono text-micro text-neutral-400">
                       <span className="inline-flex shrink-0 items-center gap-1">
                         <i className="bx bx-time-five text-sm" />

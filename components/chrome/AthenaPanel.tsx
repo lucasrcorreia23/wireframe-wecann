@@ -72,10 +72,11 @@ export function AthenaPanel({ className }: { className?: string }) {
         <p className="text-caption text-neutral-600">Copiloto clínico</p>
       </div>
 
-      {/* Sugestões contextuais — pills clicáveis; rolam dentro do painel. */}
-      <div className="no-scrollbar flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
-        <Eyebrow>Sugestões</Eyebrow>
-        <div className="flex flex-wrap gap-2">
+      {/* Sugestões contextuais — pills clicáveis; rolam dentro do painel.
+          Label + chips centralizados (acompanham o globo/Athena acima). */}
+      <div className="no-scrollbar flex min-h-0 flex-1 flex-col items-center gap-2 overflow-y-auto">
+       
+        <div className="flex w-full flex-wrap justify-center gap-2">
           {suggestions.map((s) => (
             <button
               key={s}
