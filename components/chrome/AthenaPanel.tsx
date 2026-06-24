@@ -5,34 +5,38 @@ import { Eyebrow } from "@/components/ui";
 import { AthenaGlobe } from "@/components/experience/AthenaGlobe";
 import { cn } from "@/lib/cn";
 
-type Insight = { tag: string; text: string };
-
-// Insights contextuais por módulo: a IA "acompanha" o usuário e muda de pauta
+// Sugestões contextuais por módulo: frases de prompt que o usuário pode pedir à
+// Athena (pills clicáveis). A IA "acompanha" o usuário e muda as sugestões
 // conforme o contexto. Coluna DIREITA persistente (presente em toda a plataforma).
-const INSIGHTS: Record<string, Insight[]> = {
+const SUGGESTIONS: Record<string, string[]> = {
   home: [
-    { tag: "Pauta do dia", text: "2 pré-consultas aguardando revisão." },
-    { tag: "Atenção", text: "Renovação de receita controlada vence hoje." },
-    { tag: "Resumo", text: "7 compromissos · 3 retornos · 1 primeira vez." },
+    "Resumir o dia",
+    "Quais são meus retornos?",
+    "Sugerir conduta",
+    "Buscar evidência",
+    "Pré-consultas pendentes",
   ],
   messages: [
-    { tag: "Triagem", text: "2 mensagens novas marcadas como prioritárias." },
-    { tag: "Sugestão", text: "Resposta-modelo pronta p/ dúvida de posologia." },
+    "Responder dúvida de posologia",
+    "Resumir mensagens novas",
+    "Marcar como prioritária",
   ],
   patients: [
-    { tag: "Coorte", text: "128 pacientes ativos · 18 em titulação." },
-    { tag: "Acompanhamento", text: "5 sem evolução registrada há 90 dias." },
+    "Resumir a coorte",
+    "Sem evolução há 90 dias",
+    "Quem está em titulação?",
   ],
   consult: [
-    { tag: "Pergunta-chave", text: "Investigar qualidade do sono e despertares." },
-    { tag: "Alerta", text: "Interação: tramadol + amitriptilina (serotoninérgica)." },
-    { tag: "CID sugerido", text: "M79.7 · fibromialgia." },
-    { tag: "Literatura", text: "Canabinoide adjuvante reduz dor noturna (coorte 2023)." },
+    "Resumir a queixa principal",
+    "Sugerir CID",
+    "Checar interações",
+    "Sugerir conduta",
+    "Buscar literatura",
   ],
   analise: [
-    { tag: "A validar", text: "Queixa principal e HDA preenchidas pela Athena." },
-    { tag: "Conferir", text: "CID e conduta sugeridos aguardam confirmação." },
-    { tag: "Escalas", text: "Faltam 2 escalas para fechar a evolução." },
+    "Revisar o que a Athena preencheu",
+    "Conferir CID e conduta",
+    "Quais escalas faltam?",
   ],
 };
 
@@ -45,11 +49,11 @@ const PROMPT: Record<string, string> = {
 };
 
 // Athena — copiloto clínico PERSISTENTE (coluna direita do WorkspaceShell). Monta
-// o globo contido UMA vez (não remonta na troca de módulo). Só insights/prompt
+// o globo contido UMA vez (não remonta na troca de módulo). Só sugestões/prompt
 // trocam com o nó atual. Padrão da pílula: glass-panel-blue + rounded-[28px].
 export function AthenaPanel({ className }: { className?: string }) {
   const node = useFlow((s) => s.currentNode);
-  const insights = INSIGHTS[node] ?? [];
+  const suggestions = SUGGESTIONS[node] ?? [];
   const prompt = PROMPT[node] ?? "Pergunte à Athena…";
 
   return (
@@ -68,22 +72,21 @@ export function AthenaPanel({ className }: { className?: string }) {
         <p className="text-caption text-neutral-600">Copiloto clínico</p>
       </div>
 
-      {/* Insights contextuais — rolam dentro do painel. */}
+      {/* Sugestões contextuais — pills clicáveis; rolam dentro do painel. */}
       <div className="no-scrollbar flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
-        <Eyebrow>Insights</Eyebrow>
-        <ul className="flex flex-col gap-2">
-          {insights.map((it) => (
-            <li
-              key={it.tag}
-              className="glass-frost-inner flex flex-col gap-1 rounded-2xl px-3 py-2.5"
+        <Eyebrow>Sugestões</Eyebrow>
+        <div className="flex flex-wrap gap-2">
+          {suggestions.map((s) => (
+            <button
+              key={s}
+              type="button"
+              className="glass-frost-inner flex items-center gap-1.5 rounded-full px-3 py-1.5 text-caption text-neutral-700 transition-colors hover:text-ink"
             >
-              <span className="font-mono text-micro uppercase tracking-[0.1em] text-neutral-500">
-                {it.tag}
-              </span>
-              <span className="text-caption text-neutral-700">{it.text}</span>
-            </li>
+              <i className="bx bx-message-square-dots text-base text-neutral-500" />
+              {s}
+            </button>
           ))}
-        </ul>
+        </div>
       </div>
 
       {/* Input de chat (mock) — padrão rico da Home. */}

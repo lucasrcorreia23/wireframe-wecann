@@ -5,6 +5,7 @@ export { WireCard } from "./WireCard";
 export { WireField } from "./WireField";
 export { WireButton } from "./WireButton";
 export { WireBadge } from "./WireBadge";
+export { Avatar } from "./Avatar";
 export { WireTabs } from "./WireTabs";
 export { WireTable } from "./WireTable";
 export type { WireColumn, WireRow } from "./WireTable";

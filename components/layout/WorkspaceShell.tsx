@@ -40,7 +40,7 @@ export function WorkspaceShell() {
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-neutral-100">
       <div
-        className="grid h-full items-stretch gap-4 px-[3vw] pt-24 pb-12"
+        className="grid h-full items-stretch gap-4 px-[6vw] pt-24 pb-12"
         // gridTemplateRows minmax(0,1fr): a linha PREENCHE a altura do shell (não
         // encolhe para o conteúdo). Sem isso a linha fica "auto" e as colunas
         // ganham altura do conteúdo → overflow-y-auto nunca dispara (não rola) e
@@ -55,7 +55,7 @@ export function WorkspaceShell() {
           <CenterStage renderCenter={renderCenter} />
         </div>
 
-        {/* DIREITA — Athena persistente (globo contido + insights + chat). */}
+        {/* DIREITA — Athena persistente (globo contido + sugestões + chat). */}
         <AthenaPanel />
       </div>
 

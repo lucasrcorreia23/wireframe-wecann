@@ -1,7 +1,7 @@
 "use client";
 
 import { useFlow } from "@/flow/store";
-import { WireBadge, Eyebrow } from "@/components/ui";
+import { WireBadge, Eyebrow, Avatar } from "@/components/ui";
 import { ModuleCard } from "@/components/ui/ModuleCard";
 
 // `messages` — Mensagens: inbox das mensagens automatizadas recebidas dos
@@ -46,9 +46,7 @@ export function MessagesCenter() {
                 onClick={() => goTo("consult")}
                 className="glass-frost-inner flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition-colors hover:border-ink/20"
               >
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/50 bg-white/40 font-mono text-micro text-neutral-700">
-                  {t.initials}
-                </span>
+                <Avatar name={t.name} size="md" />
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <span className="text-body font-medium text-ink">{t.name}</span>
                   <span className="truncate text-caption text-neutral-600">

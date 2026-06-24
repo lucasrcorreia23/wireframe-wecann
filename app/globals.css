@@ -141,6 +141,21 @@
   animation: panel-in-right 420ms ease-out both;
 }
 
+/* Dica de scroll ("tem mais abaixo"): bob vertical leve e contínuo na setinha.
+   Sob reduced-motion é neutralizado pela regra global abaixo. */
+@keyframes scroll-hint {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(3px);
+  }
+}
+.scroll-hint {
+  animation: scroll-hint 1.6s ease-in-out infinite;
+}
+
 /* Cross-fade curto (fallback reduced-motion, §6): substitui reveal/slide por
    um fade de 200ms — sem dolly, sem translate. A câmera é setada instantaneamente
    na CameraRig e a atmosfera fica estática (Atmosphere). */
@@ -203,6 +218,11 @@
   .panel-in-left,
   .panel-in-right {
     animation: soft-fade 200ms ease both;
+  }
+
+  /* A dica de scroll perde o movimento, mas continua visível (estática). */
+  .scroll-hint {
+    animation: none;
   }
 
   /* Neutraliza grandes movimentos de transição decorativos, preservando o

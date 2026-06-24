@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFlow } from "@/flow/store";
+import { Avatar } from "@/components/ui";
 
 const PATIENTS = [
   { initials: "MC", name: "Marina Castro", condition: "Dor crônica · fibromialgia" },
@@ -77,9 +78,7 @@ export function SearchBar() {
                     onClick={() => goTo("consult")}
                     className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-white/45"
                   >
-                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/50 bg-white/40 font-mono text-micro text-neutral-700">
-                      {p.initials}
-                    </span>
+                    <Avatar name={p.name} size="sm" />
                     <div className="flex min-w-0 flex-col">
                       <span className="text-body font-medium text-ink">{p.name}</span>
                       <span className="truncate text-caption text-neutral-600">

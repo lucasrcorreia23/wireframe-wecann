@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useFlow } from "@/flow/store";
-import { WireBadge } from "@/components/ui";
+import { WireBadge, Avatar } from "@/components/ui";
 import { ModuleCard } from "@/components/ui/ModuleCard";
 import { NewAppointmentPanel } from "./NewAppointmentPanel";
 import { PillDetailPanel, type Pill } from "./PillDetailPanel";
@@ -17,12 +17,12 @@ const RECENT = [
 ];
 
 const AGENDA = [
-  { time: "09:30", name: "Marina Castro", condition: "Dor crônica · pré 40%", urgent: true },
-  { time: "10:15", name: "André Lobo", condition: "Fibromialgia · retorno", urgent: false },
-  { time: "11:00", name: "Júlia Tavares", condition: "Insônia · 1ª consulta", urgent: false },
-  { time: "13:30", name: "Rui Salgado", condition: "Dor neuropática · controle", urgent: false },
-  { time: "14:15", name: "Helena Pires", condition: "Ansiedade · retorno", urgent: false },
-  { time: "15:00", name: "Bruno Antunes", condition: "Avaliação inicial", urgent: false },
+  { time: "09:30", name: "Marina Castro", condition: "Dor crônica · pré 40%", type: "Pré-consulta", duration: "30 min", convenio: "Unimed Nacional", modality: "presencial", urgent: true },
+  { time: "10:15", name: "André Lobo", condition: "Fibromialgia · retorno", type: "Retorno", duration: "20 min", convenio: "Bradesco Saúde", modality: "teleconsulta", urgent: false },
+  { time: "11:00", name: "Júlia Tavares", condition: "Insônia · 1ª consulta", type: "1ª consulta", duration: "50 min", convenio: "Particular", modality: "presencial", urgent: false },
+  { time: "13:30", name: "Rui Salgado", condition: "Dor neuropática · controle", type: "Controle especial", duration: "30 min", convenio: "SulAmérica", modality: "presencial", urgent: false },
+  { time: "14:15", name: "Helena Pires", condition: "Ansiedade · retorno", type: "Retorno", duration: "20 min", convenio: "Unimed Nacional", modality: "teleconsulta", urgent: false },
+  { time: "15:00", name: "Bruno Antunes", condition: "Avaliação inicial", type: "Avaliação", duration: "40 min", convenio: "Particular", modality: "presencial", urgent: false },
 ];
 
 const PILLS: Pill[] = [
@@ -161,13 +161,42 @@ export function HomeCenter() {
               <li key={item.time}>
                 <button
                   onClick={() => goTo("consult")}
-                  className="group flex w-full items-center justify-between gap-3 rounded-2xl px-4 py-3 text-left transition-colors hover:bg-white/55"
+                  className="group flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left transition-colors hover:bg-white/55"
                 >
-                  <div className="flex min-w-0 flex-col gap-0.5">
-                    <span className="text-body font-medium text-ink">{item.name}</span>
+                  <Avatar name={item.name} size="md" />
+                  <div className="flex min-w-0 flex-1 flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <span className="truncate text-body font-medium text-ink">
+                        {item.name}
+                      </span>
+                      <WireBadge tone={item.urgent ? "mid" : "neutral"}>
+                        {item.type}
+                      </WireBadge>
+                    </div>
                     <span className="truncate text-caption text-neutral-500">
                       {item.condition}
                     </span>
+                    <div className="flex items-center gap-2 overflow-hidden font-mono text-micro text-neutral-400">
+                      <span className="inline-flex shrink-0 items-center gap-1">
+                        <i className="bx bx-time-five text-sm" />
+                        {item.duration}
+                      </span>
+                      <span aria-hidden>·</span>
+                      <span className="inline-flex min-w-0 items-center gap-1">
+                        <i className="bx bx-id-card text-sm" />
+                        <span className="truncate">{item.convenio}</span>
+                      </span>
+                      <span aria-hidden>·</span>
+                      <span className="inline-flex shrink-0 items-center gap-1">
+                        <i
+                          className={cn(
+                            "bx text-sm",
+                            item.modality === "teleconsulta" ? "bx-video" : "bx-map-pin",
+                          )}
+                        />
+                        {item.modality}
+                      </span>
+                    </div>
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1.5">
                     <span className="font-mono text-caption font-medium text-ink">
@@ -193,6 +222,26 @@ export function HomeLeft() {
   const goTo = useFlow((s) => s.goTo);
   const [activePill, setActivePill] = useState<Pill | null>(null);
 
+  // Dica de scroll: a setinha só aparece quando a lista de pílulas tem mais
+  // conteúdo abaixo (rolável e fora do fim) — afordância honesta, some no fim.
+  const pillsRef = useRef<HTMLUListElement>(null);
+  const [moreBelow, setMoreBelow] = useState(false);
+  const syncMoreBelow = useCallback(() => {
+    const el = pillsRef.current;
+    if (!el) return;
+    const scrollable = el.scrollHeight > el.clientHeight + 1;
+    const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
+    setMoreBelow(scrollable && !atBottom);
+  }, []);
+  useEffect(() => {
+    const el = pillsRef.current;
+    if (!el) return;
+    syncMoreBelow();
+    const ro = new ResizeObserver(syncMoreBelow);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [syncMoreBelow]);
+
   return (
     <>
       <div className="flex h-full min-h-0 flex-col gap-4">
@@ -200,20 +249,32 @@ export function HomeLeft() {
           <div className="flex flex-wrap gap-2">
             {RECENT.map((p) => (
               <button
-                key={p.initials}
+                key={p.name}
                 onClick={() => goTo("consult")}
                 title={p.name}
                 aria-label={p.name}
-                className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/45 bg-white/30 font-mono text-micro text-neutral-600 backdrop-blur-md transition-colors hover:border-ink hover:text-ink"
+                className="rounded-full transition-transform hover:scale-105"
               >
-                {p.initials}
+                <Avatar name={p.name} size="sm" />
               </button>
             ))}
           </div>
         </ModuleCard>
 
-        <ModuleCard eyebrow="Pílulas do dia" icon="bx-capsule" size="md">
-          <ul className="flex flex-col gap-3">
+        <ModuleCard
+          eyebrow="Pílulas do dia"
+          icon="bx-capsule"
+          size="md"
+          className="relative min-h-0 flex-1"
+        >
+          {/* -mb-4 cancela o pb-4 do shell (md) só aqui: a lista rola até a borda
+              inferior do card, sem o gap que cortava as pílulas antes do fim.
+              (cn não tem tailwind-merge, então um pb-0 não venceria o pb-4.) */}
+          <ul
+            ref={pillsRef}
+            onScroll={syncMoreBelow}
+            className="no-scrollbar -mb-4 flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto"
+          >
             {PILLS.map((pill) => (
               <li key={pill.title}>
                 <button
@@ -236,6 +297,20 @@ export function HomeLeft() {
               </li>
             ))}
           </ul>
+
+          {/* Setinha "tem mais abaixo": flutua no rodapé da lista, com bob leve.
+              Some (fade) ao chegar no fim. pointer-events-none: não bloqueia o
+              scroll/clique nas pílulas. */}
+          <div
+            className={cn(
+              "pointer-events-none absolute inset-x-0 bottom-2 flex justify-center transition-opacity duration-300",
+              moreBelow ? "opacity-100" : "opacity-0",
+            )}
+          >
+            <span className="scroll-hint grid h-7 w-7 place-items-center rounded-full border border-white/55 bg-white/60 text-neutral-500 shadow-sm backdrop-blur-md">
+              <i className="bx bx-chevron-down text-lg" />
+            </span>
+          </div>
         </ModuleCard>
       </div>
 
