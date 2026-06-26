@@ -37,7 +37,7 @@ export function PatientsCenter() {
           {PATIENTS.map((p) => (
             <li key={p.name}>
               <button
-                onClick={() => goTo("consult")}
+                onClick={() => goTo("pre-review")}
                 className="glass-frost-inner flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition-colors hover:border-ink/20"
               >
                 <Avatar name={p.name} size="md" />

@@ -132,12 +132,22 @@ export function WorkspaceShell() {
       </div>
     );
   } else {
+    // Override de grid por módulo (ex.: Paciente 360 usa sidebar de largura fixa).
+    const moduleGrid = MODULES[currentNode]?.grid;
+    const gridColumns = moduleGrid
+      ? athenaCollapsed
+        ? moduleGrid.collapsed
+        : moduleGrid.expanded
+      : athenaCollapsed
+        ? GRID_COLLAPSED
+        : GRID_EXPANDED;
+
     body = (
       <div
         onScrollCapture={onScrollCapture}
         className="grid h-full items-stretch gap-4 px-[5vw]"
         style={{
-          gridTemplateColumns: athenaCollapsed ? GRID_COLLAPSED : GRID_EXPANDED,
+          gridTemplateColumns: gridColumns,
           gridTemplateRows: "minmax(0, 1fr)",
         }}
       >

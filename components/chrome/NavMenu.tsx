@@ -9,6 +9,7 @@ const ITEMS: { label: string; node: NodeId; icon: string }[] = [
   { label: "Home", node: "home", icon: "bx-home-alt" },
   { label: "Mensagens", node: "messages", icon: "bx-envelope" },
   { label: "Pacientes", node: "patients", icon: "bx-group" },
+  { label: "Paciente 360", node: "pre-review", icon: "bx-id-card" },
   { label: "Consulta", node: "consult-intro", icon: "bx-pulse" },
   { label: "Documentos", node: "clinical-note", icon: "bx-file" },
 ];

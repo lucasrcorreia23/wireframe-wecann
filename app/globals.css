@@ -24,10 +24,11 @@
   --color-state-hard: #2a2a28; /* crítico    */
 
   /* ───────────────────────── Tipografia ───────────────────────── */
-  /* Adobe Fonts (Typekit · kit jir2fmf) — font-family conferidos no CSS do kit. */
+  /* Display = Late Serif (Typekit); corpo/prosa = Inter (Google Fonts);
+     dados/badges/labels = Config Mono (Typekit). Sistema de 3 fontes do Figma. */
   --font-display: "late-serif-variable", Georgia, serif; /* serifada editorial (display) */
-  --font-sans: "config-mono-vf", ui-monospace, monospace; /* corpo/UI = mono variável */
-  --font-mono: "config-mono-vf", ui-monospace, monospace; /* dados/métricas */
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif; /* corpo/UI = Inter */
+  --font-mono: "config-mono-vf", ui-monospace, monospace; /* dados/métricas/badges */
 
   /* Escala modular ~1.25 (rem). */
   --text-display-xl: 3.815rem;
@@ -60,6 +61,11 @@
 
   /* ───────────────────────── Formas e movimento ───────────────────────── */
   --radius-wire: 3px; /* cards quase retos, sóbrios */
+
+  /* Sombras (Paciente 360 · cards sólidos #f9f9f9 flutuando sobre o fundo). */
+  --shadow-card: 0 1px 2px rgba(17, 17, 20, 0.04),
+    0 8px 24px -8px rgba(17, 17, 20, 0.1);
+  --shadow-tab: 0 4px 13.5px rgba(0, 0, 0, 0.05); /* pílula da aba ativa */
 
   /* Durações padrão (§2.3) — também reaproveitadas em lib/motion.ts. */
   --duration-micro: 180ms;
@@ -197,6 +203,14 @@
   .glass-frost-inner {
     background: rgba(255, 255, 255, 0.5);
     border: 1px solid rgba(255, 255, 255, 0.62);
+  }
+
+  /* Card SÓLIDO (#f9f9f9) do Paciente 360 — opaco, borda branca sutil + sombra
+     suave. Diferente do glass-panel-blue: aqui o card não é translúcido. */
+  .card-solid {
+    background: #f9f9f9;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: var(--shadow-card);
   }
 
   /* Esconde scrollbar mantendo o scroll. */

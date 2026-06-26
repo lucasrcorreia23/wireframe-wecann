@@ -17,14 +17,20 @@ export default function RootLayout({
     <html lang="pt-BR" className="h-full antialiased">
       <head>
         {/*
-          Tipografia via Adobe Fonts (Typekit):
-            • Late Serif Variable  → display/serifada  (--font-display)
-            • Config Mono Variable → corpo + dados     (--font-sans / --font-mono)
-          Passo único pendente: criar um Web Project em fonts.adobe.com com AS DUAS
-          famílias e trocar KIT_ID pelo id do seu kit. Confirme também os nomes de
-          font-family no painel "How to use" e ajuste-os em app/globals.css se diferirem.
+          Tipografia:
+            • Late Serif Variable (Adobe Fonts) → display/serifada   (--font-display)
+            • Inter (Google Fonts)              → corpo/prosa        (--font-sans)
+            • Config Mono Variable (Adobe Fonts)→ dados/badges/labels (--font-mono)
+          Late Serif + Config Mono vêm do Typekit (kit jir2fmf); Inter vem do
+          Google Fonts. Mesmo padrão de <link> usado antes para o Typekit.
         */}
         <link rel="stylesheet" href="https://use.typekit.net/jir2fmf.css" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+        />
       </head>
       <body className="min-h-full bg-paper text-ink font-sans">{children}</body>
     </html>
