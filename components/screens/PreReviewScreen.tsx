@@ -488,20 +488,115 @@ function AlertsSection() {
   );
 }
 
-const TABS: { key: string; label: string; icon: string }[] = [
-  { key: "motivo", label: "Motivo", icon: "bx-detail" },
-  { key: "timeline", label: "Linha do tempo", icon: "bx-history" },
-  { key: "escalas", label: "Escalas", icon: "bx-line-chart" },
-  { key: "comorbidades", label: "Comorbidades", icon: "bx-plus-medical" },
-  { key: "medicacoes", label: "Medicações", icon: "bx-capsule" },
-  { key: "exames", label: "Exames", icon: "bx-test-tube" },
-  { key: "documentos", label: "Documentos", icon: "bx-file" },
-  { key: "atendimentos", label: "Atendimentos", icon: "bx-calendar-check" },
-  { key: "notas", label: "Notas", icon: "bx-group" },
+// `summary`: a informação mais relevante da seção — exibida sob o título no modo
+// "Seções" (accordions), para dar contexto mesmo com o accordion recolhido.
+const TABS: { key: string; label: string; icon: string; summary: string }[] = [
+  { key: "motivo", label: "Motivo", icon: "bx-detail", summary: "Dor lombar refratária há 14 meses · EVA 5/10 · busca reduzir opioides" },
+  { key: "timeline", label: "Linha do tempo", icon: "bx-history", summary: "11 eventos · hoje (25/06): avaliação terapêutica em andamento" },
+  { key: "escalas", label: "Escalas", icon: "bx-line-chart", summary: "M3 · EVA 8→5, PSQI 14→9 — MCID atingido" },
+  { key: "comorbidades", label: "Comorbidades", icon: "bx-plus-medical", summary: "4 validadas · 3 ativas, 1 em controle" },
+  { key: "medicacoes", label: "Medicações", icon: "bx-capsule", summary: "6 em uso · 2 suspensas · CBD em titulação" },
+  { key: "exames", label: "Exames", icon: "bx-test-tube", summary: "7 exames · RM lombar: discopatia L4–L5" },
+  { key: "documentos", label: "Documentos", icon: "bx-file", summary: "7 documentos · 2 pendentes" },
+  { key: "atendimentos", label: "Atendimentos", icon: "bx-calendar-check", summary: "4 consultas · última 19/06 com Dra. Helena Prado" },
+  { key: "notas", label: "Notas", icon: "bx-group", summary: "2 notas · Reumatologia + Fisioterapia" },
 ];
 
+// Alterna a visualização dos aprofundamentos: "Abas" (barra + 1 conteúdo) ou
+// "Seções" (accordions empilhados, cada um com a linha-resumo sob o título).
+type CenterView = "abas" | "secoes";
+
+function ViewToggle({ value, onChange }: { value: CenterView; onChange: (v: CenterView) => void }) {
+  const opts: { key: CenterView; label: string; icon: string }[] = [
+    { key: "abas", label: "Abas", icon: "bx-carousel" },
+    { key: "secoes", label: "Seções", icon: "bx-list-ul" },
+  ];
+  return (
+    <div className="inline-flex items-center gap-1 rounded-full bg-white/40 p-1">
+      {opts.map((o) => {
+        const active = value === o.key;
+        return (
+          <button
+            key={o.key}
+            type="button"
+            onClick={() => onChange(o.key)}
+            aria-pressed={active}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-mono text-micro transition-colors duration-[180ms]",
+              active
+                ? "bg-paper text-ink shadow-[var(--shadow-tab)]"
+                : "text-neutral-500 hover:text-neutral-700",
+            )}
+          >
+            <i className={cn("bx text-sm", o.icon)} />
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// Accordion da coluna principal: ícone + (título sobre linha-resumo) + chevron;
+// corpo expansível (mesmo conteúdo das abas). Controlado pelo pai (sanfona).
+function CenterAccordion({
+  icon,
+  title,
+  summary,
+  open,
+  onToggle,
+  last,
+  children,
+}: {
+  icon: string;
+  title: string;
+  summary: string;
+  open: boolean;
+  onToggle: () => void;
+  last?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <div className={cn(!last && "border-b border-white/50")}>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="flex w-full items-center gap-3 py-4 text-left"
+      >
+        <span className="glass-frost-inner grid h-9 w-9 shrink-0 place-items-center rounded-full text-neutral-600">
+          <i className={cn("bx text-lg", icon)} />
+        </span>
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span className="text-body font-medium text-ink">{title}</span>
+          <span className="truncate text-caption text-neutral-500">{summary}</span>
+        </div>
+        <i
+          className={cn(
+            "bx bx-chevron-down shrink-0 text-2xl text-neutral-500 transition-transform duration-300",
+            open && "rotate-180",
+          )}
+        />
+      </button>
+      <div
+        className={cn(
+          "grid transition-[grid-template-rows] duration-300 ease-out",
+          open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+        )}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <div className="pb-5 pt-1">{children}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function PreReviewCenter() {
+  const [view, setView] = useState<CenterView>("abas");
   const [tab, setTab] = useState(TABS[0].key);
+  // Sanfona: no máximo um aberto. `null` = todos fechados (estado inicial).
+  const [openKey, setOpenKey] = useState<string | null>(null);
 
   return (
     <div className="no-scrollbar flex h-full min-h-0 flex-col gap-4 overflow-y-auto pt-[88px] pb-6">
@@ -509,10 +604,35 @@ export function PreReviewCenter() {
       <AlertsSection />
 
       <SolidCard className="flex flex-col gap-4 rounded-[28px] p-[25px]">
-        <ScrollTabs options={TABS} value={tab} onChange={setTab} />
-        <div className="border-t border-neutral-200/40 pt-5">
-          <TabContent tab={tab} />
+        <div className="flex items-center justify-between gap-3">
+          <Eyebrow icon="bx-layer">Aprofundamentos</Eyebrow>
+          <ViewToggle value={view} onChange={setView} />
         </div>
+
+        {view === "abas" ? (
+          <>
+            <ScrollTabs options={TABS} value={tab} onChange={setTab} />
+            <div className="border-t border-neutral-200/40 pt-5">
+              <TabContent tab={tab} />
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-col border-t border-neutral-200/40">
+            {TABS.map((t, i) => (
+              <CenterAccordion
+                key={t.key}
+                icon={t.icon}
+                title={t.label}
+                summary={t.summary}
+                open={openKey === t.key}
+                onToggle={() => setOpenKey((k) => (k === t.key ? null : t.key))}
+                last={i === TABS.length - 1}
+              >
+                <TabContent tab={t.key} />
+              </CenterAccordion>
+            ))}
+          </div>
+        )}
       </SolidCard>
     </div>
   );
