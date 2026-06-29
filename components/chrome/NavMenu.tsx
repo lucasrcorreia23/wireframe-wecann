@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { Icon } from "@/components/ui";
 import { useFlow } from "@/flow/store";
 import type { NodeId } from "@/flow/types";
 import { cn } from "@/lib/cn";
@@ -54,7 +55,7 @@ export function NavMenu() {
                 )}
               >
                 <span className="grid h-7 w-7 shrink-0 place-items-center text-neutral-500">
-                  <i className={`bx ${it.icon} text-xl`} />
+                  <Icon name={it.icon} size={20} />
                 </span>
                 <span className="text-body font-medium">{it.label}</span>
               </button>
@@ -68,7 +69,7 @@ export function NavMenu() {
             className="flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-neutral-600 transition-colors hover:bg-white/40"
           >
             <span className="grid h-7 w-7 shrink-0 place-items-center text-neutral-500">
-              <i className="bx bx-log-out text-xl" />
+              <Icon name="log-out" size={20} />
             </span>
             <span className="text-body font-medium">Sair</span>
           </button>

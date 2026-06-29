@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Icon } from "./Icon";
 import { cn } from "@/lib/cn";
 
 // Card de vidro colapsável (padrão da pílula: glass-panel-blue + rounded-[28px]).
@@ -36,7 +37,7 @@ export function CollapsibleCard({
       <header className="flex flex-wrap items-center gap-3">
         {icon ? (
           <span className="glass-frost-inner grid h-10 w-10 shrink-0 place-items-center rounded-full text-ink">
-            <i className={cn("bx text-xl", icon)} />
+            <Icon name={icon} size={20} />
           </span>
         ) : null}
         <div className="flex min-w-0 flex-col gap-0.5">
@@ -54,12 +55,7 @@ export function CollapsibleCard({
             aria-label={open ? "Recolher" : "Expandir"}
             className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-neutral-500 transition-colors hover:bg-white/40 hover:text-ink"
           >
-            <i
-              className={cn(
-                "bx bx-chevron-up text-2xl transition-transform duration-300",
-                !open && "rotate-180",
-              )}
-            />
+            <Icon name="chevron-up" size={24} className={cn("transition-transform duration-300", !open && "rotate-180")} />
           </button>
         </div>
       </header>

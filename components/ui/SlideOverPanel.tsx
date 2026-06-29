@@ -104,6 +104,9 @@ export function SlideOverPanel({
           // cantos arredondados.
           "glass-panel-blue backdrop-blur-2xl absolute inset-y-0 right-8 my-auto flex h-fit max-h-[calc(100dvh-4rem)] w-full flex-col overflow-hidden rounded-[28px] p-7 opacity-0",
           open ? "pointer-events-auto" : "pointer-events-none",
+          // Fechado: display:none — não deixa o painel deslocado fora da tela, que
+          // entraria na cópia ao Figma como "largura sobrando" à direita.
+          !open && "hidden",
           className,
         )}
       >

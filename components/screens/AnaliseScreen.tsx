@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { WireBadge, WireButton, Segmented } from "@/components/ui";
+import { WireBadge, WireButton, Segmented, Icon } from "@/components/ui";
 import { ModuleCard } from "@/components/ui/ModuleCard";
 import { CollapsibleCard } from "@/components/ui/CollapsibleCard";
 import { AthenaTag } from "@/components/ui/AthenaTag";
@@ -79,7 +79,7 @@ function Field({
 /* --------------------------- card Pré-Consulta --------------------------- */
 
 const PRECONSULTA_TABS = [
-  { key: "resumo", label: (<><i className="bx bx-file text-base" /> Resumo do caso</>) },
+  { key: "resumo", label: (<><Icon name="file" size={16} /> Resumo do caso</>) },
   {
     key: "escalas",
     label: (
@@ -93,7 +93,7 @@ const PRECONSULTA_TABS = [
   },
   {
     key: "status",
-    label: (<><i className="bx bx-trending-up text-base" /> Status Acompanhamento <span className="text-neutral-400">★★</span></>),
+    label: (<><Icon name="trending-up" size={16} /> Status Acompanhamento <span className="text-neutral-400">★★</span></>),
   },
 ] as const;
 
@@ -200,9 +200,9 @@ function AnamneseExameCard({
             type="button"
             className="glass-frost-inner flex items-center gap-2 rounded-full px-3 py-1.5 text-caption text-neutral-700"
           >
-            <i className="bx bx-file-blank text-base text-neutral-500" />
+            <Icon name="file-blank" size={16} className="text-neutral-500" />
             Template: —
-            <i className="bx bx-chevron-down text-base text-neutral-400" />
+            <Icon name="chevron-down" size={16} className="text-neutral-400" />
           </button>
         </>
       }
@@ -334,12 +334,12 @@ function AnamneseExameCard({
             </div>
             <div className="flex flex-wrap items-center justify-end gap-2 border-t border-white/50 pt-4">
               <WireButton variant="secondary" onClick={onSend} className="gap-2">
-                <i className="bx bx-send text-lg" />
+                <Icon name="send" size={18} />
                 Revisar e enviar ao paciente
               </WireButton>
               {onContinue ? (
                 <WireButton variant="primary" onClick={onContinue} className="gap-2">
-                  <i className="bx bx-check-double text-lg" />
+                  <Icon name="check-double" size={18} />
                   Encerrar e conferir
                 </WireButton>
               ) : null}

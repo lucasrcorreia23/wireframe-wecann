@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { WireButton } from "@/components/ui";
+import { WireButton, Icon } from "@/components/ui";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { SlideOverPanel } from "@/components/ui/SlideOverPanel";
 import { cn } from "@/lib/cn";
@@ -32,7 +32,7 @@ export function NewAppointmentPanel({
             Cancelar
           </WireButton>
           <WireButton variant="primary" onClick={onClose} className="gap-2">
-            <i className="bx bx-calendar-check text-lg" />
+            <Icon name="calendar-check" size={18} />
             Agendar
           </WireButton>
         </>
@@ -41,7 +41,7 @@ export function NewAppointmentPanel({
       {/* Header */}
       <header className="flex items-center gap-3">
         <span className="glass-frost-inner grid h-10 w-10 shrink-0 place-items-center rounded-full text-ink">
-          <i className="bx bx-plus text-xl" />
+          <Icon name="plus" size={20} />
         </span>
         <h2 className="font-display text-title font-medium text-ink">
           Novo agendamento
@@ -52,7 +52,7 @@ export function NewAppointmentPanel({
           aria-label="Fechar"
           className="ml-auto grid h-9 w-9 place-items-center rounded-full text-neutral-500 transition-colors hover:bg-white/40 hover:text-ink"
         >
-          <i className="bx bx-x text-2xl" />
+          <Icon name="x" size={24} />
         </button>
       </header>
 
@@ -60,7 +60,7 @@ export function NewAppointmentPanel({
       <div className="no-scrollbar mt-6 flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto pb-24">
         <Field label="Paciente *">
           <div className="glass-frost-inner flex items-center gap-2 rounded-2xl px-4 py-3">
-            <i className="bx bx-search text-lg text-neutral-400" />
+            <Icon name="search" size={18} className="text-neutral-400" />
             <input
               type="text"
               placeholder="Buscar por nome…"
@@ -71,7 +71,7 @@ export function NewAppointmentPanel({
 
         <Field label="Profissional *">
           <div className="glass-frost-inner flex items-center gap-2 rounded-2xl px-4 py-3">
-            <i className="bx bx-plus-medical text-lg text-neutral-400" />
+            <Icon name="plus-medical" size={18} className="text-neutral-400" />
             <span className="text-body text-ink">Dr. Demo Sandbox</span>
           </div>
         </Field>
@@ -80,7 +80,7 @@ export function NewAppointmentPanel({
           <Field label="Tipo">
             <div className="glass-frost-inner flex items-center justify-between gap-2 rounded-2xl px-4 py-3">
               <span className="text-body text-ink">Consulta</span>
-              <i className="bx bx-chevron-down text-lg text-neutral-400" />
+              <Icon name="chevron-down" size={18} className="text-neutral-400" />
             </div>
           </Field>
           <Field label="Modalidade">
@@ -121,7 +121,7 @@ export function NewAppointmentPanel({
           <Field label="Duração">
             <div className="glass-frost-inner flex items-center justify-between gap-2 rounded-2xl px-4 py-3">
               <span className="text-body text-ink">30 min</span>
-              <i className="bx bx-chevron-down text-lg text-neutral-400" />
+              <Icon name="chevron-down" size={18} className="text-neutral-400" />
             </div>
           </Field>
         </div>
@@ -184,7 +184,7 @@ function ModalityButton({
           : "glass-frost-inner text-neutral-600 hover:text-ink",
       )}
     >
-      <i className={cn("bx text-lg", icon)} />
+      <Icon name={icon} size={18} />
       {children}
     </button>
   );

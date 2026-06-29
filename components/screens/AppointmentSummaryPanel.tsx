@@ -1,6 +1,6 @@
 "use client";
 
-import { WireButton, WireBadge, Eyebrow, Avatar } from "@/components/ui";
+import { WireButton, WireBadge, Eyebrow, Avatar, Icon } from "@/components/ui";
 import { ScrollFade } from "@/components/ui/ScrollFade";
 import { SlideOverPanel } from "@/components/ui/SlideOverPanel";
 import { cn } from "@/lib/cn";
@@ -94,7 +94,7 @@ function PreAnamnese({ appt, onSend }: { appt: Appt; onSend: () => void }) {
               key={h}
               className="glass-frost-inner flex items-start gap-2.5 rounded-2xl px-3 py-2.5"
             >
-              <i className="bx bx-chevron-right mt-0.5 shrink-0 text-base text-neutral-400" />
+              <Icon name="chevron-right" size={16} className="mt-0.5 text-neutral-400" />
               <span className="text-caption text-neutral-700 text-pretty">{h}</span>
             </li>
           ))}
@@ -128,7 +128,7 @@ function PreAnamnese({ appt, onSend }: { appt: Appt; onSend: () => void }) {
       </div>
       {!pending ? (
         <WireButton variant="secondary" size="sm" onClick={onSend} className="shrink-0 gap-1.5">
-          <i className="bx bx-send text-base" />
+          <Icon name="send" size={16} />
           Enviar
         </WireButton>
       ) : null}
@@ -169,11 +169,11 @@ export function AppointmentSummaryPanel({
         isPatient ? (
           <>
             <WireButton variant="ghost" onClick={onGoProfile} className="gap-2">
-              <i className="bx bx-user text-lg" />
+              <Icon name="user" size={18} />
               Ver perfil completo
             </WireButton>
             <WireButton variant="primary" onClick={onGoConsult} className="gap-2">
-              <i className="bx bx-video text-lg" />
+              <Icon name="video" size={18} />
               Iniciar consulta
             </WireButton>
           </>
@@ -189,7 +189,7 @@ export function AppointmentSummaryPanel({
           <Avatar name={appt.title} seed={appt.photoSeed} size="md" />
         ) : (
           <span className="glass-frost-inner grid h-10 w-10 shrink-0 place-items-center rounded-full text-ink">
-            <i className="bx bx-collection text-xl" />
+            <Icon name="collection" size={20} />
           </span>
         )}
         <div className="flex min-w-0 flex-col gap-1.5">
@@ -224,7 +224,7 @@ export function AppointmentSummaryPanel({
           aria-label="Fechar"
           className="ml-auto grid h-9 w-9 shrink-0 place-items-center rounded-full text-neutral-500 transition-colors hover:bg-white/40 hover:text-ink"
         >
-          <i className="bx bx-x text-2xl" />
+          <Icon name="x" size={24} />
         </button>
       </header>
 

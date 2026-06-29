@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFlow } from "@/flow/store";
-import { WireBadge, Avatar, Eyebrow } from "@/components/ui";
+import { WireBadge, Avatar, Eyebrow, Icon } from "@/components/ui";
 
 // Pacientes sugeridos com a prontidão da pré-consulta (mesmos dados do diretório,
 // PatientsScreen). `pre`+`tone` codificam o quanto a pré-consulta já foi preenchida.
@@ -52,7 +52,7 @@ export function ConsultIntroCenter() {
 
         {/* Barra estilo Google — pílula de vidro, ícone + input controlado. */}
         <div className="glass-panel-blue backdrop-blur-2xl flex w-full items-center gap-3 rounded-full px-5 py-3.5">
-          <i className="bx bx-search text-xl text-neutral-500" />
+          <Icon name="search" size={20} className="text-neutral-500" />
           <input
             ref={inputRef}
             value={q}

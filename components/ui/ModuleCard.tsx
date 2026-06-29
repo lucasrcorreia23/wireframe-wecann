@@ -1,4 +1,5 @@
 import { cn } from "@/lib/cn";
+import { Icon } from "./Icon";
 import { Eyebrow } from "./Eyebrow";
 
 // Escala de blocos consolidada (proposta de design 2D):
@@ -65,7 +66,7 @@ export function ModuleCard({
                 )}
               >
                 {!eyebrow && icon ? (
-                  <i className={cn("bx shrink-0 text-base text-neutral-400", icon)} />
+                  <Icon name={icon} size={16} className="text-neutral-400" />
                 ) : null}
                 {title}
               </h3>

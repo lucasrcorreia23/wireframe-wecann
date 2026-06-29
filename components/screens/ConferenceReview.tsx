@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { WireButton, WireBadge, Eyebrow, Segmented } from "@/components/ui";
+import { WireButton, WireBadge, Eyebrow, Segmented, Icon } from "@/components/ui";
 import { AthenaTag } from "@/components/ui/AthenaTag";
 import { cn } from "@/lib/cn";
 
@@ -91,7 +91,7 @@ function DivergenceRow({ d }: { d: (typeof DIVERGENCES)[number] }) {
                 : "border-neutral-300 text-neutral-600 hover:border-neutral-500",
             )}
           >
-            <i className="bx bx-check text-lg" />
+            <Icon name="check" size={18} />
           </button>
           <button
             type="button"
@@ -105,7 +105,7 @@ function DivergenceRow({ d }: { d: (typeof DIVERGENCES)[number] }) {
                 : "border-neutral-300 text-neutral-600 hover:border-neutral-500",
             )}
           >
-            <i className="bx bx-pencil text-base" />
+            <Icon name="pencil" size={16} />
           </button>
           <button
             type="button"
@@ -119,7 +119,7 @@ function DivergenceRow({ d }: { d: (typeof DIVERGENCES)[number] }) {
                 : "border-neutral-300 text-neutral-600 hover:border-neutral-500",
             )}
           >
-            <i className="bx bx-x text-lg" />
+            <Icon name="x" size={18} />
           </button>
         </div>
       </div>
@@ -130,7 +130,7 @@ function DivergenceRow({ d }: { d: (typeof DIVERGENCES)[number] }) {
           onClick={() => setShowWhy((v) => !v)}
           className="inline-flex items-center gap-1.5 text-caption text-neutral-600 transition-colors hover:text-ink"
         >
-          <i className={cn("bx bx-chevron-right text-base transition-transform", showWhy && "rotate-90")} />
+          <Icon name="chevron-right" size={16} className={cn("transition-transform", showWhy && "rotate-90")} />
           por quê?
         </button>
         {decision === "pending" ? (
@@ -240,12 +240,12 @@ export function ConferenceReview({
         </span>
         <div className="flex shrink-0 items-center gap-2">
           <WireButton variant="secondary" onClick={onSend} className="gap-2">
-            <i className="bx bx-send text-lg" />
+            <Icon name="send" size={18} />
             Revisar e enviar
           </WireButton>
           {onContinue ? (
             <WireButton variant="primary" onClick={onContinue} className="gap-2">
-              <i className="bx bx-check-double text-lg" />
+              <Icon name="check-double" size={18} />
               Confirmar e encerrar
             </WireButton>
           ) : null}

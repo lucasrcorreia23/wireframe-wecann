@@ -1,10 +1,9 @@
 "use client";
 
-import { WireButton } from "@/components/ui";
+import { WireButton, Icon } from "@/components/ui";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { ScrollFade } from "@/components/ui/ScrollFade";
 import { SlideOverPanel } from "@/components/ui/SlideOverPanel";
-import { cn } from "@/lib/cn";
 
 export type CasuistryDetail = {
   kind: "cid" | "treatment";
@@ -40,7 +39,7 @@ export function CasuistryDetailPanel({
             Fechar
           </WireButton>
           <WireButton variant="primary" onClick={onClose} className="gap-2">
-            <i className="bx bx-bar-chart-alt-2 text-lg" />
+            <Icon name="bar-chart-alt-2" size={18} />
             Ver coorte
           </WireButton>
         </>
@@ -48,12 +47,7 @@ export function CasuistryDetailPanel({
     >
         <header className="flex items-start gap-3">
           <span className="glass-frost-inner grid h-10 w-10 shrink-0 place-items-center rounded-full text-ink">
-            <i
-              className={cn(
-                "bx text-xl",
-                detail?.kind === "treatment" ? "bx-capsule" : "bx-pulse",
-              )}
-            />
+            <Icon name={detail?.kind === "treatment" ? "capsule" : "pulse"} size={20} />
           </span>
           <div className="flex min-w-0 flex-col gap-1.5">
             <Eyebrow>
@@ -70,7 +64,7 @@ export function CasuistryDetailPanel({
             aria-label="Fechar"
             className="ml-auto grid h-9 w-9 shrink-0 place-items-center rounded-full text-neutral-500 transition-colors hover:bg-white/40 hover:text-ink"
           >
-            <i className="bx bx-x text-2xl" />
+            <Icon name="x" size={24} />
           </button>
         </header>
 
@@ -91,7 +85,7 @@ export function CasuistryDetailPanel({
               <ul className="flex flex-col gap-2.5">
                 {detail?.points.map((point) => (
                   <li key={point} className="flex items-start gap-2.5">
-                    <i className="bx bx-check mt-0.5 shrink-0 text-lg text-ink" />
+                    <Icon name="check" size={18} className="mt-0.5 text-ink" />
                     <span className="text-body text-pretty text-neutral-700">
                       {point}
                     </span>

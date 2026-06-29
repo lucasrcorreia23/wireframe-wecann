@@ -1,4 +1,5 @@
 import { cn } from "@/lib/cn";
+import { Icon } from "./Icon";
 
 // Eyebrow/label: mono, uppercase, tracking largo (§2.2). Usado acima de títulos
 // e como rótulo de seção/funcionalidade. `icon` exibe um boxicon sutil à esquerda
@@ -20,7 +21,7 @@ export function Eyebrow({
         className,
       )}
     >
-      {icon ? <i className={cn("bx text-base text-neutral-400", icon)} /> : null}
+      {icon ? <Icon name={icon} size={15} className="text-neutral-400" /> : null}
       {children}
     </span>
   );

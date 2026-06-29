@@ -1,89 +1,92 @@
 "use client";
 
 import { useFlow } from "@/flow/store";
-import { NavMenu } from "./NavMenu";
-import { SearchBar } from "./SearchBar";
+import type { NodeId } from "@/flow/types";
+import { Avatar, Icon } from "@/components/ui";
 import { cn } from "@/lib/cn";
 
-// Barra superior (header auto-hide): [menu] [busca] à esquerda; avatar à direita.
-// - Por padrão (topo): visível e SEM fundo.
-// - Rolando para baixo: sobe e some (translateY), liberando todo o conteúdo.
-// - Rolando para cima: reaparece com fundo SÓ de blur (sem cor sólida).
-// NavMenu/SearchBar ficam FORA do header (overlays fixos) — o translate do header
-// criaria um containing block e os arrastaria junto. O "voltar" vive nas telas.
-export function TopBar({
-  headerHidden = false,
-  headerBlur = false,
-}: {
-  headerHidden?: boolean;
-  headerBlur?: boolean;
-}) {
-  const toggleMenu = useFlow((s) => s.toggleMenu);
+// Header GLOBAL e persistente (padrão Figma 4952:10612) — substitui a antiga barra
+// auto-hide de menu/busca. Layout: logotipo à esquerda · navegação central em
+// pílulas (barra branca única) · à direita busca (abre o overlay SearchBar), bloco
+// nome/CRM e avatar. Navegação é o flow store (jump direto). Sem `justify-between`:
+// laterais em `flex-1` mantêm as pílulas centradas.
+const NAV: { label: string; node: NodeId }[] = [
+  { label: "Home", node: "home" },
+  { label: "Agenda", node: "agenda" },
+  { label: "Pacientes", node: "patients" },
+  { label: "Pré-Consulta", node: "pre-visit" },
+  { label: "Pós-Consulta", node: "pos-visit" },
+  { label: "Casuística", node: "casuistry" },
+  { label: "Documentos", node: "documents" },
+  { label: "Mensagens", node: "messages" },
+];
+
+export function TopBar() {
+  const currentNode = useFlow((s) => s.currentNode);
+  const goTo = useFlow((s) => s.goTo);
   const toggleSearch = useFlow((s) => s.toggleSearch);
 
   return (
-    <>
-      <header
-        className={cn(
-          // pointer-events-none: a faixa transparente não bloqueia cliques no
-          // conteúdo atrás; só os botões reativam os eventos.
-          "pointer-events-none absolute inset-x-0 top-0 z-20 h-16",
-          // Slide alinhado ao token de painel da plataforma (~420ms, power2.out).
-          "transition-transform duration-[420ms] ease-out motion-reduce:transition-none",
-          headerHidden ? "-translate-y-full" : "translate-y-0",
-        )}
-      >
-        {/* Fundo SÓ de blur (sem cor), aparece no scroll reverso; ausente no topo.
-            Fade por opacidade (suave) + hairline para definição. */}
-        <div
-          className={cn(
-            "pointer-events-none absolute inset-0 border-b border-white/30 backdrop-blur-2xl",
-            "transition-opacity duration-300 motion-reduce:transition-none",
-            headerBlur ? "opacity-100" : "opacity-0",
-          )}
-        />
+    <header className="relative z-40 flex shrink-0 items-center gap-4 px-6 py-4">
+      {/* Esquerda — logotipo (wordmark). */}
+      <div className="flex flex-1 items-center">
+        <button
+          type="button"
+          onClick={() => goTo("home")}
+          aria-label="WeCann — início"
+          className="font-display text-body-l font-medium text-neutral-500 transition-colors hover:text-ink"
+        >
+          wecann<span className="text-neutral-400">.care</span>
+        </button>
+      </div>
 
-        {/* Esquerda — só o menu (ghost). O perfil agora vive dentro do menu. */}
-        <div className="pointer-events-auto absolute left-3 top-4 flex items-center gap-1">
-          <IconButton label="Menu" onClick={() => toggleMenu()}>
-            <i className="bx bx-menu text-xl" />
-          </IconButton>
+      {/* Centro — navegação em pílulas (barra branca única). */}
+      <nav className="flex shrink-0 items-center gap-6 rounded-[38px] bg-paper px-6 py-4 shadow-[0_4px_13.5px_rgba(0,0,0,0.05)]">
+        {NAV.map((it) => {
+          const active = it.node === currentNode;
+          return (
+            <button
+              key={it.label}
+              type="button"
+              onClick={() => goTo(it.node)}
+              aria-current={active ? "page" : undefined}
+              className={cn(
+                "whitespace-nowrap font-display text-caption font-medium transition-colors",
+                active ? "text-ink" : "text-ink/50 hover:text-ink/80",
+              )}
+            >
+              {it.label}
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* Direita — busca + nome/CRM + avatar. */}
+      <div className="flex flex-1 items-center justify-end gap-4">
+        <button
+          type="button"
+          onClick={() => toggleSearch()}
+          aria-label="Buscar paciente"
+          className="grid h-10 w-10 place-items-center rounded-full text-ink/70 transition-colors hover:bg-white/60 hover:text-ink"
+        >
+          <Icon name="search" size={20} />
+        </button>
+
+        <div className="flex items-center gap-3">
+          <div className="flex flex-col items-end leading-tight">
+            <span className="text-caption font-medium text-ink">
+              Ricardo Rodrigues
+            </span>
+            <span className="text-micro text-neutral-600">CRM/SP 000001</span>
+          </div>
+          <Avatar
+            name="Ricardo Rodrigues"
+            seed="ricardo-rodrigues"
+            size="md"
+            className="h-12 w-12 border-2 border-neutral-300"
+          />
         </div>
-
-        {/* Direita — busca (onde antes ficava o avatar do perfil) */}
-        <div className="pointer-events-auto absolute right-3 top-4">
-          <IconButton label="Buscar paciente" onClick={() => toggleSearch()}>
-            <i className="bx bx-search text-xl" />
-          </IconButton>
-        </div>
-      </header>
-
-      <NavMenu />
-      <SearchBar />
-    </>
-  );
-}
-
-function IconButton({
-  children,
-  label,
-  onClick,
-}: {
-  children: React.ReactNode;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      aria-label={label}
-      className={cn(
-        // Ghost: sem fundo/borda por padrão; hover sutil.
-        "grid h-9 w-9 place-items-center rounded-full text-ink/70",
-        "transition-colors hover:bg-white/45 hover:text-ink",
-      )}
-    >
-      {children}
-    </button>
+      </div>
+    </header>
   );
 }

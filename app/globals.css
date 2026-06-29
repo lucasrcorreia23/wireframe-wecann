@@ -23,12 +23,18 @@
   --color-state-mid: #6b6b66; /* atenção    */
   --color-state-hard: #2a2a28; /* crítico    */
 
+  /* ÚNICO acento de cor do produto — reservado a sinais clinicamente CRÍTICOS
+     (efeito adverso ativo, receita expirada, alerta crítico). Uso restrito a
+     ponto/borda/label/chip; nunca preenchimentos amplos. Vermelho-tijolo sóbrio. */
+  --color-critical: #a3362f;
+  --color-critical-weak: #f3e6e4;
+
   /* ───────────────────────── Tipografia ───────────────────────── */
   /* Display = Late Serif (Typekit); corpo/prosa = Inter (Google Fonts);
-     dados/badges/labels = Config Mono (Typekit). Sistema de 3 fontes do Figma. */
+     dados/badges/labels = Inter (era Config Mono). */
   --font-display: "late-serif-variable", Georgia, serif; /* serifada editorial (display) */
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif; /* corpo/UI = Inter */
-  --font-mono: "config-mono-vf", ui-monospace, monospace; /* dados/métricas/badges */
+  --font-mono: "Inter", ui-sans-serif, system-ui, sans-serif; /* dados/métricas/badges = Inter */
 
   /* Escala modular ~1.25 (rem). */
   --text-display-xl: 3.815rem;
@@ -205,12 +211,19 @@
     border: 1px solid rgba(255, 255, 255, 0.62);
   }
 
-  /* Card SÓLIDO (#f9f9f9) do Paciente 360 — opaco, borda branca sutil + sombra
-     suave. Diferente do glass-panel-blue: aqui o card não é translúcido. */
+  /* Card SÓLIDO BRANCO do Paciente 360 — opaco, hairline neutro + sombra suave.
+     Flutua sobre o canvas cinza (#f2f2f1) com contraste claro. */
   .card-solid {
-    background: #f9f9f9;
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    background: #ffffff;
+    border: 1px solid rgba(17, 17, 20, 0.05);
     box-shadow: var(--shadow-card);
+  }
+
+  /* Camada interna sobre o card sólido BRANCO — cinza reentrante. Substitui o
+     glass-frost-inner (branco translúcido), que sumiria sobre o branco. */
+  .frost-inset {
+    background: var(--color-neutral-100);
+    border: 1px solid var(--color-neutral-200);
   }
 
   /* Esconde scrollbar mantendo o scroll. */
@@ -225,6 +238,7 @@
   .station-sharp {
     -webkit-font-smoothing: antialiased;
   }
+
 }
 
 @media (prefers-reduced-motion: reduce) {

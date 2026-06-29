@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { WireButton, WireBadge, Stat, Eyebrow } from "@/components/ui";
+import { WireButton, WireBadge, Stat, Eyebrow, Icon } from "@/components/ui";
 import { ModuleCard } from "@/components/ui/ModuleCard";
 import { BackButton } from "@/components/ui/BackButton";
 import { JourneyShell } from "@/components/layout/JourneyShell";
@@ -95,7 +95,7 @@ export function ReportScreen() {
       >
         <header className="flex items-start gap-3">
           <span className="glass-frost-inner grid h-10 w-10 shrink-0 place-items-center rounded-full text-ink">
-            <i className="bx bx-send text-xl" />
+            <Icon name="send" size={20} />
           </span>
           <div className="flex min-w-0 flex-col gap-1.5">
             <Eyebrow>Pós-consulta · encerramento</Eyebrow>
@@ -109,7 +109,7 @@ export function ReportScreen() {
             aria-label="Fechar"
             className="ml-auto grid h-9 w-9 shrink-0 place-items-center rounded-full text-neutral-500 transition-colors hover:bg-white/40 hover:text-ink"
           >
-            <i className="bx bx-x text-2xl" />
+            <Icon name="x" size={24} />
           </button>
         </header>
 
@@ -123,7 +123,7 @@ export function ReportScreen() {
           {DOCS.map(([doc, meta]) => (
             <li key={doc} className="flex items-center justify-between gap-3 py-2">
               <span className="flex items-center gap-2 text-caption text-ink">
-                <i className="bx bx-check text-base text-neutral-500" />
+                <Icon name="check" size={16} className="text-neutral-500" />
                 {doc}
               </span>
               <span className="font-mono text-micro text-neutral-500">{meta}</span>
@@ -136,7 +136,7 @@ export function ReportScreen() {
             Cancelar
           </WireButton>
           <WireButton variant="primary" onClick={confirmSend} className="gap-2">
-            <i className="bx bx-send text-lg" />
+            <Icon name="send" size={18} />
             Enviar e ir para home
           </WireButton>
         </footer>

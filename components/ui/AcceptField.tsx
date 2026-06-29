@@ -1,6 +1,7 @@
 "use client";
 
 import { Eyebrow } from "./Eyebrow";
+import { Icon } from "./Icon";
 import { AthenaTag } from "./AthenaTag";
 import { cn } from "@/lib/cn";
 
@@ -125,7 +126,7 @@ function TrioButton({
           : "border-neutral-300 text-neutral-600 hover:border-neutral-500",
       )}
     >
-      <i className={cn("bx", icon, icon === "bx-pencil" ? "text-base" : "text-lg")} />
+      <Icon name={icon} size={icon === "bx-pencil" ? 16 : 18} />
     </button>
   );
 }

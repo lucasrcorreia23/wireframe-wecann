@@ -1,691 +1,504 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
-import { WireBadge, WireButton } from "@/components/ui";
-import { ModuleCard } from "@/components/ui/ModuleCard";
-import { BackButton } from "@/components/ui/BackButton";
+import { useState } from "react";
+import { Avatar, Chip, Eyebrow, Icon, WireButton, Segmented } from "@/components/ui";
+import { useFlow } from "@/flow/store";
 import { cn } from "@/lib/cn";
-import { gsap, useGSAP } from "@/lib/gsap";
-import { DURATION, EASE, prefersReducedMotion } from "@/lib/motion";
-import type { ScreenProps } from "./index";
 
-// Fade de overlays da chamada — oculto, surge no hover do grupo (vídeo ou palco).
-const CALL_FADE =
-  "opacity-0 transition-opacity duration-300 group-hover:opacity-100";
+// `consult` — Consulta ao Vivo. Tela de 2 zonas: COLUNA PRINCIPAL (seções
+// empilhadas) + ASIDE ATHENA (360px, colapsável p/ 56px). Autocontida (o shell não
+// renderiza a Athena overlay aqui). Conteúdo conforme contrato CONSULTA_AO_VIVO §6.
+// Monocromático + 1 acento crítico; ícones SVG (lucide); larguras flex.
 
-// `consult` — Tela de consulta do paciente (módulo "Consulta e Análise").
-// Pós-reestruturação 2D, a tela é dividida nas ZONAS do WorkspaceShell:
-//  • ConsultLeft  (ESQUERDA, resumo): contexto do paciente + anamnese da sessão.
-//  • ConsultCenter (CENTRO, foco): a chamada DOMINA + notas do médico.
-//  • A IA (Athena) vive na coluna DIREITA persistente do shell (AthenaPanel).
-// Encerrar a chamada (`onContinue`) faz o CENTRO evoluir para a tela de Análise.
-// Tudo em vidro/neutros; gravidade por peso (WireBadge), nunca por matiz.
+/* ============================ DADOS (mock) ============================ */
 
-// ESQUERDA — contexto do paciente + anamnese da sessão (resumo alimentado pela IA).
-export function ConsultLeft() {
+type Mode = "primeira" | "seguimento" | "evento";
+type Layout = "classic" | "soap";
+
+const CLASSIC_TABS = ["Segmento", "Comorbidades", "Resultados", "Escalas", "Conduta"];
+const SOAP_TABS = ["S · Subjetivo", "O · Objetivo", "A · Avaliação", "P · Plano"];
+
+const QPHDA_BULLETS: { text: string; source: "ia" | "human"; status: "suggested" | "accepted" }[] = [
+  { text: "Dor lombar crônica refratária há 14 meses, irradiação para MID.", source: "human", status: "accepted" },
+  { text: "Melhora da dor desde a última consulta (EVA 6 → 5).", source: "ia", status: "accepted" },
+  { text: "Sonolência diurna leve após aumento do CBD — investigar.", source: "ia", status: "suggested" },
+];
+
+const CIAP = [
+  { code: "L03", desc: "Sinais/sintomas lombares", confidence: 88, validated: true },
+  { code: "P06", desc: "Distúrbio do sono", confidence: 74, validated: false },
+];
+
+const PROBLEMS = [
+  { title: "Dor lombar crônica", ciap: "L84", cid: "M54.5", status: "ativo", age: "há 14m" },
+  { title: "Insônia", ciap: "P06", cid: "G47.0", status: "ativo", age: "há 1a" },
+  { title: "Tabagismo", ciap: "P17", cid: "—", status: "resolvido", age: "há 3a" },
+];
+
+const ALERTS = [{ level: "Crítico", n: 1 }, { level: "Alto", n: 2 }, { level: "Médio", n: 3 }];
+
+const ATH_CATEGORIES = [
+  { icon: "bulb", label: "Sugestão", text: "Considerar reduzir dose noturna de CBD pela sonolência." },
+  { icon: "line-chart", label: "Escala", text: "PSQI vencida — reaplicar neste timepoint." },
+  { icon: "shield", label: "Checagem", text: "Interação CBD × depressores do SNC — monitorar sedação." },
+  { icon: "error", label: "Evento", text: "Sonolência diurna (CTCAE Grau 1) relatada." },
+  { icon: "git-compare", label: "Interação", text: "Tramadol + amitriptilina — risco serotoninérgico baixo." },
+  { icon: "book-open", label: "Literatura", text: "CBD em dor lombar crônica · Pain Med 2024 · RS." },
+];
+
+const EXAM_GROUPS = [
+  { group: "Laboratoriais", tag: "1 pendente", items: ["Hemograma", "Perfil hepático", "Função renal"] },
+  { group: "Imagem", tag: "normais", items: ["RM lombar", "Raio-X lombar"] },
+  { group: "Funcionais", tag: "—", items: ["ENMG MMII"] },
+];
+
+const PREV_VISITS = [
+  { date: "19/06/2026", kind: "Retorno · M3", badge: "SOAP assinado", scale: "EVA 5" },
+  { date: "04/03/2026", kind: "Retorno · M1", badge: "SOAP assinado", scale: "EVA 6" },
+  { date: "28/08/2025", kind: "Consulta baseline", badge: "Sem SOAP", scale: "EVA 8" },
+];
+
+const DOC_TYPES = ["Prescrição", "Atestado", "Exames", "Laudo", "Encaminhamento"];
+
+/* ============================ SEÇÃO ============================ */
+
+function Section({ icon, title, aside, children }: { icon: string; title: string; aside?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="no-scrollbar flex h-full min-h-0 min-w-0 flex-col gap-4 overflow-y-auto pt-[88px] pb-6">
-      <PatientHeader />
-      <Anamnese />
-    </div>
+    <section className="flex flex-col gap-3 rounded-[20px] bg-[#f9f9f9] p-5">
+      <div className="flex items-center gap-2">
+        <Icon name={icon} size={18} className="text-neutral-500" />
+        <h3 className="font-display text-body-l font-medium text-ink">{title}</h3>
+        {aside ? <div className="flex flex-1 items-center justify-end gap-2">{aside}</div> : null}
+      </div>
+      {children}
+    </section>
   );
 }
 
-// CENTRO — chamada em foco + notas do médico.
-export function ConsultCenter({ onContinue }: ScreenProps) {
-  return (
-    <div className="flex h-full min-h-0 min-w-0 flex-col gap-4 pt-[88px] pb-6">
-      <CallScreen onEnd={onContinue} />
-      <NotesBox />
-    </div>
-  );
-}
+/* ============================ HEADER ============================ */
 
-/* ============================ COLUNA ESQUERDA ============================ */
-
-// Header horizontal: apenas contexto do paciente (sem médico/qualidade). Maior
-// presença — avatar e nome ampliados.
 function PatientHeader() {
   return (
-    <ModuleCard className="gap-3.5 px-5 pb-5 pt-4">
-      <div className="flex items-start gap-3.5">
-        <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full border border-white/50 bg-paper/60 font-display text-title font-medium text-ink">
-          MC
-        </span>
-        <div className="flex min-w-0 flex-col gap-0.5 pt-0.5">
-          <span className="truncate font-display text-title font-medium leading-tight text-ink">
-            Marina Castro
-          </span>
-          <span className="font-mono text-micro text-neutral-500">
-            48a · F · 64kg
-          </span>
+    <header className="flex items-center gap-4 rounded-[20px] bg-paper px-5 py-3.5 shadow-[var(--shadow-card)]">
+      <Avatar name="Marina Castro" seed="marina" size="md" className="h-12 w-12" />
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-display text-[20px] font-medium text-ink">Marina Castro</span>
+          <span className="text-caption text-neutral-500">38a · F · 64kg · São Paulo/SP · Unimed</span>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Chip>M54.5 · Dor lombar</Chip>
+          <Chip tone="inset">Seguimento Cannabis · 3º mês</Chip>
+          <span className="font-mono text-micro text-neutral-400">★★☆ registro</span>
         </div>
       </div>
-      <div className="flex flex-wrap gap-1.5">
-        <WireBadge>Fibromialgia</WireBadge>
-        <WireBadge tone="mid">Dor crônica</WireBadge>
-        <WireBadge tone="hard">Alergia · Dipirona</WireBadge>
+      <div className="flex shrink-0 items-center gap-3">
+        <div className="flex flex-col items-end leading-tight">
+          <span className="text-caption font-medium text-ink">Dra. Helena Prado</span>
+          <span className="text-micro text-neutral-500">Neuro · CRM-SP 123456 · Pesquisadora</span>
+        </div>
+        <Avatar name="Helena Prado" seed="helena" size="md" className="h-10 w-10" />
       </div>
-    </ModuleCard>
+    </header>
   );
 }
 
-const ANAMNESE_VIEWS = [
-  { key: "anamnese", label: "Anamnese", icon: "bx-notepad" },
-  { key: "ef", label: "Exame físico", icon: "bx-pulse" },
-] as const;
+/* ============================ PRÉ-CONSULTA ============================ */
 
-// Anamnese da sessão. Título único + toggle full-width; só as rows rolam (fade).
-function Anamnese() {
-  const [view, setView] = useState<(typeof ANAMNESE_VIEWS)[number]["key"]>(
-    "anamnese",
+function PrevisitSection() {
+  const [tab, setTab] = useState<"resumo" | "escalas" | "acomp">("resumo");
+  return (
+    <Section
+      icon="sparkles"
+      title="Pré-Consulta · síntese Athena"
+      aside={
+        <Segmented
+          value={tab}
+          onChange={setTab}
+          options={[
+            { key: "resumo", label: "Resumo" },
+            { key: "escalas", label: "Escalas" },
+            { key: "acomp", label: "Acompanhamento" },
+          ]}
+        />
+      }
+    >
+      {tab === "resumo" ? (
+        <p className="text-caption leading-relaxed text-neutral-700 text-pretty">
+          Paciente relata melhora parcial da dor e do sono desde o início do CBD, com sonolência diurna
+          leve. Mantém uso de tramadol em desmame. Sem novos eventos adversos graves.
+        </p>
+      ) : tab === "escalas" ? (
+        <div className="flex flex-wrap gap-2">
+          {["EVA 5/10", "PSQI 9/21", "HAD-A 7/21", "BPI 4/10"].map((s) => (
+            <Chip key={s} tone="muted">{s}</Chip>
+          ))}
+        </div>
+      ) : (
+        <span className="font-mono text-caption text-neutral-500">★★☆ Seguimento de 3 meses · perto do limite</span>
+      )}
+    </Section>
   );
+}
+
+/* ============================ ANAMNESE ============================ */
+
+function BulletRow({ b }: { b: (typeof QPHDA_BULLETS)[number] }) {
+  return (
+    <li className="flex items-start gap-2 py-1.5">
+      <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-neutral-400" />
+      <span className="min-w-0 flex-1 text-caption text-neutral-700 text-pretty">{b.text}</span>
+      {b.source === "ia" ? (
+        <span className="inline-flex shrink-0 items-center gap-1 font-mono text-micro text-neutral-400">
+          <Icon name="bot" size={13} /> Athena
+        </span>
+      ) : null}
+      {b.status === "suggested" ? (
+        <div className="flex shrink-0 items-center gap-1">
+          <button aria-label="Aceitar" className="grid h-6 w-6 place-items-center rounded-full text-neutral-500 hover:bg-neutral-100 hover:text-ink"><Icon name="check" size={14} /></button>
+          <button aria-label="Rejeitar" className="grid h-6 w-6 place-items-center rounded-full text-neutral-500 hover:bg-neutral-100 hover:text-ink"><Icon name="x" size={14} /></button>
+        </div>
+      ) : null}
+    </li>
+  );
+}
+
+function CiapChips() {
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-2">
+        <Eyebrow>Codificação CIAP-2</Eyebrow>
+        <div className="flex flex-1 items-center justify-end">
+          <button className="text-micro text-neutral-500 hover:text-ink">Validar códigos</button>
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {CIAP.map((c) => (
+          <span key={c.code} className={cn("inline-flex items-center gap-1.5 rounded-full border-[0.8px] px-[9px] py-[5px] text-caption", c.validated ? "border-neutral-300 bg-neutral-100 text-neutral-700" : "border-neutral-200 bg-paper text-neutral-500")}>
+            {c.validated ? <Icon name="check" size={13} /> : <Icon name="bot" size={13} />}
+            <strong className="font-medium text-ink">{c.code}</strong> {c.desc}
+            {!c.validated ? <span className="font-mono text-micro text-neutral-400">IA · {c.confidence}%</span> : null}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ProblemList() {
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-2">
+        <Eyebrow>Lista de problemas</Eyebrow>
+        <div className="flex flex-1 items-center justify-end">
+          <button className="inline-flex items-center gap-1 text-micro text-neutral-500 hover:text-ink"><Icon name="plus" size={13} /> Problema</button>
+        </div>
+      </div>
+      {PROBLEMS.map((p) => (
+        <div key={p.title} className="flex items-center gap-2 rounded-[12px] bg-paper px-3 py-2">
+          <span className="min-w-0 flex-1 truncate text-caption font-medium text-ink">{p.title}</span>
+          <Chip tone="muted">CIAP {p.ciap}</Chip>
+          {p.cid !== "—" ? <Chip tone="muted">CID {p.cid}</Chip> : null}
+          <Chip tone={p.status === "resolvido" ? "dim" : "inset"}>{p.status}</Chip>
+          <span className="shrink-0 font-mono text-micro text-neutral-400">{p.age}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function EventPanel() {
+  return (
+    <div className="flex flex-col gap-3 rounded-[16px] border border-neutral-300 bg-paper p-4">
+      <div className="flex items-center gap-2">
+        <Icon name="error" size={18} className="text-critical" />
+        <span className="text-caption font-medium text-ink">Que evento está sendo registrado?</span>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {["Evento adverso", "Intercorrência", "Internação", "Outro"].map((s, i) => (
+          <Chip key={s} tone={i === 0 ? "inset" : "muted"}>{s}</Chip>
+        ))}
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        {[["Gravidade (CTCAE v5)", "Grau 1"], ["Medicação suspeita", "CBD 200mg/mL"], ["Naranjo", "score 4 · possível"], ["WHO-UMC", "possível"]].map(([l, v]) => (
+          <div key={l} className="flex flex-col gap-1">
+            <Eyebrow>{l}</Eyebrow>
+            <span className="text-caption text-neutral-700">{v}</span>
+          </div>
+        ))}
+      </div>
+      <div className="flex items-center gap-2 border-t border-neutral-200/70 pt-3">
+        <span className="text-micro text-neutral-500">Conduta: reduzir dose · notificar ANVISA/VigiMed (CTCAE ≥ 2)</span>
+        <div className="flex flex-1 items-center justify-end gap-2">
+          <WireButton variant="secondary">Voltar ao Seguimento</WireButton>
+          <WireButton variant="primary">Salvar e notificar</WireButton>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AnamneseSection() {
+  const [mode, setMode] = useState<Mode>("seguimento");
+  const [layout, setLayout] = useState<Layout>("classic");
+  const tabs = layout === "soap" ? SOAP_TABS : CLASSIC_TABS;
+  const [tab, setTab] = useState(0);
 
   return (
-    <ModuleCard title="Anamnese da sessão">
-      {/* Toggle segmentado full-width. */}
-      <div className="grid grid-cols-2 gap-1 rounded-full bg-white/40 p-1">
-        {ANAMNESE_VIEWS.map((v) => (
-          <button
-            key={v.key}
-            onClick={() => setView(v.key)}
-            aria-pressed={view === v.key}
-            className={cn(
-              "inline-flex items-center justify-center gap-1.5 rounded-full px-2.5 py-1.5 font-mono text-micro uppercase tracking-[0.08em] transition-colors duration-[180ms]",
-              view === v.key
-                ? "bg-paper text-ink shadow-sm"
-                : "text-neutral-500 hover:text-neutral-700",
-            )}
-          >
-            <i className={cn("bx text-sm", v.icon)} />
-            {v.label}
+    <Section
+      icon="notepad"
+      title="Anamnese e exame físico"
+      aside={
+        <>
+          <Segmented
+            value={mode}
+            onChange={(m) => setMode(m as Mode)}
+            options={[
+              { key: "primeira", label: "1ª consulta" },
+              { key: "seguimento", label: "Seguimento" },
+              { key: "evento", label: "Evento" },
+            ]}
+          />
+          <button className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-paper px-3 py-1.5 text-caption text-ink">
+            Template: Neurologia <Icon name="chevron-down" size={14} className="text-neutral-400" />
           </button>
+        </>
+      }
+    >
+      {mode === "evento" ? (
+        <EventPanel />
+      ) : (
+        <div className="flex flex-col gap-4">
+          {/* alternador de layout + abas */}
+          <div className="flex items-center gap-3 border-b border-neutral-200/60 pb-3">
+            <div className="no-scrollbar flex items-center gap-1 overflow-x-auto">
+              {tabs.map((t, i) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setTab(i)}
+                  className={cn("shrink-0 rounded-full px-3 py-1.5 text-caption transition-colors", i === tab ? "bg-paper text-ink shadow-[var(--shadow-tab)]" : "text-neutral-500 hover:text-ink")}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-1 items-center justify-end">
+              <Segmented
+                value={layout}
+                onChange={(l) => { setLayout(l as Layout); setTab(0); }}
+                options={[{ key: "classic", label: "Abas" }, { key: "soap", label: "SOAP" }]}
+              />
+            </div>
+          </div>
+
+          {/* conteúdo da aba */}
+          <div className="flex flex-col gap-4">
+            {(layout === "classic" && tab === 0) || (layout === "soap" && tab === 0) ? (
+              <div className="flex flex-col gap-2">
+                <Eyebrow>Queixa principal e HDA</Eyebrow>
+                <ul className="flex flex-col">{QPHDA_BULLETS.map((b, i) => <BulletRow key={i} b={b} />)}</ul>
+              </div>
+            ) : null}
+            {layout === "soap" && (tab === 0 || tab === 2 || tab === 3) ? <CiapChips /> : null}
+            {layout === "soap" && tab === 2 ? <ProblemList /> : null}
+            {layout === "classic" && tab === 1 ? <ProblemList /> : null}
+            {(tab === 3 && layout === "classic") || (tab === 3 && layout === "soap") ? (
+              <p className="text-caption text-neutral-600">Plano: manter CBD com ajuste noturno; reaplicar PSQI; retorno em 4 semanas.</p>
+            ) : null}
+          </div>
+
+          {/* anotações privadas → alimenta Athena */}
+          <div className="flex flex-col gap-1.5 rounded-[12px] bg-neutral-100 p-3">
+            <div className="flex items-center gap-2">
+              <Eyebrow>Suas anotações</Eyebrow>
+              <span className="inline-flex flex-1 items-center justify-end gap-1 font-mono text-micro text-neutral-400">
+                <Icon name="bot" size={13} /> Athena lê em tempo real
+              </span>
+            </div>
+            <input placeholder="Anote algo (Enter envia à Athena)…" className="bg-transparent text-caption text-ink placeholder:text-neutral-400 focus:outline-none" />
+          </div>
+        </div>
+      )}
+    </Section>
+  );
+}
+
+/* ============================ EXAMES / DOCS / RECENT ============================ */
+
+function ExamesSection() {
+  return (
+    <Section icon="test-tube" title="Exames complementares" aside={<button className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-paper px-3 py-1.5 text-caption text-ink"><Icon name="plus" size={14} /> Solicitar</button>}>
+      <div className="flex flex-wrap gap-3">
+        {EXAM_GROUPS.map((g) => (
+          <div key={g.group} className="flex min-w-[200px] flex-1 flex-col gap-2 rounded-[16px] bg-paper p-3">
+            <div className="flex items-center gap-2">
+              <span className="min-w-0 flex-1 truncate text-caption font-medium text-ink">{g.group}</span>
+              <Chip tone="muted">{g.tag}</Chip>
+            </div>
+            {g.items.map((it) => (
+              <span key={it} className="truncate text-micro text-neutral-500">{it}</span>
+            ))}
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+function GerardocsSection() {
+  const goTo = useFlow((s) => s.goTo);
+  return (
+    <Section icon="file" title="Gerar documentos" aside={<WireButton variant="primary" onClick={() => goTo("documents")} className="gap-2"><Icon name="file-signature" size={15} /> Abrir Studio</WireButton>}>
+      <div className="flex flex-wrap gap-2">
+        {DOC_TYPES.map((d, i) => (
+          <Chip key={d} tone={i === 0 ? "inset" : "muted"}>{d}</Chip>
+        ))}
+      </div>
+      <p className="text-micro text-neutral-500">Mesmo Documents Studio da tela Documentos (paridade consulta ↔ standalone).</p>
+    </Section>
+  );
+}
+
+function RecentSection() {
+  return (
+    <Section icon="time" title="Atendimentos prévios e documentos">
+      <div className="flex flex-wrap gap-3">
+        <div className="flex min-w-[280px] flex-1 flex-col gap-2 rounded-[16px] bg-paper p-3">
+          <Eyebrow>Atendimentos prévios</Eyebrow>
+          {PREV_VISITS.map((v) => (
+            <div key={v.date} className="flex items-center gap-2 border-b border-dashed border-neutral-200/70 py-2 last:border-0">
+              <span className="font-mono text-micro text-neutral-500">{v.date}</span>
+              <span className="min-w-0 flex-1 truncate text-caption text-ink">{v.kind}</span>
+              <Chip tone="muted">{v.badge}</Chip>
+              <span className="shrink-0 font-mono text-micro text-neutral-400">{v.scale}</span>
+            </div>
+          ))}
+        </div>
+        <div className="flex min-w-[280px] flex-1 flex-col gap-2 rounded-[16px] bg-paper p-3">
+          <Eyebrow>Documentos gerados</Eyebrow>
+          {["Receita · CBD (enviado)", "Atestado · 2 dias (enviado)", "Laudo · evolução (rascunho)"].map((d) => (
+            <div key={d} className="flex items-center gap-2 border-b border-dashed border-neutral-200/70 py-2 last:border-0">
+              <Icon name="file" size={16} className="text-neutral-500" />
+              <span className="min-w-0 flex-1 truncate text-caption text-neutral-700">{d}</span>
+              <button aria-label="Visualizar" className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-neutral-400 hover:bg-neutral-100 hover:text-ink"><Icon name="show" size={15} /></button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </Section>
+  );
+}
+
+/* ============================ ASIDE ATHENA ============================ */
+
+function AthenaAside({ open, onToggle }: { open: boolean; onToggle: () => void }) {
+  if (!open) {
+    return (
+      <aside className="flex w-[56px] shrink-0 flex-col items-center gap-4 border-l border-neutral-200 bg-paper py-4">
+        <button onClick={onToggle} aria-label="Expandir Athena" className="grid h-9 w-9 place-items-center rounded-full bg-ink text-paper">
+          <Icon name="bot" size={18} />
+        </button>
+        {["microphone", "video", "error", "bulb"].map((ic) => (
+          <span key={ic} className="grid h-9 w-9 place-items-center rounded-full text-neutral-400"><Icon name={ic} size={18} /></span>
+        ))}
+      </aside>
+    );
+  }
+  return (
+    <aside className="no-scrollbar flex w-[360px] shrink-0 flex-col gap-4 overflow-y-auto border-l border-neutral-200 bg-paper px-4 py-4">
+      <div className="flex items-center gap-2">
+        <span className="grid h-9 w-9 place-items-center rounded-full bg-ink text-paper"><Icon name="bot" size={18} /></span>
+        <div className="flex min-w-0 flex-1 flex-col">
+          <span className="text-caption font-medium text-ink">Athena · copilota-clínica</span>
+          <span className="text-micro text-neutral-500">6 sugestões · 3 alertas</span>
+        </div>
+        <button onClick={onToggle} aria-label="Recolher" className="grid h-8 w-8 place-items-center rounded-full text-neutral-400 hover:bg-neutral-100 hover:text-ink"><Icon name="chevron-right" size={18} /></button>
+      </div>
+
+      {/* Transcrição */}
+      <button className="flex items-center gap-2 rounded-[14px] border border-neutral-200 bg-paper px-3 py-2.5 text-left hover:bg-neutral-100">
+        <Icon name="microphone" size={18} className="text-neutral-600" />
+        <span className="min-w-0 flex-1 text-caption font-medium text-ink">Transcrição ao vivo</span>
+        <Chip tone="muted">Presencial</Chip>
+      </button>
+
+      {/* Telemed */}
+      <div className="flex flex-col gap-2 rounded-[14px] bg-[#f9f9f9] p-3">
+        <div className="flex items-center gap-2">
+          <Icon name="video" size={16} className="text-neutral-600" />
+          <span className="min-w-0 flex-1 text-caption font-medium text-ink">Telemedicina</span>
+          <Chip tone="dim">presencial</Chip>
+        </div>
+        <WireButton variant="secondary" size="sm" className="w-full gap-2"><Icon name="link" size={14} /> Gerar link de chamada</WireButton>
+      </div>
+
+      {/* Alertas */}
+      <div className="flex items-center gap-2">
+        {ALERTS.map((a) => (
+          <div key={a.level} className={cn("flex flex-1 flex-col items-center gap-0.5 rounded-[12px] p-2", a.level === "Crítico" ? "bg-critical-weak" : "bg-neutral-100")}>
+            <span className={cn("font-sans text-[20px] font-medium leading-none", a.level === "Crítico" ? "text-critical" : "text-ink")}>{a.n}</span>
+            <span className="text-micro text-neutral-500">{a.level}</span>
+          </div>
         ))}
       </div>
 
-      {/* A coluna inteira rola (nada fixo); o conteúdo da anamnese empilha aqui. */}
-      {view === "anamnese" ? <AnamneseContent /> : <ExameFisicoContent />}
-    </ModuleCard>
-  );
-}
-
-// Linha empilhada: rótulo (mono micro) EM CIMA, valor (caption) embaixo.
-function Row({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-col gap-1 border-b border-dashed border-white/50 py-3 first:pt-0 last:border-0">
-      <span className="font-mono text-micro uppercase tracking-[0.1em] text-neutral-500">
-        {label}
-      </span>
-      <div className="text-caption leading-relaxed text-neutral-700">
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function AnamneseContent() {
-  return (
-    <div className="flex flex-col">
-      <Row label="Identificação">
-        <div className="flex flex-wrap gap-1.5">
-          <WireBadge>48a · F</WireBadge>
-          <WireBadge>Aposentada</WireBadge>
-          <WireBadge>Florianópolis/SC</WireBadge>
-        </div>
-      </Row>
-      <Row label="Queixa · HMA">
-        Dor lombar refratária há 14 meses, pior à noite e ao frio; prejudica o
-        sono e a rotina. Busca reduzir opioide.
-      </Row>
-      <Row label="Sono">10h na cama · sono fragmentado · 3-4 despertares/noite</Row>
-      <Row label="Medicações">
-        <ul className="font-mono text-caption text-neutral-700">
-          <li>Tramadol 50mg · 2×/dia</li>
-          <li>Amitriptilina 25mg · noite</li>
-        </ul>
-      </Row>
-      <Row label="Comorbidades">
-        <div className="flex flex-wrap gap-1.5">
-          <WireBadge>M79.7 · Fibromialgia</WireBadge>
-          <WireBadge tone="mid">F41.1 · Ansiedade</WireBadge>
-        </div>
-      </Row>
-      <Row label="Escalas">
-        <div className="flex flex-col gap-1.5">
-          <ScoreCard name="BPI dor" value="6/10" note="moderada-grave" />
-          <ScoreCard name="PSQI sono" value="13" note="qualidade ruim" tone="mid" />
-        </div>
-      </Row>
-      <Row label="Plano · obs.">
-        Titular canabinoide · desmame gradual de opioide · reforçar higiene do
-        sono · retorno em 30 dias.
-      </Row>
-    </div>
-  );
-}
-
-function ExameFisicoContent() {
-  return (
-    <div className="flex flex-col">
-      <Row label="Sinais vitais">
-        <span className="font-mono text-caption text-neutral-700">
-          PA 128/82 · FC 76 · FR 16 · SpO₂ 98% · Tax 36,4°C
-        </span>
-      </Row>
-      <Row label="Antropometria">
-        <div className="flex flex-wrap gap-1.5">
-          <WireBadge>Peso 64kg</WireBadge>
-          <WireBadge>IMC 24,1</WireBadge>
-        </div>
-      </Row>
-      <Row label="Aparelhos">
-        <div className="flex flex-wrap gap-1.5">
-          <WireBadge tone="soft">Cardio normal</WireBadge>
-          <WireBadge tone="soft">Resp normal</WireBadge>
-          <WireBadge tone="soft">Abd normal</WireBadge>
-        </div>
-      </Row>
-      <Row label="Musculoesq.">
-        <div className="flex flex-wrap gap-1.5">
-          <WireBadge tone="mid">11/18 tender points</WireBadge>
-          <WireBadge tone="mid">Lombar dolorosa</WireBadge>
-        </div>
-      </Row>
-      <Row label="Neurológico">
-        Força e sensibilidade preservadas · sem déficit focal
-      </Row>
-      <Row label="Red flags">
-        <div className="flex items-start gap-2">
-          <WireBadge tone="hard">Atenção</WireBadge>
-          <span>Investigar interação serotoninérgica antes de ajustar dose.</span>
-        </div>
-      </Row>
-    </div>
-  );
-}
-
-function ScoreCard({
-  name,
-  value,
-  note,
-  tone = "neutral",
-}: {
-  name: string;
-  value: string;
-  note: string;
-  tone?: "neutral" | "mid";
-}) {
-  return (
-    <div className="glass-frost-inner flex items-center gap-3 rounded-xl px-3 py-2">
-      <span className="min-w-[64px] font-mono text-micro uppercase tracking-[0.1em] text-neutral-500">
-        {name}
-      </span>
-      <span
-        className={cn(
-          "font-mono text-body font-medium",
-          tone === "mid" ? "text-state-mid" : "text-ink",
-        )}
-      >
-        {value}
-      </span>
-      <span className="ml-auto text-micro text-neutral-500">{note}</span>
-    </div>
-  );
-}
-
-/* ============================ COLUNA CENTRAL ============================ */
-
-// Botão de controle in-call (redondo, vidro). `danger` = encerrar.
-function CallControl({
-  icon,
-  label,
-  active = false,
-  danger = false,
-  onClick,
-}: {
-  icon: string;
-  label: string;
-  active?: boolean;
-  danger?: boolean;
-  onClick?: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      aria-label={label}
-      title={label}
-      className={cn(
-        "grid h-11 w-11 place-items-center rounded-full border backdrop-blur transition-colors duration-[180ms]",
-        danger
-          ? "border-transparent bg-ink text-paper hover:bg-neutral-800"
-          : active
-            ? "border-white/60 bg-paper/85 text-ink"
-            : "border-white/30 bg-white/15 text-paper/90 hover:bg-white/25",
-      )}
-    >
-      <i className={cn("bx text-xl", icon)} />
-    </button>
-  );
-}
-
-// Fileira de controles in-call — reutilizada na barra normal e no modo imersivo.
-function CallControlBar({
-  mic,
-  cam,
-  transcribing,
-  fullscreen,
-  onToggleMic,
-  onToggleCam,
-  onToggleTranscribing,
-  onToggleFullscreen,
-  onEnd,
-  className,
-}: {
-  mic: boolean;
-  cam: boolean;
-  transcribing: boolean;
-  fullscreen: boolean;
-  onToggleMic: () => void;
-  onToggleCam: () => void;
-  onToggleTranscribing: () => void;
-  onToggleFullscreen: () => void;
-  onEnd?: () => void;
-  className?: string;
-}) {
-  return (
-    <div className={cn("flex items-center justify-center gap-2", className)}>
-      <CallControl
-        icon={mic ? "bx-microphone" : "bx-microphone-off"}
-        label="Microfone"
-        active={mic}
-        onClick={onToggleMic}
-      />
-      <CallControl
-        icon={cam ? "bx-video" : "bx-video-off"}
-        label="Câmera"
-        active={cam}
-        onClick={onToggleCam}
-      />
-      <CallControl icon="bx-desktop" label="Compartilhar tela" />
-      <CallControl
-        icon="bx-captions"
-        label="Transcrição"
-        active={transcribing}
-        onClick={onToggleTranscribing}
-      />
-      <CallControl icon="bx-message-rounded-dots" label="Chat" />
-      <CallControl
-        icon={fullscreen ? "bx-exit-fullscreen" : "bx-fullscreen"}
-        label="Tela cheia"
-        active={fullscreen}
-        onClick={onToggleFullscreen}
-      />
-      <CallControl
-        icon="bx-phone-off"
-        label="Encerrar chamada"
-        danger
-        onClick={onEnd}
-      />
-    </div>
-  );
-}
-
-// Campo de ditar nota (mock — wireframe).
-function NoteInput({ className }: { className?: string }) {
-  return (
-    <div
-      className={cn(
-        "glass-frost-inner flex shrink-0 items-center gap-2 rounded-full py-1.5 pl-4 pr-2",
-        className,
-      )}
-    >
-      <span className="flex-1 truncate text-caption text-neutral-400">
-        Anotar algo durante a sessão…
-      </span>
-      <span className="inline-flex items-center gap-1.5 font-mono text-micro text-neutral-500">
-        <i className="bx bx-microphone text-base" /> Ditar
-      </span>
-      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-ink text-paper">
-        →
-      </span>
-    </div>
-  );
-}
-
-// Overlay imersivo em portal — palco cinematográfico + notas fixas embaixo.
-// A transição (entrar/sair) é um clip-path `inset` que cresce do retângulo da
-// chamada até a viewport inteira (sem distorcer o conteúdo e sem transform no
-// `group` → o hover via `group-hover` continua intacto). Proxy + onUpdate p/
-// montar a string numericamente (sempre confiável, sem depender do parser de
-// strings do GSAP) e sem ref-guard (StrictMode-safe: a animação pode reexecutar).
-function ImmersiveCall({
-  originRect,
-  isClosing,
-  onExitComplete,
-  mic,
-  cam,
-  transcribing,
-  onToggleMic,
-  onToggleCam,
-  onToggleTranscribing,
-  onClose,
-  onEnd,
-}: {
-  originRect: DOMRect;
-  isClosing: boolean;
-  onExitComplete: () => void;
-  mic: boolean;
-  cam: boolean;
-  transcribing: boolean;
-  onToggleMic: () => void;
-  onToggleCam: () => void;
-  onToggleTranscribing: () => void;
-  onClose: () => void;
-  onEnd?: () => void;
-}) {
-  const stageRef = useRef<HTMLDivElement>(null);
-  const reduce = useMemo(() => prefersReducedMotion(), []);
-
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.stopPropagation();
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [onClose]);
-
-  useGSAP(
-    () => {
-      const stage = stageRef.current;
-      if (!stage) return;
-
-      // p = 0 → tela cheia (inset 0); p = 1 → recolhido no retângulo da chamada.
-      const apply = (p: number) => {
-        const vw = window.innerWidth;
-        const vh = window.innerHeight;
-        const top = originRect.top * p;
-        const right = (vw - originRect.right) * p;
-        const bottom = (vh - originRect.bottom) * p;
-        const left = originRect.left * p;
-        const radius = 18 * p;
-        const value = `inset(${top}px ${right}px ${bottom}px ${left}px round ${radius}px)`;
-        stage.style.setProperty("clip-path", value);
-        stage.style.setProperty("-webkit-clip-path", value);
-      };
-
-      // Reduced-motion: sem clip, só um fade suave.
-      if (reduce) {
-        apply(0);
-        if (isClosing) {
-          gsap.to(stage, {
-            opacity: 0,
-            duration: DURATION.crossfade,
-            onComplete: onExitComplete,
-          });
-        } else {
-          gsap.fromTo(
-            stage,
-            { opacity: 0 },
-            { opacity: 1, duration: DURATION.crossfade },
-          );
-        }
-        return;
-      }
-
-      const proxy = { p: isClosing ? 0 : 1 };
-      apply(proxy.p); // estado inicial antes do paint (sem flash)
-
-      gsap.to(proxy, {
-        p: isClosing ? 1 : 0,
-        duration: DURATION.travel * 0.6,
-        ease: isClosing ? "power2.in" : EASE.panel,
-        onUpdate: () => apply(proxy.p),
-        onComplete: isClosing ? onExitComplete : undefined,
-      });
-    },
-    { scope: stageRef, dependencies: [isClosing] },
-  );
-
-  return (
-    <div
-      ref={stageRef}
-      className="group fixed inset-0 z-[60] h-screen w-screen overflow-hidden bg-neutral-900"
-    >
-      {/* Palco — placeholder do paciente (sempre visível). */}
-      <div className="absolute inset-0 grid place-items-center">
-        <span className="grid h-28 w-28 place-items-center rounded-full border border-paper/25 bg-paper/10 font-display text-display-l text-paper/80">
-          MC
-        </span>
-      </div>
-
-      {/* Self-view (PiP) — topo-direita (hover). */}
-      <div
-        className={cn(
-          "absolute right-6 top-6 grid h-20 w-28 place-items-center rounded-xl border border-white/30 bg-neutral-700/90 text-paper/70",
-          CALL_FADE,
-        )}
-      >
-        <i className="bx bxs-user text-2xl" />
-        <span className="absolute bottom-1 left-1.5 font-mono text-[10px] text-paper/60">
-          Você
-        </span>
-      </div>
-
-      {/* Nome do paciente — rodapé-esquerda (hover). */}
-      <span
-        className={cn(
-          "absolute bottom-6 left-6 font-mono text-micro text-paper/70",
-          CALL_FADE,
-        )}
-      >
-        Marina Castro
-      </span>
-
-      {/* Base — controles (hover) + faixa de notas (sempre visível). */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center px-4 pb-6">
-        <div className="flex w-full max-w-[760px] flex-col gap-3">
-          <CallControlBar
-            mic={mic}
-            cam={cam}
-            transcribing={transcribing}
-            fullscreen
-            onToggleMic={onToggleMic}
-            onToggleCam={onToggleCam}
-            onToggleTranscribing={onToggleTranscribing}
-            onToggleFullscreen={onClose}
-            onEnd={onEnd}
-            className={cn(
-              CALL_FADE,
-              "pointer-events-none group-hover:pointer-events-auto",
-            )}
-          />
-          {/* Faixa de notas — quase o empty state da NotesBox, porém com mais
-              contraste/polimento para se destacar sobre o fundo escuro. */}
-          <div className="pointer-events-auto flex flex-col items-center gap-3 rounded-[28px] border border-white/60 bg-paper/85 p-5 shadow-[0_16px_48px_rgba(0,0,0,0.28)] backdrop-blur-2xl">
-            <div className="flex flex-col items-center gap-1 text-center">
-              <i className="bx bx-note text-3xl text-neutral-400" />
-              <span className="font-display text-body-l font-medium text-ink">
-                Notas clínicas
-              </span>
-              <span className="text-caption text-neutral-500">
-                Só você vê estas anotações pessoais.
-              </span>
+      {/* Categorias */}
+      <div className="flex flex-col gap-2">
+        {ATH_CATEGORIES.map((c) => (
+          <div key={c.label} className="flex gap-2 rounded-[12px] bg-[#f9f9f9] p-2.5">
+            <Icon name={c.icon} size={16} className="mt-0.5 shrink-0 text-neutral-500" />
+            <div className="flex min-w-0 flex-col">
+              <span className="text-micro font-medium uppercase tracking-[0.08em] text-neutral-500">{c.label}</span>
+              <span className="text-caption text-neutral-700 text-pretty">{c.text}</span>
             </div>
-            <NoteInput className="w-full" />
           </div>
-        </div>
+        ))}
       </div>
+
+      <div className="mt-auto flex items-center gap-2 border-t border-neutral-200/70 pt-3">
+        <Icon name="shield" size={14} className="text-neutral-400" />
+        <span className="text-micro text-neutral-400">Conformidade CFM · LGPD</span>
+      </div>
+    </aside>
+  );
+}
+
+/* ============================ TELA ============================ */
+
+export function ConsultCenter() {
+  const goTo = useFlow((s) => s.goTo);
+  const [asideOpen, setAsideOpen] = useState(true);
+
+  return (
+    <div className="relative flex h-full min-h-0">
+      <main className="no-scrollbar flex min-w-0 flex-1 flex-col gap-5 overflow-y-auto px-8 py-6">
+        <PatientHeader />
+        <PrevisitSection />
+        <AnamneseSection />
+        <ExamesSection />
+        <GerardocsSection />
+        <RecentSection />
+        <div className="h-4 shrink-0" />
+      </main>
+
+      <AthenaAside open={asideOpen} onToggle={() => setAsideOpen((v) => !v)} />
+
+      {/* FAB + encerrar */}
+      <button
+        type="button"
+        aria-label="Adicionar evento"
+        className="absolute bottom-6 left-1/2 grid h-12 w-12 -translate-x-1/2 place-items-center rounded-full bg-ink text-paper shadow-[var(--shadow-card)] md:left-[calc(50%-180px)]"
+      >
+        <Icon name="plus" size={22} />
+      </button>
+      <button
+        type="button"
+        onClick={() => goTo("clinical-note")}
+        className="absolute bottom-6 right-[384px] inline-flex items-center gap-2 rounded-full bg-paper px-4 py-2.5 text-caption font-medium text-ink shadow-[var(--shadow-card)]"
+      >
+        <Icon name="check-double" size={16} /> Encerrar consulta
+      </button>
     </div>
   );
 }
-
-// A chamada em foco. Controles + overlays só aparecem no hover (modo cinema).
-function CallScreen({ onEnd }: { onEnd?: () => void }) {
-  const [mic, setMic] = useState(true);
-  const [cam, setCam] = useState(true);
-  const [transcribing, setTranscribing] = useState(true);
-  const [fullscreen, setFullscreen] = useState(false);
-  const [isClosing, setIsClosing] = useState(false);
-  const [originRect, setOriginRect] = useState<DOMRect | null>(null);
-  const videoRef = useRef<HTMLDivElement>(null);
-
-  const showImmersive = fullscreen || isClosing;
-
-  const handleToggleFullscreen = useCallback(() => {
-    if (fullscreen && !isClosing) {
-      setIsClosing(true);
-      return;
-    }
-    if (!fullscreen) {
-      const rect = videoRef.current?.getBoundingClientRect();
-      if (rect) setOriginRect(rect);
-      setFullscreen(true);
-    }
-  }, [fullscreen, isClosing]);
-
-  const handleExitComplete = useCallback(() => {
-    setFullscreen(false);
-    setIsClosing(false);
-    setOriginRect(null);
-  }, []);
-
-  const handleCloseImmersive = useCallback(() => {
-    if (!isClosing) setIsClosing(true);
-  }, [isClosing]);
-
-  return (
-    <ModuleCard className="flex-[2] min-h-0 gap-2">
-      <div className="flex min-h-9 shrink-0 items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-3">
-          <BackButton />
-          <h2 className="font-display text-title font-medium text-ink">
-            Tela da consulta
-          </h2>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <button
-            type="button"
-            aria-label="Compartilhar link da consulta"
-            title="Compartilhar link da consulta"
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-neutral-300 bg-paper text-ink transition-colors hover:border-neutral-500"
-          >
-            <i className="bx bx-link text-xl" />
-          </button>
-          <WireButton variant="primary" size="sm" onClick={onEnd}>
-            Encerrar
-          </WireButton>
-        </div>
-      </div>
-
-      <div
-        ref={videoRef}
-        className={cn(
-          "group relative min-h-0 flex-1 overflow-hidden rounded-[18px] border border-white/40 bg-neutral-800",
-          showImmersive && "opacity-0",
-        )}
-      >
-        {/* Placeholder do paciente (sempre visível). */}
-        <div className="absolute inset-0 grid place-items-center">
-          <span className="grid h-20 w-20 place-items-center rounded-full border border-paper/25 bg-paper/10 font-display text-display-m text-paper/80">
-            MC
-          </span>
-        </div>
-
-        {/* Self-view (PiP) — topo-direita, não colide com a barra (hover). */}
-        <div
-          className={cn(
-            "absolute right-3 top-3 grid h-16 w-24 place-items-center rounded-xl border border-white/30 bg-neutral-700/90 text-paper/70",
-            CALL_FADE,
-          )}
-        >
-          <i className="bx bxs-user text-2xl" />
-          <span className="absolute bottom-1 left-1.5 font-mono text-[10px] text-paper/60">
-            Você
-          </span>
-        </div>
-
-        {/* Nome do paciente — rodapé-esquerda (hover). */}
-        <span
-          className={cn(
-            "absolute bottom-4 left-3 font-mono text-micro text-paper/70",
-            CALL_FADE,
-          )}
-        >
-          Marina Castro
-        </span>
-
-        {/* Barra de controles — rodapé-centro (hover). */}
-        <div
-          className={cn(
-            "pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/45 to-transparent px-3 pb-3 pt-10 group-hover:pointer-events-auto",
-            CALL_FADE,
-          )}
-        >
-          <CallControlBar
-            mic={mic}
-            cam={cam}
-            transcribing={transcribing}
-            fullscreen={fullscreen}
-            onToggleMic={() => setMic((v) => !v)}
-            onToggleCam={() => setCam((v) => !v)}
-            onToggleTranscribing={() => setTranscribing((v) => !v)}
-            onToggleFullscreen={handleToggleFullscreen}
-            onEnd={onEnd}
-          />
-        </div>
-      </div>
-
-      {showImmersive &&
-        originRect &&
-        typeof document !== "undefined" &&
-        createPortal(
-          <ImmersiveCall
-            originRect={originRect}
-            isClosing={isClosing}
-            onExitComplete={handleExitComplete}
-            mic={mic}
-            cam={cam}
-            transcribing={transcribing}
-            onToggleMic={() => setMic((v) => !v)}
-            onToggleCam={() => setCam((v) => !v)}
-            onToggleTranscribing={() => setTranscribing((v) => !v)}
-            onClose={handleCloseImmersive}
-            onEnd={onEnd}
-          />,
-          document.body,
-        )}
-    </ModuleCard>
-  );
-}
-
-// Box de notas livres do médico — empty state (ícone + título centralizado) com
-// o campo de digitar fixo embaixo. Fica abaixo da chamada (fixa).
-function NotesBox() {
-  return (
-    <ModuleCard className="flex-1 min-h-0">
-      {/* Empty state — ícone + título serifado + privacidade, centralizado no box. */}
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-1.5 px-4 text-center text-neutral-500">
-        <i className="bx bx-note text-3xl text-neutral-400" />
-        <span className="font-display text-body-l font-medium text-ink">
-          Notas clínicas
-        </span>
-        <span className="max-w-[34ch] text-caption text-neutral-500">
-          Só você vê estas anotações pessoais.
-        </span>
-      </div>
-
-      <NoteInput className="mt-1" />
-    </ModuleCard>
-  );
-}
-

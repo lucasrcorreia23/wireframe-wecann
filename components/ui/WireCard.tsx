@@ -1,4 +1,5 @@
 import { cn } from "@/lib/cn";
+import { Icon } from "./Icon";
 import { Eyebrow } from "./Eyebrow";
 
 // Card wireframe: bordas hairline, radius quase reto, sem sombra (profundidade
@@ -40,7 +41,7 @@ export function WireCard({
             {title ? (
               <h3 className="flex items-center gap-2 text-title font-medium text-ink text-pretty">
                 {!eyebrow && icon ? (
-                  <i className={cn("bx shrink-0 text-base text-neutral-400", icon)} />
+                  <Icon name={icon} size={16} className="text-neutral-400" />
                 ) : null}
                 {title}
               </h3>

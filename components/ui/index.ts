@@ -13,3 +13,12 @@ export { AcceptField, type Decision } from "./AcceptField";
 export { WireTable } from "./WireTable";
 export type { WireColumn, WireRow } from "./WireTable";
 export { ScreenShell } from "./ScreenShell";
+// Kit do look & feel do Figma (Fase 0).
+export { Icon } from "./Icon";
+export { Chip, type ChipTone } from "./Chip";
+export { AccordionRow } from "./AccordionRow";
+export { KpiCard } from "./KpiCard";
+export { AppScreen } from "./AppScreen";
+export { SummaryStrip, type SummaryColumn } from "./SummaryStrip";
+export { StatusStrip, type StatusItem } from "./StatusStrip";
+export { ScreenHeader } from "./ScreenHeader";

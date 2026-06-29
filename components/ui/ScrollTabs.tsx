@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/cn";
+import { Icon } from "./Icon";
 
 // Barra de abas horizontal COMPACTA com scroll horizontal (no-scrollbar) — para
 // muitas seções num espaço estreito. A ativa ganha vidro "paper" + sombra sutil;
@@ -44,7 +45,7 @@ export function ScrollTabs<T extends string>({
                 : "text-neutral-500 hover:bg-white/40 hover:text-neutral-700",
             )}
           >
-            {o.icon ? <i className={cn("bx text-base", o.icon)} /> : null}
+            {o.icon ? <Icon name={o.icon} size={16} /> : null}
             {o.label}
           </button>
         );

@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import "boxicons/css/boxicons.min.css";
 import "./globals.css";
 
 export const metadata: Metadata = {

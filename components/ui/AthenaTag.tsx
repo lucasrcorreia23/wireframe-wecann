@@ -1,4 +1,5 @@
 import { cn } from "@/lib/cn";
+import { Icon } from "./Icon";
 
 // Marcador de conteúdo preenchido pela IA (Athena) que o médico deve validar.
 // Cinza/vidro como o resto do sistema — a "cor" semântica vem do ícone + rótulo,
@@ -17,7 +18,7 @@ export function AthenaTag({
         className,
       )}
     >
-      <i className="bx bx-bot text-sm text-neutral-500" />
+      <Icon name="bot" size={14} className="text-neutral-500" />
       {children}
     </span>
   );

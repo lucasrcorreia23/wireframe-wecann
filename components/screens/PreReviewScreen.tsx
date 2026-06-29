@@ -1,17 +1,17 @@
 "use client";
 
-import { useRef, useState, type ReactNode } from "react";
-import { WireButton, Avatar, Eyebrow, ScrollTabs } from "@/components/ui";
-import { BackButton } from "@/components/ui/BackButton";
+import { Fragment, useState, type ReactNode } from "react";
+import { WireButton, Avatar, Eyebrow, AppScreen, Chip, SummaryStrip, StatusStrip, AccordionRow, Icon } from "@/components/ui";
+import { SlideOverPanel } from "@/components/ui/SlideOverPanel";
 import { useFlow } from "@/flow/store";
 import { cn } from "@/lib/cn";
 
-// `pre-review` — Paciente 360 · Perfil. Redesign (Figma "v2"): ESQUERDA = sidebar
-// FIXA (~311px) com identidade + contato + 3 accordions (Condições, Dados
-// pessoais, Indicadores), todos RECOLHIDOS por padrão. CENTRO = topo fixo
-// (Resumo do status atual + Alertas pré-consulta) + barra de ABAS com os
-// aprofundamentos. Cards SÓLIDOS (#f9f9f9 · .card-solid) com sombra suave; nada
-// de cor — gravidade clínica por peso de cinza.
+// `pre-review` — Paciente 360 · Perfil. Redesign conforme Figma (4952:10611):
+// COLUNA ÚNICA centralizada (AppScreen) — header do paciente · faixa-resumo de 4
+// colunas · "Resumo do status atual" · "Alertas pré-consulta" · lista em SANFONA
+// (AccordionRow). Monocromático; o acento crítico aparece só no chip "Crítico" do
+// alerta. Conteúdo clínico (linha do tempo, escalas, medicações, exames…)
+// preservado dentro de cada seção da sanfona.
 
 /* ============================ DADOS (mock) ============================ */
 
@@ -29,8 +29,6 @@ const CONTACT: [string, string][] = [
   ["Carteirinha", "0042 1187 5530"],
 ];
 
-const CONDITIONS = ["Ansiedade", "Fibromialgia", "Dor crônica"];
-
 const PERSONAL: [string, string][] = [
   ["Nascimento", "14/05/1987"],
   ["Sexo", "Feminino"],
@@ -40,13 +38,6 @@ const PERSONAL: [string, string][] = [
   ["Endereço", "R. das Acácias, 210 · Pinheiros"],
 ];
 
-const INDICATORS: { label: string; hint: string; value: string }[] = [
-  { label: "Consultas", hint: "desde ago/2025", value: "12" },
-  { label: "Aderência", hint: "últimos 6 meses", value: "86%" },
-  { label: "EVA dor", hint: "basal → M3", value: "8 → 5" },
-  { label: "PSQI sono", hint: "basal → M3", value: "14 → 9" },
-];
-
 const SUMMARY_PARAGRAPH =
   "Marina mantém dor lombar crônica refratária, hoje em §M3§ do episódio com CBD. " +
   "Desde a última consulta houve melhora da dor (EVA 6 → 5) e do sono (PSQI 11 → 9), " +
@@ -54,21 +45,26 @@ const SUMMARY_PARAGRAPH =
 
 const PRE_STATES = ["Respondida", "Pendente", "Não enviada", "1ª consulta"];
 
-const ALERTS: { tone: "hard" | "mid"; label: string; text: string }[] = [
+const ALERTS: { tone: "critical" | "inset"; label: string; text: string }[] = [
   {
-    tone: "hard",
+    tone: "critical",
     label: "Crítico",
     text: "Possível interação entre CBD e múltiplos depressores do SNC (Lexotan, Crestor, propranolol). Monitorar sedação excessiva.",
   },
   {
-    tone: "mid",
+    tone: "inset",
     label: "Atenção",
     text: "Fluvoxamina 75mg (1,5 comprimido) foi recentemente aumentada e causou efeito adverso. Considerar redução antes de iniciar CBD.",
   },
   {
-    tone: "mid",
+    tone: "inset",
     label: "Atenção",
     text: "Escala PSQI vencida para reaplicação neste timepoint — reaplicar antes do retorno.",
+  },
+  {
+    tone: "inset",
+    label: "Atenção",
+    text: "Aderência ao CBD em 86% — reforçar adesão e técnica de administração no retorno.",
   },
 ];
 
@@ -202,12 +198,6 @@ const PRE_CONSULTS: { date: string; channel: string; stars: number }[] = [
   { date: "26/08/2025", channel: "Web · 1ª pré-anamnese", stars: 0 },
 ];
 
-// ── Notas (equipe)
-const TEAM_NOTES: { who: string; date: string; text: string }[] = [
-  { who: "Dra. Bárbara · Reumatologia", date: "12/12/2025", text: "Fibromialgia associada; sugiro abordagem multimodal." },
-  { who: "Fisioterapia", date: "20/02/2026", text: "Ganho de mobilidade lombar; manter programa." },
-];
-
 /* ============================ ÁTOMOS ============================ */
 
 // Pílula de dado (12px mono). Pesos de cinza — nunca cor. `dim` esmaece (45%).
@@ -245,9 +235,24 @@ function Tag({
   );
 }
 
-// Card sólido (#f9f9f9 + sombra). Base de todas as seções do Paciente 360.
-function SolidCard({ className, children }: { className?: string; children: ReactNode }) {
-  return <section className={cn("card-solid", className)}>{children}</section>;
+// "Soft chip" do resumo da sanfona — branco, cantos 16px e sombra suave (igual ao
+// Figma). `label` é o prefixo cinza (ex.: "EVA"). `icon` = Material Symbols opc.
+function SoftChip({
+  label,
+  icon,
+  children,
+}: {
+  label?: string;
+  icon?: string;
+  children: ReactNode;
+}) {
+  return (
+    <span className="inline-flex items-center gap-2 rounded-[16px] bg-paper px-3 py-2.5 text-body leading-none text-ink shadow-[0_4px_13.5px_rgba(0,0,0,0.05)]">
+      {icon ? <Icon name={icon} size={18} className="text-neutral-500" /> : null}
+      {label ? <span className="text-caption font-medium text-neutral-500">{label}</span> : null}
+      {children}
+    </span>
+  );
 }
 
 // Linha rótulo → valor (contato / dados pessoais). Divisória sutil entre itens.
@@ -255,425 +260,411 @@ function InfoRow({ label, value, last }: { label: string; value: string; last?: 
   return (
     <div
       className={cn(
-        "flex items-center justify-between gap-3 pt-[8px] pb-[9px]",
+        "flex items-center gap-3 pt-[8px] pb-[9px]",
         !last && "border-b border-white/40",
       )}
     >
       <span className="shrink-0 text-caption text-neutral-500">{label}</span>
-      <span className="truncate text-right text-caption text-neutral-700">{value}</span>
+      <span className="flex-1 truncate text-right text-caption text-neutral-700">{value}</span>
     </div>
   );
 }
 
-/* ===================== ESQUERDA — SIDEBAR ===================== */
+/* ===================== HEADER DO PACIENTE ===================== */
 
-// Seção colapsável da sidebar. Anima a altura via grid-template-rows 1fr↔0fr
-// (CSS puro, sem transform → preserva qualquer backdrop atrás). Default fechada.
-function AccordionSection({
-  title,
-  defaultOpen = false,
-  children,
-}: {
-  title: string;
-  defaultOpen?: boolean;
-  children: ReactNode;
-}) {
-  const [open, setOpen] = useState(defaultOpen);
-  return (
-    <SolidCard className="rounded-[20px] px-[17px] py-[13px]">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-        className="flex min-h-9 w-full items-center justify-between gap-3 pl-1 text-left"
-      >
-        <span className="font-medium text-body text-ink">{title}</span>
-        <i
-          className={cn(
-            "bx bx-chevron-down shrink-0 text-2xl text-neutral-500 transition-transform duration-300",
-            open && "rotate-180",
-          )}
-        />
-      </button>
-      <div
-        className={cn(
-          "grid transition-[grid-template-rows] duration-300 ease-out",
-          open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
-        )}
-      >
-        <div className="min-h-0 overflow-hidden">
-          <div className="pt-2">{children}</div>
-        </div>
-      </div>
-    </SolidCard>
-  );
-}
+function PatientHeader({ onOpenDrawer }: { onOpenDrawer: () => void }) {
+  const goTo = useFlow((s) => s.goTo);
+  const back = useFlow((s) => s.back);
 
-export function PreReviewLeft() {
   return (
-    <div className="no-scrollbar flex h-full min-h-0 flex-col gap-4 overflow-y-auto pt-[88px] pb-6">
-      {/* Identidade + contato — sempre visível. */}
-      <SolidCard className="flex flex-col gap-4 rounded-[24px] p-[17px]">
-        <div className="flex items-center gap-3">
-          <BackButton />
-          <Avatar name={PATIENT.name} seed={PATIENT.seed} size="md" className="h-12 w-12" />
-          <div className="flex min-w-0 flex-col gap-2">
-            <span className="font-display text-[20px] font-medium leading-tight text-ink">
-              {PATIENT.name}
-            </span>
-            <div className="flex flex-wrap gap-2.5">
-              <Tag variant="neutral">{PATIENT.age}</Tag>
-              <Tag variant="soft">{PATIENT.cid}</Tag>
+    <div className="flex flex-col gap-6">
+      <div className="flex items-center gap-6">
+        {/* Identidade. */}
+        <Avatar name={PATIENT.name} seed={PATIENT.seed} size="md" className="h-12 w-12" />
+        <div className="flex flex-1 flex-col gap-2">
+          <Eyebrow>Paciente</Eyebrow>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => back()}
+              aria-label="Voltar"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full border-[0.8px] border-neutral-300 bg-paper text-ink transition-colors hover:bg-neutral-100"
+            >
+              <Icon name="chevron-left" size={20} />
+            </button>
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-3">
+                <span className="font-display text-[20px] font-medium leading-tight text-ink">
+                  {PATIENT.name}
+                </span>
+                <button
+                  type="button"
+                  onClick={onOpenDrawer}
+                  aria-label="Dados pessoais do paciente"
+                  className="grid place-items-center text-neutral-500 transition-colors hover:text-ink"
+                >
+                  <Icon name="article_person" size={18} />
+                </button>
+              </div>
+              <span className="text-caption text-neutral-600">Pré-consulta · revisão</span>
             </div>
           </div>
         </div>
-        <div className="border-t border-neutral-200/40 pt-[13px]">
-          {CONTACT.map(([label, value], i) => (
-            <InfoRow key={label} label={label} value={value} last={i === CONTACT.length - 1} />
-          ))}
-        </div>
-      </SolidCard>
 
-      {/* Accordions — fechados por padrão. */}
-      <AccordionSection title="Condições">
-        <div className="flex flex-wrap gap-2">
-          {CONDITIONS.map((c) => (
-            <Tag key={c} variant="neutral" upper>
-              {c}
-            </Tag>
-          ))}
-        </div>
-      </AccordionSection>
-
-      <AccordionSection title="Dados pessoais">
-        <div className="flex flex-col">
-          {PERSONAL.map(([label, value], i) => (
-            <InfoRow key={label} label={label} value={value} last={i === PERSONAL.length - 1} />
-          ))}
-        </div>
-      </AccordionSection>
-
-      <AccordionSection title="Indicadores">
-        <div className="flex flex-col">
-          {INDICATORS.map((it, i) => (
-            <div
-              key={it.label}
-              className={cn(
-                "flex items-center justify-between gap-3 pt-[8px] pb-[9px]",
-                i !== INDICATORS.length - 1 && "border-b border-white/40",
-              )}
-            >
-              <div className="flex flex-col gap-1">
-                <span className="text-caption text-neutral-700">{it.label}</span>
-                <span className="text-micro text-neutral-500">{it.hint}</span>
-              </div>
-              <span className="font-mono text-caption text-neutral-700">{it.value}</span>
-            </div>
-          ))}
-        </div>
-      </AccordionSection>
-    </div>
-  );
-}
-
-/* ===================== CENTRO — TOPO + ABAS ===================== */
-
-// Resumo do status atual — header + ações + parágrafo + linha pré-anamnese.
-function SummarySection() {
-  const goTo = useFlow((s) => s.goTo);
-  const [intro, m3, rest] = SUMMARY_PARAGRAPH.split("§");
-
-  return (
-    <SolidCard className="flex flex-col gap-2 rounded-[20px] px-[17px] py-[13px]">
-      <div className="flex min-h-9 items-center justify-between gap-3">
-        <h2 className="font-display text-[20px] font-medium text-ink">Resumo do status atual</h2>
-        <div className="flex items-center gap-2">
+        {/* Ações. */}
+        <div className="flex items-center gap-3">
           <button
             type="button"
-            className="inline-flex h-10 items-center gap-2 rounded-full px-3 font-mono text-caption text-ink transition-colors hover:bg-white/50"
+            className="inline-flex h-10 items-center gap-2 rounded-full px-3 text-caption font-medium text-ink transition-colors hover:bg-neutral-100"
           >
-            <i className="bx bx-send text-lg" />
+            <Icon name="send" size={20} />
             Enviar mensagem
           </button>
           <WireButton variant="primary" onClick={() => goTo("consult")} className="gap-2">
-            <i className="bx bx-video text-lg" />
+            <Icon name="video_camera_front" size={20} />
             Iniciar consulta
           </WireButton>
           <button
             type="button"
             aria-label="Mais ações"
-            className="grid h-9 w-9 place-items-center rounded-full text-neutral-500 transition-colors hover:bg-white/50 hover:text-ink"
+            className="grid h-9 w-9 place-items-center rounded-full text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-ink"
           >
-            <i className="bx bx-dots-vertical-rounded text-xl" />
+            <Icon name="dots-vertical-rounded" size={20} />
           </button>
         </div>
       </div>
 
-      <div className="flex flex-col gap-4">
-        <p className="py-3 text-caption leading-relaxed text-neutral-700 text-pretty">
-          {intro}
-          <strong className="font-medium text-ink">{m3}</strong>
-          {rest}
-        </p>
-        <div className="flex items-center justify-between gap-3 border-t border-neutral-200/40 pt-3 pb-1">
-          <Eyebrow>Pré-anamnese</Eyebrow>
-          <div className="flex flex-wrap items-center gap-1">
-            {PRE_STATES.map((s, i) => (
-              <Tag key={s} variant={i === 0 ? "mid" : "soft"} dim={i !== 0}>
-                {s}
-              </Tag>
-            ))}
-          </div>
-        </div>
-      </div>
-    </SolidCard>
+      <div className="h-px w-full bg-neutral-200/70" />
+    </div>
   );
 }
 
-// Alertas pré-consulta — carrossel horizontal (snap) + dots de paginação.
-function AlertsSection() {
-  const scrollerRef = useRef<HTMLDivElement>(null);
-  const [index, setIndex] = useState(0);
+// Drawer de PERFIL — dados pessoais sob demanda (fora do foco clínico da tela).
+function PersonalDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
+  return (
+    <SlideOverPanel open={open} onClose={onClose} label="Dados pessoais" className="max-w-[420px]">
+      <div className="flex min-h-0 flex-col gap-5">
+        <div className="flex items-center gap-3">
+          <Avatar name={PATIENT.name} seed={PATIENT.seed} size="md" className="h-12 w-12" />
+          <div className="flex min-w-0 flex-col gap-1">
+            <span className="font-display text-[20px] font-medium leading-tight text-ink">
+              {PATIENT.name}
+            </span>
+            <div className="flex flex-wrap gap-2">
+              <Chip tone="muted">{PATIENT.age}</Chip>
+              <Chip>{PATIENT.cid}</Chip>
+            </div>
+          </div>
+        </div>
 
-  const onScroll = () => {
-    const el = scrollerRef.current;
-    if (!el) return;
-    const card = el.firstElementChild as HTMLElement | null;
-    const step = card ? card.offsetWidth + 12 : el.clientWidth;
-    setIndex(Math.round(el.scrollLeft / step));
-  };
+        <section className="flex flex-col gap-1">
+          <Eyebrow>Contato</Eyebrow>
+          <div className="flex flex-col">
+            {CONTACT.map(([label, value], i) => (
+              <InfoRow key={label} label={label} value={value} last={i === CONTACT.length - 1} />
+            ))}
+          </div>
+        </section>
 
-  const goToCard = (i: number) => {
-    const el = scrollerRef.current;
-    if (!el) return;
-    const card = el.children[i] as HTMLElement | undefined;
-    card?.scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" });
-  };
+        <section className="flex flex-col gap-1">
+          <Eyebrow>Dados pessoais</Eyebrow>
+          <div className="flex flex-col">
+            {PERSONAL.map(([label, value], i) => (
+              <InfoRow key={label} label={label} value={value} last={i === PERSONAL.length - 1} />
+            ))}
+          </div>
+        </section>
+      </div>
+    </SlideOverPanel>
+  );
+}
+
+/* ===================== SEÇÕES DO CENTRO ===================== */
+
+// Faixa-resumo de 4 colunas (Diagnóstico · Comorbidades · Tratamento · Alergias).
+function SummaryRow() {
+  return (
+    <SummaryStrip
+      columns={[
+        {
+          label: "Diagnóstico",
+          divider: true,
+          children: (
+            <>
+              <Chip>M54.5</Chip>
+              <span className="text-caption text-neutral-700">Dor lombar baixa (crônica)</span>
+            </>
+          ),
+        },
+        {
+          label: "Comorbidades",
+          divider: true,
+          children: ["Fibromialgia", "Ansiedade", "Insônia"].map((c) => (
+            <Chip key={c} tone="muted">
+              {c}
+            </Chip>
+          )),
+        },
+        {
+          label: "Tratamento",
+          children: (
+            <>
+              <Chip tone="inset">Episódio CBD</Chip>
+              <Chip tone="muted">M3</Chip>
+              <Chip tone="muted">86%</Chip>
+            </>
+          ),
+        },
+        {
+          label: "Alergias",
+          children: (
+            <>
+              <Chip tone="inset">Dipirona</Chip>
+              <Chip tone="muted">AINEs</Chip>
+            </>
+          ),
+        },
+      ]}
+    />
+  );
+}
+
+// Resumo do status atual — título + parágrafo + linha pré-anamnese.
+function SummarySection() {
+  const [intro, m3, rest] = SUMMARY_PARAGRAPH.split("§");
 
   return (
-    <SolidCard className="flex flex-col gap-2 rounded-[20px] p-[13px]">
-      <div className="flex min-h-9 items-center justify-between gap-3 pl-1 pr-2">
-        <h3 className="font-display text-body-l font-medium text-ink">Alertas pré-consulta</h3>
+    <section className="flex flex-col gap-4 rounded-[20px] bg-[#f9f9f9] px-4 py-3">
+      <h2 className="font-display text-[20px] font-medium text-ink">Resumo do status atual</h2>
+      <p className="text-caption leading-relaxed text-neutral-700 text-pretty">
+        {intro}
+        <strong className="font-medium text-ink">{m3}</strong>
+        {rest}
+      </p>
+      <div className="border-t border-neutral-200/50 pt-3">
+        <StatusStrip
+          label="Pré-anamnese"
+          items={PRE_STATES.map((s, i) => ({ text: s, active: i === 0 }))}
+        />
+      </div>
+    </section>
+  );
+}
+
+// Alertas pré-consulta — título + dots + faixa de cartões (1 por alerta).
+function AlertsSection() {
+  return (
+    <section className="flex flex-col gap-3">
+      <div className="flex items-center gap-3 pl-1 pr-2">
+        <h3 className="flex-1 font-display text-body-l font-medium text-ink">Alertas pré-consulta</h3>
         <div className="flex items-center gap-1.5">
-          {ALERTS.map((_, i) => (
-            <button
+          {[0, 1, 2].map((i) => (
+            <span
               key={i}
-              type="button"
-              aria-label={`Alerta ${i + 1}`}
-              onClick={() => goToCard(i)}
               className={cn(
-                "h-2 rounded-full transition-all duration-200",
-                i === index ? "w-5 bg-neutral-500" : "w-2 bg-neutral-300 hover:bg-neutral-400",
+                "h-2 rounded-full",
+                i === 0 ? "w-5 bg-neutral-500" : "w-2 bg-neutral-300",
               )}
             />
           ))}
         </div>
       </div>
-      <div
-        ref={scrollerRef}
-        onScroll={onScroll}
-        className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto"
-      >
+      <div className="flex flex-wrap items-stretch gap-3">
         {ALERTS.map((a, i) => (
           <div
             key={i}
-            className="glass-frost-inner flex w-[315px] shrink-0 snap-start flex-col gap-1.5 rounded-2xl p-[13px]"
+            className="flex min-w-[240px] flex-1 flex-col gap-2 rounded-[16px] border-[0.8px] border-white/60 bg-[#f9f9f9] p-3.5"
           >
-            <Tag variant={a.tone}>{a.label}</Tag>
-            <p className="line-clamp-2 text-caption text-neutral-700 text-pretty">{a.text}</p>
+            <Chip tone={a.tone}>{a.label}</Chip>
+            <p className="text-caption leading-snug text-neutral-700 text-pretty">{a.text}</p>
           </div>
         ))}
       </div>
-    </SolidCard>
+    </section>
   );
 }
 
-// `summary`: a informação mais relevante da seção — exibida sob o título no modo
-// "Seções" (accordions), para dar contexto mesmo com o accordion recolhido.
-const TABS: { key: string; label: string; icon: string; summary: string }[] = [
-  { key: "motivo", label: "Motivo", icon: "bx-detail", summary: "Dor lombar refratária há 14 meses · EVA 5/10 · busca reduzir opioides" },
-  { key: "timeline", label: "Linha do tempo", icon: "bx-history", summary: "11 eventos · hoje (25/06): avaliação terapêutica em andamento" },
-  { key: "escalas", label: "Escalas", icon: "bx-line-chart", summary: "M3 · EVA 8→5, PSQI 14→9 — MCID atingido" },
-  { key: "comorbidades", label: "Comorbidades", icon: "bx-plus-medical", summary: "4 validadas · 3 ativas, 1 em controle" },
-  { key: "medicacoes", label: "Medicações", icon: "bx-capsule", summary: "6 em uso · 2 suspensas · CBD em titulação" },
-  { key: "exames", label: "Exames", icon: "bx-test-tube", summary: "7 exames · RM lombar: discopatia L4–L5" },
-  { key: "documentos", label: "Documentos", icon: "bx-file", summary: "7 documentos · 2 pendentes" },
-  { key: "atendimentos", label: "Atendimentos", icon: "bx-calendar-check", summary: "4 consultas · última 19/06 com Dra. Helena Prado" },
-  { key: "notas", label: "Notas", icon: "bx-group", summary: "2 notas · Reumatologia + Fisioterapia" },
-];
-
-// Alterna a visualização dos aprofundamentos: "Abas" (barra + 1 conteúdo) ou
-// "Seções" (accordions empilhados, cada um com a linha-resumo sob o título).
-type CenterView = "abas" | "secoes";
-
-function ViewToggle({ value, onChange }: { value: CenterView; onChange: (v: CenterView) => void }) {
-  const opts: { key: CenterView; label: string; icon: string }[] = [
-    { key: "abas", label: "Abas", icon: "bx-carousel" },
-    { key: "secoes", label: "Seções", icon: "bx-list-ul" },
-  ];
+// Mini linha do tempo (resumo da sanfona) — nós-ícone conectados; último em ink.
+function TimelineMini() {
+  const icons = ["bx-detail", "bx-test-tube", "bx-capsule", "bx-pulse", "bx-target-lock"];
   return (
-    <div className="inline-flex items-center gap-1 rounded-full bg-white/40 p-1">
-      {opts.map((o) => {
-        const active = value === o.key;
-        return (
-          <button
-            key={o.key}
-            type="button"
-            onClick={() => onChange(o.key)}
-            aria-pressed={active}
+    <div className="flex items-center">
+      {icons.map((ic, i) => (
+        <Fragment key={i}>
+          {i > 0 ? <span className="h-px w-8 bg-neutral-200" /> : null}
+          <span
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-mono text-micro transition-colors duration-[180ms]",
-              active
-                ? "bg-paper text-ink shadow-[var(--shadow-tab)]"
-                : "text-neutral-500 hover:text-neutral-700",
+              "grid h-[30px] w-[30px] shrink-0 place-items-center rounded-full shadow-[0_4px_13.5px_rgba(0,0,0,0.05)]",
+              i === icons.length - 1 ? "bg-ink text-paper" : "bg-paper text-neutral-600",
             )}
           >
-            <i className={cn("bx text-sm", o.icon)} />
-            {o.label}
-          </button>
-        );
-      })}
+            <Icon name={ic} size={16} />
+          </span>
+        </Fragment>
+      ))}
     </div>
   );
 }
 
-// Accordion da coluna principal: ícone + (título sobre linha-resumo) + chevron;
-// corpo expansível (mesmo conteúdo das abas). Controlado pelo pai (sanfona).
-function CenterAccordion({
-  icon,
-  title,
-  summary,
-  open,
-  onToggle,
-  last,
-  children,
-}: {
+// Sanfona — uma seção por linha (aba branca + corpo #f9f9f9). `summary` = resumo
+// inline (chips/contagens); `body` = o conteúdo clínico completo (expandido).
+const SECTIONS: {
+  key: string;
   icon: string;
   title: string;
-  summary: string;
-  open: boolean;
-  onToggle: () => void;
-  last?: boolean;
-  children: ReactNode;
-}) {
-  return (
-    <div className={cn(!last && "border-b border-white/50")}>
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-expanded={open}
-        className="flex w-full items-center gap-3 py-4 text-left"
-      >
-        <span className="glass-frost-inner grid h-9 w-9 shrink-0 place-items-center rounded-full text-neutral-600">
-          <i className={cn("bx text-lg", icon)} />
-        </span>
-        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="text-body font-medium text-ink">{title}</span>
-          <span className="truncate text-caption text-neutral-500">{summary}</span>
-        </div>
-        <i
-          className={cn(
-            "bx bx-chevron-down shrink-0 text-2xl text-neutral-500 transition-transform duration-300",
-            open && "rotate-180",
-          )}
-        />
-      </button>
-      <div
-        className={cn(
-          "grid transition-[grid-template-rows] duration-300 ease-out",
-          open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
-        )}
-      >
-        <div className="min-h-0 overflow-hidden">
-          <div className="pb-5 pt-1">{children}</div>
-        </div>
-      </div>
-    </div>
-  );
-}
+  summary: ReactNode;
+  body: ReactNode;
+}[] = [
+  {
+    key: "motivo",
+    icon: "flag",
+    title: "Motivo Inicial",
+    summary: (
+      <SoftChip>
+        Episódio CBD · M54.5{" "}
+        <span className="text-neutral-500">· Dor lombar crônica</span>
+      </SoftChip>
+    ),
+    body: <MotivoTab />,
+  },
+  {
+    key: "escalas",
+    icon: "trending_up",
+    title: "Escalas de evol.",
+    summary: (
+      <>
+        <SoftChip label="EVA">5/10</SoftChip>
+        <SoftChip label="PSQI">9/21</SoftChip>
+        <SoftChip label="HAD-A">7/21</SoftChip>
+        <SoftChip label="BPI">4/10</SoftChip>
+      </>
+    ),
+    body: <EscalasTab />,
+  },
+  {
+    key: "timeline",
+    icon: "timeline",
+    title: "Linha do tempo",
+    summary: <TimelineMini />,
+    body: <TimelineTab />,
+  },
+  {
+    key: "comorbidades",
+    icon: "healing",
+    title: "Comorbidades",
+    summary: (
+      <>
+        {COMORBIDITIES.map((c) => (
+          <SoftChip key={c.cid}>{c.cid}</SoftChip>
+        ))}
+      </>
+    ),
+    body: <ComorbidadesTab />,
+  },
+  {
+    key: "medicacoes",
+    icon: "medication",
+    title: "Medicações",
+    summary: (
+      <>
+        <SoftChip icon="medication">CBD 200mg/mL</SoftChip>
+        <SoftChip>Tramadol 50mg</SoftChip>
+        <SoftChip>Amitriptilina 25mg</SoftChip>
+        <SoftChip>Pregabalina 75mg</SoftChip>
+      </>
+    ),
+    body: <MedicacoesTab />,
+  },
+  {
+    key: "exames",
+    icon: "science",
+    title: "Exames",
+    summary: (
+      <>
+        <SoftChip>Hemograma</SoftChip>
+        <SoftChip>Perfil hepático</SoftChip>
+        <SoftChip>RM lombar</SoftChip>
+        <SoftChip>ENMG MMII</SoftChip>
+      </>
+    ),
+    body: <ExamesTab />,
+  },
+  {
+    key: "documentos",
+    icon: "description",
+    title: "Documentos",
+    summary: (
+      <>
+        <SoftChip>
+          <span className="font-medium uppercase tracking-[0.06em] text-neutral-600">2 pendentes</span>
+        </SoftChip>
+        <SoftChip>
+          <span className="font-medium uppercase tracking-[0.06em] text-neutral-600">4 enviados</span>
+        </SoftChip>
+      </>
+    ),
+    body: <DocumentosTab />,
+  },
+  {
+    key: "atendimentos",
+    icon: "event_note",
+    title: "Atendimentos",
+    summary: (
+      <>
+        <SoftChip>
+          <span className="font-medium uppercase tracking-[0.06em] text-neutral-600">4 consultas</span>
+        </SoftChip>
+        <span className="text-caption text-neutral-500">Última 19/06 com Dra. Helena Prado</span>
+      </>
+    ),
+    body: <AtendimentosTab />,
+  },
+];
 
 export function PreReviewCenter() {
-  const [view, setView] = useState<CenterView>("abas");
-  const [tab, setTab] = useState(TABS[0].key);
-  // Sanfona: no máximo um aberto. `null` = todos fechados (estado inicial).
+  // Sanfona: no máximo uma seção aberta. `null` = todas fechadas (estado inicial).
   const [openKey, setOpenKey] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   return (
-    <div className="no-scrollbar flex h-full min-h-0 flex-col gap-4 overflow-y-auto pt-[88px] pb-6">
+    <AppScreen>
+      <PatientHeader onOpenDrawer={() => setDrawerOpen(true)} />
+      <SummaryRow />
       <SummarySection />
       <AlertsSection />
 
-      <SolidCard className="flex flex-col gap-4 rounded-[28px] p-[25px]">
-        <div className="flex items-center justify-between gap-3">
-          <Eyebrow icon="bx-layer">Aprofundamentos</Eyebrow>
-          <ViewToggle value={view} onChange={setView} />
-        </div>
+      <div className="flex flex-col gap-4">
+        {SECTIONS.map((s) => (
+          <AccordionRow
+            key={s.key}
+            icon={s.icon}
+            title={s.title}
+            summary={s.summary}
+            open={openKey === s.key}
+            onToggle={() => setOpenKey((k) => (k === s.key ? null : s.key))}
+          >
+            {s.body}
+          </AccordionRow>
+        ))}
+      </div>
 
-        {view === "abas" ? (
-          <>
-            <ScrollTabs options={TABS} value={tab} onChange={setTab} />
-            <div className="border-t border-neutral-200/40 pt-5">
-              <TabContent tab={tab} />
-            </div>
-          </>
-        ) : (
-          <div className="flex flex-col border-t border-neutral-200/40">
-            {TABS.map((t, i) => (
-              <CenterAccordion
-                key={t.key}
-                icon={t.icon}
-                title={t.label}
-                summary={t.summary}
-                open={openKey === t.key}
-                onToggle={() => setOpenKey((k) => (k === t.key ? null : t.key))}
-                last={i === TABS.length - 1}
-              >
-                <TabContent tab={t.key} />
-              </CenterAccordion>
-            ))}
-          </div>
-        )}
-      </SolidCard>
-    </div>
+      <PersonalDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+    </AppScreen>
   );
 }
 
-/* ===================== CONTEÚDO DAS ABAS ===================== */
+/* ===================== CONTEÚDO DAS SEÇÕES ===================== */
 
-function TabContent({ tab }: { tab: string }) {
-  switch (tab) {
-    case "motivo":
-      return <MotivoTab />;
-    case "timeline":
-      return <TimelineTab />;
-    case "escalas":
-      return <EscalasTab />;
-    case "comorbidades":
-      return <ComorbidadesTab />;
-    case "medicacoes":
-      return <MedicacoesTab />;
-    case "exames":
-      return <ExamesTab />;
-    case "documentos":
-      return <DocumentosTab />;
-    case "atendimentos":
-      return <AtendimentosTab />;
-    case "notas":
-      return <NotasTab />;
-    default:
-      return null;
-  }
-}
-
-// Cabeçalho de aba: subtítulo (esquerda) + controle/extra (direita).
+// Cabeçalho de seção: subtítulo (esquerda) + controle/extra (direita).
 function TabHeader({ children, aside }: { children?: ReactNode; aside?: ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-3">
+    <div className="flex items-center gap-3">
       {children ? (
         <p className="text-caption text-neutral-500 text-pretty">{children}</p>
       ) : (
         <span aria-hidden />
       )}
+      <span className="flex-1" />
       {aside}
     </div>
   );
@@ -703,7 +694,7 @@ function PillFilter<T extends string>({
               "shrink-0 rounded-full px-3 py-1 font-mono text-micro transition-colors duration-[180ms]",
               active
                 ? "bg-paper text-ink shadow-[var(--shadow-tab)]"
-                : "text-neutral-500 hover:bg-white/40 hover:text-neutral-700",
+                : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700",
             )}
           >
             {o}
@@ -717,10 +708,9 @@ function PillFilter<T extends string>({
 function MotivoTab() {
   return (
     <div className="flex flex-col gap-4">
-      {/* Card do episódio. */}
-      <div className="glass-frost-inner flex items-center gap-2.5 rounded-2xl px-3.5 py-3">
-        <span className="glass-frost-inner grid h-9 w-9 shrink-0 place-items-center rounded-full text-neutral-600">
-          <i className="bx bx-capsule text-lg" />
+      <div className="frost-inset flex items-center gap-2.5 rounded-2xl px-3.5 py-3">
+        <span className="frost-inset grid h-9 w-9 shrink-0 place-items-center rounded-full text-neutral-600">
+          <Icon name="capsule" size={18} />
         </span>
         <div className="flex min-w-0 flex-col">
           <span className="text-body font-medium text-ink">Episódio CBD · M54.5</span>
@@ -728,7 +718,8 @@ function MotivoTab() {
             Dor lombar crônica
           </span>
         </div>
-        <div className="ml-auto flex items-center gap-2">
+        <span className="flex-1" />
+        <div className="flex items-center gap-2">
           <Tag variant="mid">Sucesso parcial</Tag>
           <Tag variant="soft">Baseline: naïve</Tag>
         </div>
@@ -744,7 +735,7 @@ function MotivoTab() {
 
       <div className="grid grid-cols-2 gap-3">
         {MOTIVE_CARDS.map(([label, value]) => (
-          <div key={label} className="glass-frost-inner flex flex-col gap-1 rounded-xl px-3.5 py-2.5">
+          <div key={label} className="frost-inset flex flex-col gap-1 rounded-xl px-3.5 py-2.5">
             <Eyebrow>{label}</Eyebrow>
             <span className="text-caption text-neutral-700">{value}</span>
           </div>
@@ -758,7 +749,6 @@ function TimelineTab() {
   const [year, setYear] = useState<(typeof TIMELINE_YEARS)[number]>("Tudo");
 
   const all = year === "Tudo" ? TIMELINE : TIMELINE.filter((e) => e.year === year);
-  // "Tudo" abre recolhido (5 primeiros + afford. de expandir, estática/mock).
   const visible = year === "Tudo" ? all.slice(0, 5) : all;
   const hiddenCount = all.length - visible.length;
 
@@ -768,12 +758,11 @@ function TimelineTab() {
         Histórico clínico
       </TabHeader>
 
-      {/* Cabeçalho do episódio. */}
-      <div className="glass-frost-inner flex items-center justify-between gap-3 rounded-2xl px-3.5 py-2.5">
+      <div className="frost-inset flex items-center gap-3 rounded-2xl px-3.5 py-2.5">
         <span className="text-caption font-medium text-ink">
           Episódio · CBD 200mg/mL · Dor lombar crônica
         </span>
-        <span className="font-mono text-micro uppercase tracking-[0.08em] text-neutral-500">
+        <span className="flex-1 text-right font-mono text-micro uppercase tracking-[0.08em] text-neutral-500">
           início ago/2025
         </span>
       </div>
@@ -786,10 +775,10 @@ function TimelineTab() {
         {visible.map((e) => (
           <li
             key={e.date}
-            className="flex gap-3 border-b border-dashed border-white/50 py-3 first:pt-0 last:border-0"
+            className="flex gap-3 border-b border-dashed border-neutral-200/70 py-3 first:pt-0 last:border-0"
           >
-            <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/50 text-neutral-500">
-              <i className={cn("bx text-base", e.icon)} />
+            <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-neutral-100 text-neutral-500">
+              <Icon name={e.icon} size={16} />
             </span>
             <div className="flex min-w-0 flex-1 flex-col gap-1">
               <div className="flex flex-wrap items-center gap-2">
@@ -830,22 +819,23 @@ function EscalasTab() {
         {SCALES.map((sc) => {
           const v = sc.values[tp];
           const basal = sc.values["Basal"] ?? 0;
-          const delta = v == null ? null : basal - v; // melhora = redução
+          const delta = v == null ? null : basal - v;
           const mcid = delta != null && delta >= sc.mcid;
           return (
             <div
               key={sc.code}
-              className="glass-frost-inner flex flex-col gap-3 rounded-2xl px-4 py-3.5"
+              className="frost-inset flex flex-col gap-3 rounded-2xl px-4 py-3.5"
             >
-              <div className="flex items-center justify-between gap-2">
-                <Eyebrow>{sc.domain} · PRO</Eyebrow>
+              <div className="flex items-center gap-2">
+                <Eyebrow className="flex-1">{sc.domain} · PRO</Eyebrow>
                 <span className="font-mono text-micro text-neutral-400">{tp}</span>
               </div>
-              <div className="flex items-end justify-between gap-3">
+              <div className="flex items-end gap-3">
                 <div className="flex min-w-0 flex-col">
                   <span className="text-body font-medium text-ink">{sc.code}</span>
                   <span className="truncate text-caption text-neutral-500">{sc.label}</span>
                 </div>
+                <span className="flex-1" />
                 <div className="flex items-baseline gap-1">
                   <span className="font-mono text-display-m leading-none tabular-nums text-ink">
                     {v ?? "—"}
@@ -853,10 +843,11 @@ function EscalasTab() {
                   <span className="font-mono text-micro text-neutral-400">/{sc.max}</span>
                 </div>
               </div>
-              <div className="flex items-center justify-between gap-2 border-t border-white/50 pt-2.5">
+              <div className="flex items-center gap-2 border-t border-neutral-200/70 pt-2.5">
                 <span className="font-mono text-micro text-neutral-500">
                   {delta != null && delta > 0 ? `↓${delta}` : "—"} · basal {basal}
                 </span>
+                <span className="flex-1" />
                 {mcid ? (
                   <span className="font-mono text-micro uppercase tracking-[0.08em] text-state-mid">
                     MCID atingido
@@ -886,7 +877,7 @@ function ComorbidadesTab() {
         {COMORBIDITIES.map((c) => (
           <li
             key={c.cid}
-            className="flex items-center gap-3 border-b border-dashed border-white/50 py-3 first:pt-0 last:border-0"
+            className="flex items-center gap-3 border-b border-dashed border-neutral-200/70 py-3 first:pt-0 last:border-0"
           >
             <span className="w-14 shrink-0 font-mono text-caption font-medium text-ink">{c.cid}</span>
             <span className="min-w-0 flex-1 truncate text-caption text-neutral-700">{c.name}</span>
@@ -903,11 +894,11 @@ function MedRow({ name, note, dim }: { name: string; note: string; dim?: boolean
   return (
     <li
       className={cn(
-        "flex items-center gap-3 border-b border-dashed border-white/50 py-2.5 first:pt-0 last:border-0",
+        "flex items-center gap-3 border-b border-dashed border-neutral-200/70 py-2.5 first:pt-0 last:border-0",
         dim && "opacity-55",
       )}
     >
-      <i className="bx bx-capsule shrink-0 text-lg text-neutral-400" />
+      <Icon name="capsule" size={18} className="text-neutral-400" />
       <span className="min-w-0 flex-1 truncate text-caption text-ink">{name}</span>
       <span className="shrink-0 font-mono text-micro text-neutral-500">{note}</span>
     </li>
@@ -947,10 +938,10 @@ function ExamesTab() {
             {group.items.map((ex) => (
               <li
                 key={ex.name}
-                className="flex flex-col gap-1 border-b border-dashed border-white/50 py-3 first:pt-0 last:border-0"
+                className="flex flex-col gap-1 border-b border-dashed border-neutral-200/70 py-3 first:pt-0 last:border-0"
               >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-caption font-medium text-ink">{ex.name}</span>
+                <div className="flex items-center gap-3">
+                  <span className="min-w-0 flex-1 truncate text-caption font-medium text-ink">{ex.name}</span>
                   <span className="shrink-0 font-mono text-micro text-neutral-500">{ex.date}</span>
                 </div>
                 <span className="text-caption text-neutral-600 text-pretty">{ex.finding}</span>
@@ -969,9 +960,9 @@ function DocumentosTab() {
       {DOCS.map((d) => (
         <li
           key={d.name}
-          className="glass-frost-inner flex items-center gap-3 rounded-2xl px-3.5 py-2.5"
+          className="frost-inset flex items-center gap-3 rounded-2xl px-3.5 py-2.5"
         >
-          <i className="bx bx-file shrink-0 text-lg text-neutral-500" />
+          <Icon name="file" size={18} className="text-neutral-500" />
           <span className="min-w-0 flex-1 truncate text-caption text-neutral-700">{d.name}</span>
           <Tag variant={d.status === "Enviado" ? "soft" : "mid"}>{d.status}</Tag>
           <span className="shrink-0 font-mono text-micro text-neutral-400">{d.date}</span>
@@ -988,9 +979,9 @@ function AtendimentosTab() {
         <Eyebrow>{ENCOUNTERS.length} consultas</Eyebrow>
         <ul className="flex flex-col gap-2">
           {ENCOUNTERS.map((e) => (
-            <li key={e.date} className="glass-frost-inner flex flex-col gap-2 rounded-2xl px-3.5 py-3">
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-caption font-medium text-ink">{e.who}</span>
+            <li key={e.date} className="frost-inset flex flex-col gap-2 rounded-2xl px-3.5 py-3">
+              <div className="flex items-center gap-3">
+                <span className="min-w-0 flex-1 truncate text-caption font-medium text-ink">{e.who}</span>
                 <span className="shrink-0 font-mono text-micro text-neutral-400">{e.date}</span>
               </div>
               <span className="text-caption text-neutral-600">{e.kind}</span>
@@ -1012,11 +1003,11 @@ function AtendimentosTab() {
           {PRE_CONSULTS.map((p) => (
             <li
               key={p.date}
-              className="flex items-center gap-3 border-b border-dashed border-white/50 py-2.5 first:pt-0 last:border-0"
+              className="flex items-center gap-3 border-b border-dashed border-neutral-200/70 py-2.5 first:pt-0 last:border-0"
             >
               <span className="font-mono text-caption text-neutral-600">{p.date}</span>
               <Tag variant="soft">Respondido</Tag>
-              <span className="ml-auto truncate text-micro text-neutral-500">{p.channel}</span>
+              <span className="flex-1 truncate text-right text-micro text-neutral-500">{p.channel}</span>
               {p.stars > 0 ? (
                 <span className="shrink-0 font-mono text-micro text-neutral-400">
                   {"★".repeat(p.stars)}
@@ -1027,21 +1018,5 @@ function AtendimentosTab() {
         </ul>
       </div>
     </div>
-  );
-}
-
-function NotasTab() {
-  return (
-    <ul className="flex flex-col gap-3">
-      {TEAM_NOTES.map((n) => (
-        <li key={n.who} className="flex flex-col gap-1">
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-caption font-medium text-ink">{n.who}</span>
-            <span className="shrink-0 font-mono text-micro text-neutral-500">{n.date}</span>
-          </div>
-          <p className="text-caption text-neutral-700 text-pretty">{n.text}</p>
-        </li>
-      ))}
-    </ul>
   );
 }

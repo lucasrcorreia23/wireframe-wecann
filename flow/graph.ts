@@ -65,6 +65,30 @@ export const NODES: Record<NodeId, FlowNode> = {
     panels: [],
     next: "consult",
   },
+  // Caixa de entrada pré-consulta (Kanban). Ramo lateral, zona pré.
+  "pre-visit": {
+    id: "pre-visit",
+    zone: "pre",
+    title: "Pré-Consulta",
+    position: [SIDE * 1.8, 0, z(1.2)],
+    panels: [],
+  },
+  // Caixa de trabalho pós-consulta (Kanban). Ramo lateral, zona pós.
+  "pos-visit": {
+    id: "pos-visit",
+    zone: "pos",
+    title: "Pós-Consulta",
+    position: [SIDE * 1.8, 0, z(3.5)],
+    panels: [],
+  },
+  // Documents Studio. Ramo lateral.
+  documents: {
+    id: "documents",
+    zone: "pos",
+    title: "Documentos",
+    position: [SIDE * 2.2, 0, z(2.5)],
+    panels: [],
+  },
   // Launcher do módulo (tela cheia, estilo "home do Google"): título serifado +
   // busca + sugestões de pacientes. Escolher um paciente inicia a consulta.
   "consult-intro": {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { WireButton, WireBadge } from "@/components/ui";
+import { WireButton, WireBadge, Icon } from "@/components/ui";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { ScrollFade } from "@/components/ui/ScrollFade";
 import { SlideOverPanel } from "@/components/ui/SlideOverPanel";
@@ -40,7 +40,7 @@ export function SendToPatientPanel({
       footer={
         sent ? (
           <span className="flex items-center gap-2 font-mono text-micro uppercase tracking-[0.12em] text-ink">
-            <i className="bx bx-check-circle text-lg" />
+            <Icon name="check-circle" size={18} />
             Enviado ao paciente
           </span>
         ) : (
@@ -53,7 +53,7 @@ export function SendToPatientPanel({
               onClick={() => signed && setSent(true)}
               className={cn("gap-2", !signed && "pointer-events-none opacity-40")}
             >
-              <i className="bx bx-send text-lg" />
+              <Icon name="send" size={18} />
               Assinar e enviar
             </WireButton>
           </>
@@ -62,7 +62,7 @@ export function SendToPatientPanel({
     >
         <header className="flex items-start gap-3">
           <span className="glass-frost-inner grid h-10 w-10 shrink-0 place-items-center rounded-full text-ink">
-            <i className="bx bx-send text-xl" />
+            <Icon name="send" size={20} />
           </span>
           <div className="flex min-w-0 flex-col gap-1.5">
             <Eyebrow>Encerramento · envio</Eyebrow>
@@ -76,7 +76,7 @@ export function SendToPatientPanel({
             aria-label="Fechar"
             className="ml-auto grid h-9 w-9 shrink-0 place-items-center rounded-full text-neutral-500 transition-colors hover:bg-white/40 hover:text-ink"
           >
-            <i className="bx bx-x text-2xl" />
+            <Icon name="x" size={24} />
           </button>
         </header>
 
@@ -90,7 +90,7 @@ export function SendToPatientPanel({
                     key={d.label}
                     className="glass-frost-inner flex items-center gap-3 rounded-2xl p-3.5"
                   >
-                    <i className={cn("bx shrink-0 text-xl text-neutral-500", d.icon)} />
+                    <Icon name={d.icon} size={20} className="text-neutral-500" />
                     <div className="flex min-w-0 flex-1 flex-col">
                       <span className="truncate text-body font-medium text-ink">
                         {d.label}
@@ -120,7 +120,7 @@ export function SendToPatientPanel({
                     : "border-neutral-300/80 bg-white/20 text-neutral-400 hover:border-neutral-400 hover:text-neutral-600",
                 )}
               >
-                <i className={cn("bx text-2xl", signed ? "bx-check-shield" : "bx-pen")} />
+                <Icon name={signed ? "bx-check-shield" : "bx-pen"} size={24} />
                 <span className="font-mono text-micro uppercase tracking-[0.12em]">
                   {signed ? "Assinado · A3 verificado" : "Assinar com certificado A3"}
                 </span>

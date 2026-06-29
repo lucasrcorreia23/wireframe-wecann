@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Icon } from "@/components/ui";
 import { useFlow } from "@/flow/store";
 import { AthenaGlobe } from "./AthenaGlobe";
 import { ChatInput } from "@/components/chrome/AthenaPanel";
@@ -115,7 +116,7 @@ export function PersistentGlobe() {
               aria-label="Expandir Athena"
               className="glass-panel-blue backdrop-blur-2xl grid h-8 w-8 place-items-center rounded-full text-neutral-600 transition-colors hover:text-ink"
             >
-              <i className="bx bx-expand-alt text-base" />
+              <Icon name="expand-alt" size={16} />
             </button>
           </div>
           <ChatInput />

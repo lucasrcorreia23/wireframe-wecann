@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Icon } from "@/components/ui";
 import { useFlow } from "@/flow/store";
 import { cn } from "@/lib/cn";
 
@@ -58,13 +59,13 @@ export function ChatInput() {
           aria-label="Anexar arquivo"
           className="grid h-9 w-9 place-items-center rounded-full text-neutral-500 transition-colors hover:bg-white/40 hover:text-ink"
         >
-          <i className="bx bx-paperclip text-lg" />
+          <Icon name="paperclip" size={18} />
         </button>
         <button
           aria-label={hasText ? "Enviar" : "Comando de voz"}
           className="grid h-9 w-9 place-items-center rounded-full bg-ink text-paper"
         >
-          <i className={cn("bx text-lg", hasText ? "bx-send" : "bx-microphone")} />
+          <Icon name={hasText ? "bx-send" : "bx-microphone"} size={18} />
         </button>
       </div>
     </section>
@@ -107,7 +108,7 @@ export function AthenaPanel({
               type="button"
               className="glass-frost-inner flex items-center gap-1.5 rounded-full px-3 py-1.5 text-caption text-neutral-700 transition-colors hover:text-ink"
             >
-              <i className="bx bx-message-square-dots text-base text-neutral-500" />
+              <Icon name="message-square-dots" size={16} className="text-neutral-500" />
               {s}
             </button>
           ))}
@@ -123,7 +124,7 @@ export function AthenaPanel({
         aria-label="Recolher Athena"
         className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full text-neutral-500 opacity-0 transition hover:bg-white/50 hover:text-ink focus-visible:opacity-100 group-hover:opacity-100"
       >
-        <i className="bx bx-collapse-alt text-lg" />
+        <Icon name="collapse-alt" size={18} />
       </button>
     </aside>
   );

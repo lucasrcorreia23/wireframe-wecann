@@ -1,22 +1,14 @@
 "use client";
 
-import { TopBar } from "./TopBar";
 import { CompanionPanels } from "./CompanionPanels";
 
-// Raiz da camada-chrome (HUD DOM, z acima do canvas, sempre nítida §3.2).
-// O container é pointer-events-none; cada peça reativa os eventos onde precisa.
-// O header (TopBar) é auto-hide: some ao rolar para baixo e reaparece (só blur)
-// ao rolar para cima — estado calculado no WorkspaceShell e repassado aqui.
-export function ChromeOverlay({
-  headerHidden = false,
-  headerBlur = false,
-}: {
-  headerHidden?: boolean;
-  headerBlur?: boolean;
-}) {
+// Camada-chrome (HUD DOM, z acima do canvas). O header agora é o TopBar PERSISTENTE
+// (renderizado direto pelo WorkspaceShell, não mais aqui). Esta camada hospeda só os
+// painéis companheiros (zona Consulta). Container pointer-events-none; cada peça
+// reativa os eventos onde precisa.
+export function ChromeOverlay() {
   return (
     <div className="pointer-events-none absolute inset-0 z-10">
-      <TopBar headerHidden={headerHidden} headerBlur={headerBlur} />
       <CompanionPanels />
     </div>
   );

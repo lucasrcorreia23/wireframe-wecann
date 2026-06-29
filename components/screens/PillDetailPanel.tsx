@@ -1,6 +1,6 @@
 "use client";
 
-import { WireButton } from "@/components/ui";
+import { WireButton, Icon } from "@/components/ui";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { ScrollFade } from "@/components/ui/ScrollFade";
 import { SlideOverPanel } from "@/components/ui/SlideOverPanel";
@@ -35,7 +35,7 @@ export function PillDetailPanel({
             Fechar
           </WireButton>
           <WireButton variant="primary" onClick={onClose} className="gap-2">
-            <i className="bx bx-check text-lg" />
+            <Icon name="check" size={18} />
             Marcar como lida
           </WireButton>
         </>
@@ -44,7 +44,7 @@ export function PillDetailPanel({
       {/* Header */}
       <header className="flex items-start gap-3">
         <span className="glass-frost-inner grid h-10 w-10 shrink-0 place-items-center rounded-full text-ink">
-          <i className="bx bx-capsule text-xl" />
+          <Icon name="capsule" size={20} />
         </span>
         <div className="flex min-w-0 flex-col gap-1.5">
           <Eyebrow>
@@ -60,7 +60,7 @@ export function PillDetailPanel({
           aria-label="Fechar"
           className="ml-auto grid h-9 w-9 shrink-0 place-items-center rounded-full text-neutral-500 transition-colors hover:bg-white/40 hover:text-ink"
         >
-          <i className="bx bx-x text-2xl" />
+          <Icon name="x" size={24} />
         </button>
       </header>
 
@@ -71,7 +71,7 @@ export function PillDetailPanel({
           {/* Esquerda — vídeo. */}
           <div className="glass-frost-inner grid aspect-[16/9] w-full place-items-center rounded-2xl">
             <span className="grid h-16 w-16 place-items-center rounded-full bg-ink text-paper">
-              <i className="bx bx-play text-3xl" />
+              <Icon name="play" size={30} />
             </span>
           </div>
 
@@ -89,7 +89,7 @@ export function PillDetailPanel({
               <ul className="flex flex-col gap-2.5">
                 {pill?.keyPoints.map((point) => (
                   <li key={point} className="flex items-start gap-2.5">
-                    <i className="bx bx-check mt-0.5 shrink-0 text-lg text-ink" />
+                    <Icon name="check" size={18} className="mt-0.5 text-ink" />
                     <span className="text-body text-pretty text-neutral-700">
                       {point}
                     </span>

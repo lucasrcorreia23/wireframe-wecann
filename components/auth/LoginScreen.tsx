@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { Icon } from "@/components/ui";
 import { useFlow } from "@/flow/store";
 
 const FEATURES = [
@@ -57,7 +58,7 @@ export function LoginScreen() {
         {/* Marca */}
         <div className="relative flex items-center gap-3">
           <span className="grid h-12 w-12 place-items-center rounded-2xl bg-paper text-ink shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
-            <i className="bx bx-pulse text-2xl" />
+            <Icon name="pulse" size={24} />
           </span>
           <div className="flex flex-col leading-tight">
             <span className="font-display text-title font-medium text-paper">
@@ -90,7 +91,7 @@ export function LoginScreen() {
                 className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3.5 backdrop-blur-sm"
               >
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/[0.05] text-neutral-200">
-                  <i className={`bx ${f.icon} text-lg`} />
+                  <Icon name={f.icon} size={18} />
                 </span>
                 <div className="flex min-w-0 flex-col">
                   <span className="text-caption font-medium text-paper">
@@ -105,7 +106,7 @@ export function LoginScreen() {
 
         {/* Rodapé */}
         <div className="relative flex items-center gap-2 font-mono text-micro uppercase tracking-[0.14em] text-neutral-500">
-          <i className="bx bx-bolt-circle text-base" />
+          <Icon name="bolt-circle" size={16} />
           Powered by Athena · Dados estruturados em FHIR R4
         </div>
       </section>
@@ -116,7 +117,7 @@ export function LoginScreen() {
           {/* Marca compacta — só no mobile (painel esquerdo escondido). */}
           <div className="mb-10 flex items-center gap-2.5 lg:hidden">
             <span className="grid h-10 w-10 place-items-center rounded-xl bg-ink text-paper">
-              <i className="bx bx-pulse text-xl" />
+              <Icon name="pulse" size={20} />
             </span>
             <span className="font-display text-body-l font-medium text-ink">
               WeCann
@@ -136,7 +137,7 @@ export function LoginScreen() {
               E-mail profissional
             </span>
             <span className="flex items-center gap-2.5 rounded-xl border border-neutral-300 bg-paper-50 px-3.5 transition-colors focus-within:border-ink">
-              <i className="bx bx-envelope text-xl text-neutral-400" />
+              <Icon name="envelope" size={20} className="text-neutral-400" />
               <input
                 type="email"
                 placeholder="nome@clinica.com"
@@ -151,16 +152,16 @@ export function LoginScreen() {
             className="mt-5 inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-ink font-medium text-paper transition-colors duration-[180ms] hover:bg-neutral-800"
           >
             Entrar
-            <i className="bx bx-right-arrow-alt text-xl" />
+            <Icon name="right-arrow-alt" size={20} />
           </button>
 
           {/* Selos */}
           <div className="mt-6 flex items-center justify-center gap-5 font-mono text-micro uppercase tracking-[0.1em] text-neutral-500">
             <span className="inline-flex items-center gap-1.5">
-              <i className="bx bx-shield text-base text-neutral-400" /> Sem senha
+              <Icon name="shield" size={16} className="text-neutral-400" /> Sem senha
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <i className="bx bx-bolt text-base text-neutral-400" /> Acesso em 1 clique
+              <Icon name="bolt" size={16} className="text-neutral-400" /> Acesso em 1 clique
             </span>
           </div>
 

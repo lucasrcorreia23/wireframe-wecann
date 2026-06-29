@@ -2,11 +2,15 @@ import type { ComponentType } from "react";
 import type { ScreenProps } from "./index";
 import { HomeCenter } from "./HomeScreen";
 import { MessagesCenter, MessagesLeft } from "./MessagesScreen";
-import { PatientsCenter, PatientsLeft } from "./PatientsScreen";
+import { PatientsCenter } from "./PatientsScreen";
 import { ConsultIntroCenter } from "./ConsultIntroScreen";
-import { ConsultCenter, ConsultLeft } from "./ConsultScreen";
-import { AgendaCenter, AgendaLeft } from "./AgendaScreen";
-import { PreReviewCenter, PreReviewLeft } from "./PreReviewScreen";
+import { ConsultCenter } from "./ConsultScreen";
+import { AgendaCenter } from "./AgendaScreen";
+import { PreReviewCenter } from "./PreReviewScreen";
+import { PreVisitCenter } from "./PreVisitScreen";
+import { PosVisitCenter } from "./PosVisitScreen";
+import { CasuistryCenter } from "./CasuistryScreen";
+import { DocumentsCenter } from "./DocumentsScreen";
 import { ClinicalNoteCenter, ClinicalNoteLeft } from "./ClinicalNoteScreen";
 
 // Cada módulo fornece o conteúdo do CENTRO (foco) e, opcionalmente, da ESQUERDA
@@ -26,20 +30,24 @@ export type ModuleView = {
 
 export const MODULES: Record<string, ModuleView> = {
   home: { Center: HomeCenter },
-  agenda: { Center: AgendaCenter, Left: AgendaLeft },
+  // Agenda — coluna única; mini-calendário e alertas vivem DENTRO da tela.
+  agenda: { Center: AgendaCenter },
   messages: { Center: MessagesCenter, Left: MessagesLeft },
-  patients: { Center: PatientsCenter, Left: PatientsLeft },
-  "pre-review": {
-    Center: PreReviewCenter,
-    Left: PreReviewLeft,
-    // Sidebar do paciente com largura fixa (~311px no Figma); a Athena segue
-    // expansível (3ª coluna) sem comprimir a sidebar.
-    grid: {
-      collapsed: "311px minmax(0,1fr)",
-      expanded: "311px minmax(0,2.2fr) minmax(0,1fr)",
-    },
-  },
+  // Pacientes (lista) — coluna única; a sidebar de filtros vive DENTRO da tela.
+  patients: { Center: PatientsCenter },
+  // Paciente 360 — coluna ÚNICA centralizada (novo look do Figma). Sem `Left`: o
+  // shell renderiza em coluna única e a Athena vira overlay/orbe acionável.
+  "pre-review": { Center: PreReviewCenter },
+  // Pré-Consulta (Kanban) — coluna única.
+  "pre-visit": { Center: PreVisitCenter },
+  // Pós-Consulta (Kanban) — coluna única.
+  "pos-visit": { Center: PosVisitCenter },
+  // Casuística — página única analítica.
+  casuistry: { Center: CasuistryCenter },
+  // Documentos (Documents Studio) — coluna única.
+  documents: { Center: DocumentsCenter },
   "consult-intro": { Center: ConsultIntroCenter },
-  consult: { Center: ConsultCenter, Left: ConsultLeft },
+  // Consulta ao Vivo — tela autocontida de 2 zonas (main + aside Athena própria).
+  consult: { Center: ConsultCenter },
   "clinical-note": { Center: ClinicalNoteCenter, Left: ClinicalNoteLeft },
 };

@@ -1,15 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  WireButton,
-  WireBadge,
-  Avatar,
-  ScrollTabs,
-  AcceptField,
-  Eyebrow,
-  type Decision,
-} from "@/components/ui";
+import { WireButton, WireBadge, Avatar, ScrollTabs, AcceptField, Eyebrow, type Decision, Icon } from "@/components/ui";
 import { ModuleCard } from "@/components/ui/ModuleCard";
 import { BackButton } from "@/components/ui/BackButton";
 import { useFlow } from "@/flow/store";
@@ -175,7 +167,7 @@ const SECTIONS: Section[] = [
               "Solicitação de exames",
             ].map((d) => (
               <li key={d} className="flex items-center gap-2 text-caption text-neutral-700">
-                <i className="bx bx-check shrink-0 text-base text-ink" />
+                <Icon name="check" size={16} className="text-ink" />
                 <span className="text-pretty">{d}</span>
               </li>
             ))}
@@ -219,7 +211,7 @@ export function ClinicalNoteLeft() {
             "Retorno agendado · 19/07",
           ].map((g) => (
             <li key={g} className="flex items-start gap-2.5 text-caption text-neutral-700">
-              <i className="bx bx-check mt-0.5 shrink-0 text-lg text-ink" />
+              <Icon name="check" size={18} className="mt-0.5 text-ink" />
               <span className="text-pretty">{g}</span>
             </li>
           ))}
@@ -294,7 +286,7 @@ export function ClinicalNoteCenter() {
               onClick={() => setSendOpen(true)}
               className="ml-auto shrink-0 gap-2 whitespace-nowrap"
             >
-              <i className="bx bx-send text-lg" />
+              <Icon name="send" size={18} />
               Revisar e enviar
             </WireButton>
           </div>
@@ -309,7 +301,7 @@ export function ClinicalNoteCenter() {
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="flex min-w-0 flex-col gap-0.5">
                 <h3 className="flex items-center gap-2 text-body-l font-medium text-ink">
-                  <i className={cn("bx shrink-0 text-base text-neutral-400", active.icon)} />
+                  <Icon name={active.icon} size={16} className="text-neutral-400" />
                   {active.label}
                 </h3>
                 {active.subtitle ? (
@@ -327,7 +319,7 @@ export function ClinicalNoteCenter() {
                     onClick={() => setConfirmTab(active.key)}
                     className="gap-1.5"
                   >
-                    <i className="bx bx-check-double text-base" />
+                    <Icon name="check-double" size={16} />
                     Aceitar seção
                   </WireButton>
                 </div>
@@ -338,7 +330,7 @@ export function ClinicalNoteCenter() {
             {confirmTab === active.key ? (
               <div className="glass-frost-inner flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-state-hard/30 px-4 py-3">
                 <div className="flex items-center gap-2.5">
-                  <i className="bx bx-error-circle shrink-0 text-lg text-neutral-500" />
+                  <Icon name="error-circle" size={18} className="text-neutral-500" />
                   <span className="text-caption text-neutral-700 text-pretty">
                     Aceitar todas as {aiFields.length} sugestões de{" "}
                     <strong className="font-medium text-ink">{active.label}</strong>?
@@ -354,7 +346,7 @@ export function ClinicalNoteCenter() {
                     onClick={() => acceptSection(active)}
                     className="gap-1.5"
                   >
-                    <i className="bx bx-check text-base" />
+                    <Icon name="check" size={16} />
                     Confirmar
                   </WireButton>
                 </div>
@@ -393,11 +385,11 @@ export function ClinicalNoteCenter() {
                 </span>
                 <div className="flex shrink-0 items-center gap-2">
                   <WireButton variant="secondary" onClick={() => setSendOpen(true)} className="gap-2">
-                    <i className="bx bx-send text-lg" />
+                    <Icon name="send" size={18} />
                     Revisar e enviar
                   </WireButton>
                   <WireButton variant="primary" onClick={() => goTo("messages")} className="gap-2">
-                    <i className="bx bx-check-double text-lg" />
+                    <Icon name="check-double" size={18} />
                     Encerrar consulta
                   </WireButton>
                 </div>
