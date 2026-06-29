@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useFlow } from "@/flow/store";
+import { cn } from "@/lib/cn";
+import { Icon } from "@/components/ui";
 import { PillDetailPanel, type Pill } from "./PillDetailPanel";
 import { AppointmentSummaryPanel, type Appt } from "./AppointmentSummaryPanel";
 import { PATIENTS, type PatientKey } from "./appointments";
@@ -66,28 +68,84 @@ const PILLS: Pill[] = [
   },
 ];
 
-// Sugestões da Athena (visual por ora) — grade 2 por linha no container da IA.
-const SUGGESTIONS = [
-  "Resumir paciente",
-  "Sugerir conduta",
-  "Buscar evidência",
-  "Gerar laudo",
-  "Transcrever",
-  "Casuística",
-] as const;
+// Chips de atalho (contrato 6.4) — 4 temas adaptados à prática do médico. Cada um
+// dispara uma pergunta pronta à Athena (aqui, preenche o composer). "Operacional"
+// vem SEM "(& receita)" porque o financeiro está desligado no MVP (contrato §2.4).
+const SHORTCUTS: { label: string; query: string }[] = [
+  { label: "Minha casuística", query: "Mostre minha casuística por patologia neste trimestre." },
+  { label: "Outcomes clínicos", query: "Como está a resposta ao tratamento dos meus pacientes?" },
+  { label: "Operacional", query: "Resumo operacional: no-show, pendências e confirmações da agenda." },
+  { label: "Segurança clínica", query: "Quais pacientes precisam de reavaliação ou ajuste de medicação contínua?" },
+];
+
+// KPIs do dia (contrato 6.1) — 3 variações mutuamente exclusivas conforme a agenda.
+// Wireframe: estado "com agenda" como padrão; trocar DAY_STATS revela os outros.
+type DayStats = {
+  todayCount: number;
+  nextInMinutes: number | null; // null = agenda do dia concluída
+  nextDayCount: number;
+  nextDayLabel: string | null; // ex.: "qua, 30/04"
+};
+
+const DAY_STATS: DayStats = {
+  todayCount: 7,
+  nextInMinutes: 12,
+  nextDayCount: 0,
+  nextDayLabel: null,
+};
+
+function dayKpiLine(s: DayStats): string {
+  if (s.todayCount > 0) {
+    return s.nextInMinutes != null
+      ? `${s.todayCount} atendimentos hoje · próxima em ${s.nextInMinutes} min`
+      : `${s.todayCount} atendimentos hoje · agenda concluída`;
+  }
+  if (s.nextDayCount > 0 && s.nextDayLabel) {
+    return `hoje livre · ${s.nextDayCount} agendamentos ${s.nextDayLabel}`;
+  }
+  return "agenda livre";
+}
 
 // HOME — duas colunas (renderizada full-bleed pelo WorkspaceShell):
 //  • ESQUERDA (menor): saudação à esquerda → pílulas → próximas agendas, minimalista.
-//  • DIREITA (maior): container da Athena — globo (âncora do PersistentGlobe) + status
-//    + sugestões (grade 2×3) + input com pills de contexto.
+//  • DIREITA (maior): container da Athena — globo (âncora do PersistentGlobe) + KPIs do
+//    dia (6.1) + "Como posso ajudá-la?" + chips de atalho (6.4, 2×2) + composer (6.3:
+//    voz · LGPD · enviar).
 export function HomeCenter() {
   const goTo = useFlow((s) => s.goTo);
   const [selected, setSelected] = useState<Appt | null>(null);
   const [activePill, setActivePill] = useState<Pill | null>(null);
 
+  // Composer (6.3) — input controlado + estado mock de ditado por voz. Sem modo
+  // conversa ainda (thread / botão "parar" = 6.6/6.7, fora deste escopo): enviar
+  // apenas limpa o campo.
+  const [value, setValue] = useState("");
+  const [recording, setRecording] = useState(false);
+  const [seconds, setSeconds] = useState(0);
+
+  // Cronômetro do ditado: o intervalo só roda enquanto grava; o zero é reposto no
+  // toggle (evita setState síncrono dentro do efeito).
+  useEffect(() => {
+    if (!recording) return;
+    const id = setInterval(() => setSeconds((s) => s + 1), 1000);
+    return () => clearInterval(id);
+  }, [recording]);
+
+  const toggleVoice = () => {
+    setSeconds(0);
+    setRecording((r) => !r);
+  };
+
+  const canSend = value.trim().length > 0;
+  const handleSend = () => {
+    if (!canSend) return;
+    setValue("");
+  };
+  const recLabel = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+
   return (
     <>
-      <div className="no-scrollbar flex h-full flex-col items-center overflow-y-auto px-4 pt-[88px] pb-12">
+      <div className="no-scrollbar flex h-full flex-col items-center justify-center overflow-y-auto px-4 pt-6 pb-12">
         <div className="grid w-full max-w-[940px] grid-cols-1 items-stretch gap-4 md:grid-cols-[300px_minmax(0,1fr)]">
           {/* ───────────── COLUNA ESQUERDA ───────────── */}
           <div className="flex flex-col gap-4">
@@ -164,15 +222,16 @@ export function HomeCenter() {
 
           {/* ───────────── COLUNA DIREITA — container da Athena ───────────── */}
           <section className="relative flex min-h-[560px] flex-col rounded-[12px] border border-[#f7f7f7] bg-white p-[25px]">
-            {/* Topo — data/hora à direita */}
+            {/* Topo — data/hora + KPIs do dia (6.1) à direita */}
             <div className="flex items-start justify-end">
               <div className="flex flex-col items-end font-mono uppercase leading-[19.6px] text-[#afafaf]">
                 <span className="text-[14px]">Quinta, 19 de junho</span>
                 <span className="text-[12px]">14:02 BRT</span>
+                <span className="text-[12px] text-[#131126]">{dayKpiLine(DAY_STATS)}</span>
               </div>
             </div>
 
-            {/* Centro — globo + status + sugestões */}
+            {/* Centro — globo + saudação ("Como posso ajudá-la?") + chips de atalho */}
             <div className="flex flex-1 flex-col items-center justify-center gap-5 py-6">
               {/* Âncora do PersistentGlobe (o globo voa para cá; escala p/ ~72px). */}
               <div data-globe-anchor className="h-[72px] w-[72px] shrink-0" />
@@ -180,36 +239,90 @@ export function HomeCenter() {
               <div className="flex flex-col items-center gap-1.5 text-center">
                 <p className="font-mono text-[25px] font-medium leading-none text-[#18181a]">athena</p>
                 <p className="font-mono text-[12px] uppercase text-[#131126]">
-                  Aguardando suas instruções ou comando de voz
+                  Como posso ajudá-la, Dra. Helena?
                 </p>
               </div>
 
-              {/* Sugestões — grade 2 por linha */}
+              {/* Chips de atalho (6.4) — 4 temas, grade 2×2; clicar preenche o composer */}
               <div className="grid grid-cols-2 gap-x-10 gap-y-2 pt-1">
-                {SUGGESTIONS.map((s) => (
+                {SHORTCUTS.map((s) => (
                   <button
-                    key={s}
+                    key={s.label}
                     type="button"
+                    onClick={() => setValue(s.query)}
                     className="group flex items-center justify-center gap-2 rounded-full px-2 py-1.5 transition-colors hover:bg-neutral-100/70"
                   >
                     <Dot />
                     <span className="font-mono text-[12px] text-[#afafaf] transition-colors group-hover:text-[#131126]">
-                      {s}
+                      {s.label}
                     </span>
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Input + pills de contexto */}
+            {/* Composer (6.3/6.7) — input + barra de ações (voz · LGPD · enviar) */}
             <div className="flex flex-col gap-3 rounded-[24px] border border-[#f7f7f7] bg-white/25 p-[17px]">
               <input
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
                 placeholder="Pergunte à Athena ou dê instruções…"
                 className="w-full bg-transparent px-1 font-mono text-[12px] text-[#131126] placeholder:text-[#afafaf] focus:outline-none"
               />
               <div className="flex items-center justify-between">
-                <ContextPill label="Núcleo clínico" />
-                <ContextPill label="Ações rápidas" />
+                {/* Esquerda — voz (estado mock "gravando") + LGPD */}
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={toggleVoice}
+                    aria-label={recording ? "Parar gravação" : "Ditar por voz"}
+                    className={cn(
+                      "flex items-center gap-2 rounded-full px-[13px] py-[9px] transition-colors",
+                      recording ? "bg-neutral-100/80" : "hover:bg-neutral-100/70",
+                    )}
+                  >
+                    <Icon
+                      name="microphone"
+                      size={16}
+                      className={cn("text-[#131126]", recording && "animate-pulse")}
+                    />
+                    {recording ? (
+                      <span className="font-mono text-[12px] tabular-nums text-[#131126]">
+                        {recLabel}
+                      </span>
+                    ) : null}
+                  </button>
+                  <button
+                    type="button"
+                    title="Seus dados protegidos · LGPD"
+                    className="flex items-center gap-1.5 rounded-full px-[13px] py-[9px] transition-colors hover:bg-neutral-100/70"
+                  >
+                    <Icon name="shield" size={16} className="text-[#131126]" />
+                    <span className="font-mono text-[12px] uppercase text-[#131126]">LGPD</span>
+                  </button>
+                </div>
+
+                {/* Direita — enviar; gradiente da marca quando há texto */}
+                <button
+                  type="button"
+                  onClick={handleSend}
+                  disabled={!canSend}
+                  aria-label="Enviar"
+                  className="grid size-9 shrink-0 place-items-center rounded-full transition-opacity disabled:cursor-not-allowed"
+                  style={
+                    canSend
+                      ? { background: "linear-gradient(135deg, #7cedc4 0%, #489eff 55%, #ff3838 100%)" }
+                      : { background: "#ededeb" }
+                  }
+                >
+                  <Icon name="send" size={16} className={canSend ? "text-white" : "text-[#afafaf]"} />
+                </button>
               </div>
             </div>
           </section>
@@ -240,22 +353,5 @@ function Dot() {
         background: "radial-gradient(circle at 30% 30%, #7cedc4 0%, #489eff 55%, #ff3838 100%)",
       }}
     />
-  );
-}
-
-// Pill de contexto do input (estilo Figma) — rótulo + losango da marca.
-function ContextPill({ label }: { label: string }) {
-  return (
-    <button
-      type="button"
-      className="flex items-center gap-2 rounded-[40px] border border-[#f7f7f7] px-[13px] py-[9px] transition-colors hover:bg-neutral-100/70"
-    >
-      <span className="font-mono text-[12px] uppercase text-[#131126]">{label}</span>
-      <span
-        aria-hidden
-        className="size-[13px] rotate-45 rounded-[3px]"
-        style={{ background: "linear-gradient(135deg, #7cedc4 0%, #489eff 55%, #ff3838 100%)" }}
-      />
-    </button>
   );
 }
