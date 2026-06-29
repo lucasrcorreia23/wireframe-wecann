@@ -2,40 +2,58 @@
 
 import { useRef } from "react";
 import { gsap, useGSAP } from "@/lib/gsap";
-import { prefersReducedMotion } from "@/lib/motion";
 
-// Fundo "aurora" da Home (Figma node 4805-19638): manchas de cor MUITO borradas,
-// concentradas no RODAPÉ (sobretudo no canto inferior-direito), sobre branco —
-// verde-menta, ciano/azul e vermelho-coral. Camada FIXA, atrás do conteúdo (z-0) e
-// do globo (z-20); pointer-events-none. As manchas derivam de leve, contínuo e
-// lento (GSAP yoyo) — neutralizado sob prefers-reduced-motion. Em vez de blend
-// modes (que sobre branco viram branco), usamos radiais translúcidos que se
-// sobrepõem e misturam pela própria opacidade (verde+azul → teal, azul+vermelho →
-// púrpura), reproduzindo o degradê luminoso do design.
+// Fundo "aurora" da Home (Figma node 4740-15354): uma "asa" de cor que varre na
+// DIAGONAL do canto inferior-esquerdo até o superior-direito, sobre branco. Pelo
+// metadata do Figma, a faixa colorida ocupa só a METADE INFERIOR da tela (o verde — a
+// cor mais alta — começa ~42% do topo); a metade superior fica branca. Ao longo da
+// diagonal, de cima p/ baixo: verde-menta (alto-direita), azul-periwinkle (faixa
+// central) e, no rodapé, vermelho-coral (centro-direita) + ciano varrendo p/ a
+// esquerda. Camada FIXA em tela cheia, atrás do conteúdo (z-0) e do globo (z-20);
+// pointer-events-none.
+//
+// Cores extraídas direto do Figma (alphas elevados + filtro saturate p/ deixar o
+// degradê mais vivo, a pedido):
+//   verde  #4EEBB0 → #7CEDC4 → transparente   (rgba 78,235,176 / 124,237,196 / 170,239,217)
+//   vermelho #FF3838 → #E04A4A                  (rgba 255,56,56 / 224,74,74)
+//
+// As manchas têm movimento AMPLO porém lento (GSAP yoyo, 16–22s, deslocamento de
+// 22–30% do próprio tamanho + scale até ~1.34): cada uma deriva numa direção, então as
+// cores se cruzam e remisturam continuamente (verde+azul → teal, ciano+vermelho →
+// creme). O movimento é SEMPRE ativo (decorativo, sem info essencial) — não obedece a
+// prefers-reduced-motion, pois o usuário pediu o movimento explicitamente.
 const BLOBS = [
   {
-    // verde-menta — a mancha mais ampla, puxa do centro-direita para a esquerda
-    className: "right-[6%] -bottom-[8%] h-[62vh] w-[58vw]",
+    // verde-menta — topo da asa, alto à direita (~42% do topo, nada acima disso)
+    className: "right-[-6%] top-[42%] h-[44vh] w-[50vw]",
     background:
-      "radial-gradient(circle at 50% 60%, rgba(78,235,176,0.85) 0%, rgba(124,237,196,0.40) 45%, rgba(170,239,217,0) 72%)",
-    drift: { xPercent: -6, yPercent: -5, scale: 1.12 },
-    duration: 18,
+      "radial-gradient(circle at 50% 50%, rgba(78,235,176,0.98) 0%, rgba(124,237,196,0.55) 45%, rgba(170,239,217,0) 72%)",
+    drift: { xPercent: 22, yPercent: 24, scale: 1.26, rotation: 10 },
+    duration: 20,
   },
   {
-    // ciano/azul — faixa logo abaixo do verde
-    className: "right-[20%] -bottom-[16%] h-[56vh] w-[52vw]",
+    // azul-periwinkle — faixa central da diagonal, logo abaixo do verde
+    className: "right-[-4%] top-[54%] h-[42vh] w-[48vw]",
     background:
-      "radial-gradient(circle at 50% 55%, rgba(72,158,255,0.80) 0%, rgba(120,190,255,0.38) 46%, rgba(170,215,255,0) 74%)",
-    drift: { xPercent: 7, yPercent: 4, scale: 1.14 },
+      "radial-gradient(circle at 50% 50%, rgba(120,152,236,0.90) 0%, rgba(150,180,245,0.50) 46%, rgba(180,205,255,0) 74%)",
+    drift: { xPercent: -26, yPercent: 18, scale: 1.30, rotation: -12 },
     duration: 22,
   },
   {
-    // vermelho-coral — concentrado no canto inferior-direito
-    className: "right-[1%] -bottom-[20%] h-[52vh] w-[44vw]",
+    // vermelho-coral — rodapé, centro-direita
+    className: "right-[7%] -bottom-[13%] h-[42vh] w-[38vw]",
     background:
-      "radial-gradient(circle at 55% 50%, rgba(255,56,56,0.72) 0%, rgba(224,74,74,0.34) 50%, rgba(224,74,74,0) 78%)",
-    drift: { xPercent: 5, yPercent: -4, scale: 1.1 },
+      "radial-gradient(circle at 50% 50%, rgba(255,56,56,0.92) 0%, rgba(224,74,74,0.52) 48%, rgba(224,74,74,0) 76%)",
+    drift: { xPercent: 26, yPercent: -22, scale: 1.32, rotation: 12 },
     duration: 16,
+  },
+  {
+    // ciano — rodapé, varrendo do centro para a esquerda
+    className: "left-0 -bottom-[13%] h-[36vh] w-[56vw]",
+    background:
+      "radial-gradient(circle at 50% 50%, rgba(72,190,255,0.92) 0%, rgba(120,210,255,0.50) 46%, rgba(170,225,255,0) 74%)",
+    drift: { xPercent: 30, yPercent: -24, scale: 1.34, rotation: -10 },
+    duration: 18,
   },
 ] as const;
 
@@ -44,7 +62,6 @@ export function AuroraBackground() {
 
   useGSAP(
     () => {
-      if (prefersReducedMotion()) return;
       const blobs = gsap.utils.toArray<HTMLElement>("[data-aurora-blob]");
       blobs.forEach((blob, i) => {
         gsap.to(blob, {
@@ -53,7 +70,7 @@ export function AuroraBackground() {
           ease: "sine.inOut",
           repeat: -1,
           yoyo: true,
-          delay: i * 1.6,
+          delay: i * 1.2,
         });
       });
     },
@@ -64,13 +81,13 @@ export function AuroraBackground() {
     <div
       ref={rootRef}
       aria-hidden
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-0 h-[68vh] overflow-hidden"
+      className="pointer-events-none fixed inset-0 z-0 overflow-hidden [filter:saturate(1.2)]"
     >
       {BLOBS.map((blob, i) => (
         <div
           key={i}
           data-aurora-blob
-          className={`absolute rounded-full blur-[80px] will-change-transform ${blob.className}`}
+          className={`absolute rounded-full blur-[90px] will-change-transform ${blob.className}`}
           style={{ background: blob.background }}
         />
       ))}

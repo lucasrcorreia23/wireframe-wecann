@@ -1,3 +1,4 @@
+export { Icon } from "./Icon";
 export { Eyebrow } from "./Eyebrow";
 export { SectionTitle } from "./SectionTitle";
 export { Stat } from "./Stat";

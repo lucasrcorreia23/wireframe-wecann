@@ -184,48 +184,51 @@ export function AppointmentSummaryPanel({
         )
       }
     >
-      <header className="flex items-start gap-3">
-        {isPatient && appt ? (
-          <Avatar name={appt.title} seed={appt.photoSeed} size="md" />
-        ) : (
-          <span className="glass-frost-inner grid h-10 w-10 shrink-0 place-items-center rounded-full text-ink">
-            <i className="bx bx-collection text-xl" />
-          </span>
-        )}
-        <div className="flex min-w-0 flex-col gap-1.5">
-          <Eyebrow>
-            {appt?.type ?? (isPatient ? "Consulta" : "Bloco")} · {when}
-          </Eyebrow>
-          <h2 className="font-display text-title font-medium text-ink text-pretty">
-            {appt?.title}
-          </h2>
-          {isPatient && (appt?.age || appt?.followUp || appt?.convenio) ? (
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-caption text-neutral-500">
-              {[
-                appt?.age ? `${appt.age} anos` : null,
-                appt?.followUp ?? null,
-                appt?.convenio ?? null,
-              ]
-                .filter(Boolean)
-                .map((bit, idx) => (
-                  <span key={bit} className="inline-flex items-center gap-2">
-                    {idx > 0 ? (
-                      <span aria-hidden className="text-neutral-300">·</span>
-                    ) : null}
-                    {bit}
-                  </span>
-                ))}
-            </div>
-          ) : null}
+      <header className="flex flex-col gap-3">
+        {/* Linha 1 — avatar + eyebrow/nome + fechar. */}
+        <div className="flex items-start gap-3">
+          {isPatient && appt ? (
+            <Avatar name={appt.title} seed={appt.photoSeed} size="md" />
+          ) : (
+            <span className="glass-frost-inner grid h-10 w-10 shrink-0 place-items-center rounded-full text-ink">
+              <i className="bx bx-collection text-xl" />
+            </span>
+          )}
+          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+            <Eyebrow>
+              {appt?.type ?? (isPatient ? "Consulta" : "Bloco")} · {when}
+            </Eyebrow>
+            <h2 className="font-display text-title font-medium text-ink text-pretty">
+              {appt?.title}
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fechar"
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-neutral-500 transition-colors hover:bg-white/40 hover:text-ink"
+          >
+            <i className="bx bx-x text-2xl" />
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Fechar"
-          className="ml-auto grid h-9 w-9 shrink-0 place-items-center rounded-full text-neutral-500 transition-colors hover:bg-white/40 hover:text-ink"
-        >
-          <i className="bx bx-x text-2xl" />
-        </button>
+
+        {/* Linha 2 — detalhes na largura total, abaixo de um divisor (como no Paciente
+            360): importantes na horizontal (chips), menos importante na vertical. */}
+        {isPatient && (appt?.age || appt?.followUp || appt?.convenio) ? (
+          <div className="flex flex-col gap-1.5 border-t border-white/50 pt-3">
+            {appt?.age || appt?.convenio ? (
+              <div className="flex flex-wrap items-center gap-1.5">
+                {appt?.age ? <WireBadge>{appt.age} anos</WireBadge> : null}
+                {appt?.convenio ? (
+                  <WireBadge tone="soft">{appt.convenio}</WireBadge>
+                ) : null}
+              </div>
+            ) : null}
+            {appt?.followUp ? (
+              <span className="text-caption text-neutral-500">{appt.followUp}</span>
+            ) : null}
+          </div>
+        ) : null}
       </header>
 
       <ScrollFade className="mt-6 min-h-0 flex-1 pb-24" watch={appt?.title}>

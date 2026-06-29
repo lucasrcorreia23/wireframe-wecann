@@ -176,7 +176,7 @@ export function WorkspaceShell() {
       {body}
 
       {/* Recolhida/launcher → âncora da orbe no canto (o globo se encaixa aqui). */}
-      {showOrb && <div data-globe-anchor className="fixed bottom-6 right-6 h-20 w-20" />}
+      {showOrb && <div data-globe-anchor className="fixed bottom-6 right-6 h-24 w-24" />}
 
       <ChromeOverlay headerHidden={header.hidden} headerBlur={header.blur} />
       <Intro />

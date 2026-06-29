@@ -3,6 +3,7 @@
 import { useFlow } from "@/flow/store";
 import { NavMenu } from "./NavMenu";
 import { SearchBar } from "./SearchBar";
+import { Icon } from "@/components/ui/Icon";
 import { cn } from "@/lib/cn";
 
 // Barra superior (header auto-hide): [menu] [busca] à esquerda; avatar à direita.
@@ -46,14 +47,14 @@ export function TopBar({
         {/* Esquerda — só o menu (ghost). O perfil agora vive dentro do menu. */}
         <div className="pointer-events-auto absolute left-3 top-4 flex items-center gap-1">
           <IconButton label="Menu" onClick={() => toggleMenu()}>
-            <i className="bx bx-menu text-xl" />
+            <Icon name="bx-menu" className="text-xl" />
           </IconButton>
         </div>
 
         {/* Direita — busca (onde antes ficava o avatar do perfil) */}
         <div className="pointer-events-auto absolute right-3 top-4">
           <IconButton label="Buscar paciente" onClick={() => toggleSearch()}>
-            <i className="bx bx-search text-xl" />
+            <Icon name="bx-search" className="text-xl" />
           </IconButton>
         </div>
       </header>

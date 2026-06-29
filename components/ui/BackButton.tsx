@@ -2,6 +2,7 @@
 
 import { useFlow, useCanBack } from "@/flow/store";
 import { cn } from "@/lib/cn";
+import { Icon } from "./Icon";
 
 // Voltar para a tela anterior — vive ao lado do título da tela (não no topo).
 // Não-ghost (borda + papel), arredondado; só aparece quando há histórico.
@@ -18,7 +19,7 @@ export function BackButton({ className }: { className?: string }) {
         className,
       )}
     >
-      <i className="bx bx-arrow-back text-xl" />
+      <Icon name="bx-arrow-back" className="text-xl" />
     </button>
   );
 }

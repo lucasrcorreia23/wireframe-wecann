@@ -2,40 +2,44 @@
 
 import { useState } from "react";
 import { useFlow } from "@/flow/store";
+import { Icon } from "@/components/ui/Icon";
 import { cn } from "@/lib/cn";
 
 // Sugestões contextuais por módulo: frases de prompt que o usuário pode pedir à
 // Athena (pills clicáveis). A IA "acompanha" o usuário e muda as sugestões
-// conforme o contexto.
-const SUGGESTIONS: Record<string, string[]> = {
+// conforme o contexto. Cada pill tem um ícone próprio (bx-*) — renderizado como
+// SVG inline pelo <Icon> (vetor de verdade → exporta pro Figma).
+type Suggestion = { label: string; icon: string };
+
+const SUGGESTIONS: Record<string, Suggestion[]> = {
   home: [
-    "Resumir o dia",
-    "Quais são meus retornos?",
-    "Sugerir conduta",
-    "Buscar evidência",
-    "Pré-consultas pendentes",
+    { label: "Resumir o dia", icon: "bx-calendar" },
+    { label: "Quais são meus retornos?", icon: "bx-calendar-check" },
+    { label: "Sugerir conduta", icon: "bx-bulb" },
+    { label: "Buscar evidência", icon: "bx-search" },
+    { label: "Pré-consultas pendentes", icon: "bx-list-check" },
   ],
   messages: [
-    "Responder dúvida de posologia",
-    "Resumir mensagens novas",
-    "Marcar como prioritária",
+    { label: "Responder dúvida de posologia", icon: "bx-capsule" },
+    { label: "Resumir mensagens novas", icon: "bx-envelope" },
+    { label: "Marcar como prioritária", icon: "bx-flag" },
   ],
   patients: [
-    "Resumir a coorte",
-    "Sem evolução há 90 dias",
-    "Quem está em titulação?",
+    { label: "Resumir a coorte", icon: "bx-group" },
+    { label: "Sem evolução há 90 dias", icon: "bx-time-five" },
+    { label: "Quem está em titulação?", icon: "bx-trending-up" },
   ],
   consult: [
-    "Resumir a queixa principal",
-    "Sugerir CID",
-    "Checar interações",
-    "Sugerir conduta",
-    "Buscar literatura",
+    { label: "Resumir a queixa principal", icon: "bx-detail" },
+    { label: "Sugerir CID", icon: "bx-tag" },
+    { label: "Checar interações", icon: "bx-git-compare" },
+    { label: "Sugerir conduta", icon: "bx-bulb" },
+    { label: "Buscar literatura", icon: "bx-book" },
   ],
   "clinical-note": [
-    "Revisar o que a Athena preencheu",
-    "Conferir CID e conduta",
-    "Quais escalas faltam?",
+    { label: "Revisar o que a Athena preencheu", icon: "bx-show" },
+    { label: "Conferir CID e conduta", icon: "bx-check-circle" },
+    { label: "Quais escalas faltam?", icon: "bx-line-chart" },
   ],
 };
 
@@ -58,13 +62,13 @@ export function ChatInput() {
           aria-label="Anexar arquivo"
           className="grid h-9 w-9 place-items-center rounded-full text-neutral-500 transition-colors hover:bg-white/40 hover:text-ink"
         >
-          <i className="bx bx-paperclip text-lg" />
+          <Icon name="bx-paperclip" className="text-lg" />
         </button>
         <button
           aria-label={hasText ? "Enviar" : "Comando de voz"}
           className="grid h-9 w-9 place-items-center rounded-full bg-ink text-paper"
         >
-          <i className={cn("bx text-lg", hasText ? "bx-send" : "bx-microphone")} />
+          <Icon name={hasText ? "bx-send" : "bx-microphone"} className="text-lg" />
         </button>
       </div>
     </section>
@@ -92,7 +96,7 @@ export function AthenaPanel({
       )}
     >
       {/* Âncora do globo — o PersistentGlobe sobrepõe aqui (topo do painel). */}
-      <div data-globe-anchor className="h-20 w-20 shrink-0 self-center" />
+      <div data-globe-anchor className="h-24 w-24 shrink-0 self-center" />
 
       <p className="text-center font-display text-title font-medium text-ink">
         Athena
@@ -103,12 +107,12 @@ export function AthenaPanel({
         <div className="flex w-full flex-wrap justify-center gap-2">
           {suggestions.slice(0, 3).map((s) => (
             <button
-              key={s}
+              key={s.label}
               type="button"
               className="glass-frost-inner flex items-center gap-1.5 rounded-full px-3 py-1.5 text-caption text-neutral-700 transition-colors hover:text-ink"
             >
-              <i className="bx bx-message-square-dots text-base text-neutral-500" />
-              {s}
+              <Icon name={s.icon} className="text-base text-neutral-500" />
+              {s.label}
             </button>
           ))}
         </div>
@@ -123,7 +127,7 @@ export function AthenaPanel({
         aria-label="Recolher Athena"
         className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full text-neutral-500 opacity-0 transition hover:bg-white/50 hover:text-ink focus-visible:opacity-100 group-hover:opacity-100"
       >
-        <i className="bx bx-collapse-alt text-lg" />
+        <Icon name="bx-collapse-alt" className="text-lg" />
       </button>
     </aside>
   );

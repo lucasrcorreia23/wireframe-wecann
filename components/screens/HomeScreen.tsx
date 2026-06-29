@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useFlow } from "@/flow/store";
+import { cn } from "@/lib/cn";
+import { Icon } from "@/components/ui/Icon";
 import { PillDetailPanel, type Pill } from "./PillDetailPanel";
 import { AppointmentSummaryPanel, type Appt } from "./AppointmentSummaryPanel";
 import { PATIENTS, type PatientKey } from "./appointments";
@@ -66,15 +68,23 @@ const PILLS: Pill[] = [
   },
 ];
 
-// Sugestões da Athena (visual por ora) — grade 2 por linha no container da IA.
-const SUGGESTIONS = [
-  "Resumir paciente",
-  "Sugerir conduta",
-  "Buscar evidência",
-  "Gerar laudo",
-  "Transcrever",
-  "Casuística",
-] as const;
+// Sugestões da Athena (visual por ora) — dispostas em CONSTELAÇÃO 2‑3‑1 (Figma):
+// 2 na 1ª linha, 3 na 2ª, 1 centralizada na 3ª. Cada pill com ícone próprio
+// (bx-*) renderizado como SVG inline pelo <Icon> (vetor de verdade → Figma).
+type Suggestion = { label: string; icon: string };
+
+const SUGGESTION_ROWS: readonly (readonly Suggestion[])[] = [
+  [
+    { label: "Resumir paciente", icon: "bx-user" },
+    { label: "Sugerir conduta", icon: "bx-bulb" },
+  ],
+  [
+    { label: "Buscar evidência", icon: "bx-search" },
+    { label: "Gerar laudo", icon: "bx-file" },
+    { label: "Transcrever", icon: "bx-captions" },
+  ],
+  [{ label: "Casuística", icon: "bx-collection" }],
+];
 
 // HOME — duas colunas (renderizada full-bleed pelo WorkspaceShell):
 //  • ESQUERDA (menor): saudação à esquerda → pílulas → próximas agendas, minimalista.
@@ -91,19 +101,12 @@ export function HomeCenter() {
         <div className="grid w-full max-w-[940px] grid-cols-1 items-stretch gap-4 md:grid-cols-[300px_minmax(0,1fr)]">
           {/* ───────────── COLUNA ESQUERDA ───────────── */}
           <div className="flex flex-col gap-4">
-            {/* Saudação — alinhada à esquerda */}
-            <div className="flex flex-col gap-1 px-1">
-              <h1 className="font-display text-[25px] font-medium leading-[30px] text-[#131126]">
-                Boa tarde, Dra. Helena
-              </h1>
-              <p className="font-mono text-[12px] uppercase leading-[19.6px] text-[#afafaf]">
-                7 compromissos hoje · 2 ações pendentes
-              </p>
-            </div>
-
-            {/* Pílulas — card minimalista */}
+            {/* Pílulas — card minimalista (ícone no título e nos itens) */}
             <section className="flex flex-col gap-3 rounded-[12px] border border-[#f7f7f7] bg-white px-[25px] py-[18px]">
-              <h3 className="font-display text-[16px] font-medium text-[#131126]">→ Pílulas</h3>
+              <h3 className="flex items-center gap-2 font-display text-[16px] font-medium text-[#131126]">
+                <Icon name="bx-capsule" className="text-base text-neutral-400" />
+                Pílulas
+              </h3>
               <ul className="flex flex-col gap-0.5">
                 {PILLS.map((pill) => (
                   <li key={pill.title}>
@@ -111,7 +114,7 @@ export function HomeCenter() {
                       onClick={() => setActivePill(pill)}
                       className="group flex w-full items-center gap-2.5 rounded-[8px] px-1.5 py-1.5 text-left transition-colors hover:bg-neutral-100/70"
                     >
-                      <Dot />
+                      <Icon name="bx-news" className="shrink-0 text-base text-neutral-400" />
                       <span className="min-w-0 flex-1 truncate font-mono text-[12px] text-[#131126]">
                         {pill.title}
                       </span>
@@ -124,9 +127,12 @@ export function HomeCenter() {
               </ul>
             </section>
 
-            {/* Próximas agendas — card minimalista */}
+            {/* Próximas agendas — card minimalista (ícone no título e nos itens) */}
             <section className="flex flex-col gap-3 rounded-[12px] border border-[#f7f7f7] bg-white px-[25px] py-[18px]">
-              <h3 className="font-display text-[16px] font-medium text-[#131126]">→ Agenda de hoje</h3>
+              <h3 className="flex items-center gap-2 font-display text-[16px] font-medium text-[#131126]">
+                <Icon name="bx-calendar" className="text-base text-neutral-400" />
+                Agenda de hoje
+              </h3>
               <ul className="flex flex-col gap-0.5">
                 {TODAY_ORDER.map((slot) => {
                   const p = PATIENTS[slot.key];
@@ -145,6 +151,13 @@ export function HomeCenter() {
                         }
                         className="group flex w-full items-center gap-3 rounded-[8px] px-1.5 py-1.5 text-left transition-colors hover:bg-neutral-100/70"
                       >
+                        <Icon
+                          name={slot.urgent ? "bx-error-circle" : "bx-time-five"}
+                          className={cn(
+                            "shrink-0 text-base",
+                            slot.urgent ? "text-[#ff3838]" : "text-neutral-400",
+                          )}
+                        />
                         <span className="w-[42px] shrink-0 font-mono text-[12px] tabular-nums text-[#131126]">
                           {slot.time}
                         </span>
@@ -164,9 +177,17 @@ export function HomeCenter() {
 
           {/* ───────────── COLUNA DIREITA — container da Athena ───────────── */}
           <section className="relative flex min-h-[560px] flex-col rounded-[12px] border border-[#f7f7f7] bg-white p-[25px]">
-            {/* Topo — data/hora à direita */}
-            <div className="flex items-start justify-end">
-              <div className="flex flex-col items-end font-mono uppercase leading-[19.6px] text-[#afafaf]">
+            {/* Topo — saudação à esquerda, data/hora à direita */}
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex flex-col gap-1">
+                <h1 className="font-display text-[25px] font-medium leading-[30px] text-[#131126]">
+                  Boa tarde, Dra. Helena
+                </h1>
+                <p className="font-mono text-[12px] uppercase leading-[19.6px] text-[#afafaf]">
+                  Você tem 7 compromissos hoje
+                </p>
+              </div>
+              <div className="flex shrink-0 flex-col items-end font-mono uppercase leading-[19.6px] text-[#afafaf]">
                 <span className="text-[14px]">Quinta, 19 de junho</span>
                 <span className="text-[12px]">14:02 BRT</span>
               </div>
@@ -174,8 +195,8 @@ export function HomeCenter() {
 
             {/* Centro — globo + status + sugestões */}
             <div className="flex flex-1 flex-col items-center justify-center gap-5 py-6">
-              {/* Âncora do PersistentGlobe (o globo voa para cá; escala p/ ~72px). */}
-              <div data-globe-anchor className="h-[72px] w-[72px] shrink-0" />
+              {/* Âncora do PersistentGlobe (o globo voa para cá e escala p/ este tamanho). */}
+              <div data-globe-anchor className="h-[100px] w-[100px] shrink-0" />
 
               <div className="flex flex-col items-center gap-1.5 text-center">
                 <p className="font-mono text-[25px] font-medium leading-none text-[#18181a]">athena</p>
@@ -184,24 +205,26 @@ export function HomeCenter() {
                 </p>
               </div>
 
-              {/* Sugestões — grade 2 por linha */}
-              <div className="grid grid-cols-2 gap-x-10 gap-y-2 pt-1">
-                {SUGGESTIONS.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    className="group flex items-center justify-center gap-2 rounded-full px-2 py-1.5 transition-colors hover:bg-neutral-100/70"
-                  >
-                    <Dot />
-                    <span className="font-mono text-[12px] text-[#afafaf] transition-colors group-hover:text-[#131126]">
-                      {s}
-                    </span>
-                  </button>
+              {/* Sugestões — constelação 2‑3‑1, só texto */}
+              <div className="flex flex-col items-center gap-2 pt-1">
+                {SUGGESTION_ROWS.map((row, i) => (
+                  <div key={i} className="flex flex-wrap justify-center gap-x-10 gap-y-2">
+                    {row.map((s) => (
+                      <button
+                        key={s.label}
+                        type="button"
+                        className="flex items-center gap-1.5 rounded-full px-2 py-1.5 font-mono text-[12px] text-[#afafaf] transition-colors hover:text-[#131126]"
+                      >
+                        <Icon name={s.icon} className="text-[14px]" />
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
                 ))}
               </div>
             </div>
 
-            {/* Input + pills de contexto */}
+            {/* Input + pill de contexto + microfone */}
             <div className="flex flex-col gap-3 rounded-[24px] border border-[#f7f7f7] bg-white/25 p-[17px]">
               <input
                 placeholder="Pergunte à Athena ou dê instruções…"
@@ -209,7 +232,13 @@ export function HomeCenter() {
               />
               <div className="flex items-center justify-between">
                 <ContextPill label="Núcleo clínico" />
-                <ContextPill label="Ações rápidas" />
+                <button
+                  type="button"
+                  aria-label="Comando de voz"
+                  className="grid size-9 shrink-0 place-items-center rounded-full border border-[#f7f7f7] text-[#131126] transition-colors hover:bg-neutral-100/70"
+                >
+                  <Icon name="bx-microphone" className="text-lg" />
+                </button>
               </div>
             </div>
           </section>
@@ -230,32 +259,14 @@ export function HomeCenter() {
   );
 }
 
-// Pontinho multicolor (eco do globo) — usado nas pílulas, agenda e sugestões.
-function Dot() {
-  return (
-    <span
-      aria-hidden
-      className="size-2 shrink-0 rounded-full"
-      style={{
-        background: "radial-gradient(circle at 30% 30%, #7cedc4 0%, #489eff 55%, #ff3838 100%)",
-      }}
-    />
-  );
-}
-
-// Pill de contexto do input (estilo Figma) — rótulo + losango da marca.
+// Pill de contexto do input — apenas o rótulo (sem o losango da marca).
 function ContextPill({ label }: { label: string }) {
   return (
     <button
       type="button"
-      className="flex items-center gap-2 rounded-[40px] border border-[#f7f7f7] px-[13px] py-[9px] transition-colors hover:bg-neutral-100/70"
+      className="flex items-center rounded-[40px] border border-[#f7f7f7] px-[13px] py-[9px] transition-colors hover:bg-neutral-100/70"
     >
       <span className="font-mono text-[12px] uppercase text-[#131126]">{label}</span>
-      <span
-        aria-hidden
-        className="size-[13px] rotate-45 rounded-[3px]"
-        style={{ background: "linear-gradient(135deg, #7cedc4 0%, #489eff 55%, #ff3838 100%)" }}
-      />
     </button>
   );
 }

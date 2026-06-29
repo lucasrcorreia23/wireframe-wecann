@@ -200,7 +200,7 @@ export function AthenaGlobeCanvas() {
         alpha: true,
         toneMapping: THREE.NeutralToneMapping,
       }}
-      camera={{ position: [0, 0, 7], fov: 45, near: 0.1, far: 100 }}
+      camera={{ position: [0, 0, 6], fov: 45, near: 0.1, far: 100 }}
     >
       <Suspense fallback={null}>
         <Environment files="/hdri/studio.hdr" environmentIntensity={1.0}>

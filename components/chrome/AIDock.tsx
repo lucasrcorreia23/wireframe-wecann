@@ -1,7 +1,7 @@
 "use client";
 
 import { useFlow } from "@/flow/store";
-import { Eyebrow } from "@/components/ui";
+import { Eyebrow, Icon } from "@/components/ui";
 import { cn } from "@/lib/cn";
 
 // Sugestões contextuais por tela (Mapa Funcional): frases de prompt clicáveis.
@@ -71,7 +71,7 @@ export function AIDock({ className }: { className?: string }) {
               type="button"
               className="glass-frost-inner flex items-center gap-1.5 rounded-full px-3 py-1.5 text-caption text-neutral-700 transition-colors hover:text-ink"
             >
-              <i className="bx bx-message-square-dots text-base text-neutral-500" />
+              <Icon name="bx-message-square-dots" className="text-base text-neutral-500" />
               {s}
             </button>
           ))}

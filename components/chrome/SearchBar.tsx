@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFlow } from "@/flow/store";
-import { Avatar } from "@/components/ui";
+import { Avatar, Icon } from "@/components/ui";
 
 const PATIENTS = [
   { initials: "MC", name: "Marina Castro", condition: "Dor crônica · fibromialgia" },
@@ -54,7 +54,7 @@ export function SearchBar() {
       />
       <div className="panel-in-right glass-panel-blue backdrop-blur-2xl pointer-events-auto fixed inset-x-4 top-4 z-40 overflow-hidden rounded-[28px] p-2">
           <div className="flex items-center gap-3 px-4 py-2.5">
-            <i className="bx bx-search text-xl text-neutral-500" />
+            <Icon name="bx-search" className="text-xl text-neutral-500" />
             <input
               ref={inputRef}
               value={q}
