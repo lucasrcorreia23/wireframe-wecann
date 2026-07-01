@@ -16,14 +16,10 @@ export default function RootLayout({
     <html lang="pt-BR" className="h-full antialiased">
       <head>
         {/*
-          Tipografia:
-            • Late Serif Variable (Adobe Fonts) → display/serifada   (--font-display)
-            • Inter (Google Fonts)              → corpo/prosa        (--font-sans)
-            • Config Mono Variable (Adobe Fonts)→ dados/badges/labels (--font-mono)
-          Late Serif + Config Mono vêm do Typekit (kit jir2fmf); Inter vem do
-          Google Fonts. Mesmo padrão de <link> usado antes para o Typekit.
+          Tipografia: Inter (Google Fonts) em TUDO — display, corpo/prosa e
+          dados/badges/labels. As variáveis --font-display / --font-sans /
+          --font-mono apontam todas para Inter (ver globals.css).
         */}
-        <link rel="stylesheet" href="https://use.typekit.net/jir2fmf.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link

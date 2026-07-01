@@ -1,6 +1,6 @@
 import { cn } from "@/lib/cn";
 
-// Cabeçalho padrão das telas de conteúdo — título serifado (display) + subtítulo +
+// Cabeçalho padrão das telas de conteúdo — título display (Inter) + subtítulo +
 // ações à direita (via spacer `flex-1`, sem `justify-between`). Mantém as 6 telas
 // consistentes com o look do Figma.
 export function ScreenHeader({

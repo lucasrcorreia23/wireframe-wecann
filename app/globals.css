@@ -30,9 +30,10 @@
   --color-critical-weak: #f3e6e4;
 
   /* ───────────────────────── Tipografia ───────────────────────── */
-  /* Display = Late Serif (Typekit); corpo/prosa = Inter (Google Fonts);
-     dados/badges/labels = Inter (era Config Mono). */
-  --font-display: "late-serif-variable", Georgia, serif; /* serifada editorial (display) */
+  /* Inter em TUDO (Google Fonts): display, corpo/prosa e dados/badges/labels.
+     As três famílias apontam para Inter — as classes font-display/font-sans/
+     font-mono continuam existindo como intenção semântica, mas renderizam Inter. */
+  --font-display: "Inter", ui-sans-serif, system-ui, sans-serif; /* display = Inter */
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif; /* corpo/UI = Inter */
   --font-mono: "Inter", ui-sans-serif, system-ui, sans-serif; /* dados/métricas/badges = Inter */
 
@@ -86,7 +87,7 @@
   }
 
   html {
-    /* Late Serif (serifada) via --font-display; Config Mono no corpo (--font-sans). */
+    /* Inter em toda a tipografia (--font-display / --font-sans / --font-mono). */
     text-rendering: optimizeLegibility;
   }
 

@@ -89,7 +89,7 @@ export const NODES: Record<NodeId, FlowNode> = {
     position: [SIDE * 2.2, 0, z(2.5)],
     panels: [],
   },
-  // Launcher do módulo (tela cheia, estilo "home do Google"): título serifado +
+  // Launcher do módulo (tela cheia, estilo "home do Google"): título display +
   // busca + sugestões de pacientes. Escolher um paciente inicia a consulta.
   "consult-intro": {
     id: "consult-intro",

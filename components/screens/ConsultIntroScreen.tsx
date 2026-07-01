@@ -14,7 +14,7 @@ const PATIENTS: { name: string; condition: string; pre: string; tone: "neutral" 
   { name: "Helena Pires", condition: "Ansiedade · dor", pre: "100%", tone: "neutral" },
 ];
 
-// CENTRO (tela cheia) — launcher do módulo "Consulta e Análise": título serifado,
+// CENTRO (tela cheia) — launcher do módulo "Consulta e Análise": título display,
 // barra de busca centralizada (estilo Google) e sugestões de pacientes. Cada linha
 // traz o nome de um lado e a prontidão da pré-consulta do outro. Escolher um
 // paciente inicia a consulta. Renderizada full-bleed pelo WorkspaceShell (sem
@@ -41,7 +41,7 @@ export function ConsultIntroCenter() {
   return (
     <div className="station-fade no-scrollbar flex h-full min-h-0 flex-col items-center justify-center overflow-y-auto">
       <div className="flex w-full max-w-2xl flex-col items-center gap-8 py-12">
-        {/* Wordmark serifado do módulo (estilo "logo" acima da busca). */}
+        {/* Wordmark display do módulo (estilo "logo" acima da busca). */}
         <div className="flex flex-col items-center gap-3 text-center">
          
           <h1 className="font-display text-display-l font-medium leading-[1.05] text-ink">
