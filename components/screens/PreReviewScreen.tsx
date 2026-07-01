@@ -84,14 +84,16 @@ const TIMELINE: {
   meds?: string;
   icon: string;
   text: string;
+  /** Marco do episódio (Basal → M1 → M3 → Hoje) — aparece no trilho horizontal. */
+  milestone?: boolean;
 }[] = [
-  { date: "25/06/2026", year: "2026", tag: "Hoje", icon: "bx-target-lock", text: "Avaliação terapêutica em andamento — revisar evolução, resposta clínica e ajustes." },
-  { date: "19/06/2026", year: "2026", tag: "M3", icon: "bx-pulse", text: "Sonolência diurna leve relatada (CTCAE Grau 1)." },
-  { date: "04/03/2026", year: "2026", tag: "M1", meds: "CBD 200mg/mL", icon: "bx-capsule", text: "Início de CBD; desmame gradual de tramadol." },
+  { date: "25/06/2026", year: "2026", tag: "Hoje", icon: "bx-target-lock", milestone: true, text: "Avaliação terapêutica em andamento — revisar evolução, resposta clínica e ajustes." },
+  { date: "19/06/2026", year: "2026", tag: "M3", icon: "bx-pulse", milestone: true, text: "Sonolência diurna leve relatada (CTCAE Grau 1)." },
+  { date: "04/03/2026", year: "2026", tag: "M1", meds: "CBD 200mg/mL", icon: "bx-capsule", milestone: true, text: "Início de CBD; desmame gradual de tramadol." },
   { date: "02/03/2026", year: "2026", icon: "bx-test-tube", text: "Hemograma e perfil hepático normais — base para monitorar CBD." },
   { date: "10/01/2026", year: "2026", meds: "Amitriptilina 25mg", icon: "bx-capsule", text: "Ajuste de amitriptilina por sono fragmentado." },
   { date: "12/12/2025", year: "2025", icon: "bx-scan", text: "Ressonância lombar · alterações degenerativas L4–L5." },
-  { date: "28/08/2025", year: "2025", tag: "Basal", icon: "bx-detail", text: "Reavaliação · encaminhamento e solicitação de exames." },
+  { date: "28/08/2025", year: "2025", tag: "Basal", icon: "bx-detail", milestone: true, text: "Reavaliação · encaminhamento e solicitação de exames." },
   { date: "05/05/2025", year: "2025", meds: "Tramadol 50mg", icon: "bx-capsule", text: "Tramadol para controle da dor refratária." },
   { date: "18/09/2024", year: "2024", icon: "bx-body", text: "Fisioterapia + AINEs; resposta parcial e transitória." },
   { date: "22/05/2024", year: "2024", icon: "bx-scan", text: "Raio-X lombar · redução do espaço discal L4–L5." },
@@ -99,6 +101,25 @@ const TIMELINE: {
 ];
 
 const TIMELINE_YEARS = ["Tudo", "2026", "2025", "2024"] as const;
+
+// Marcos do episódio (Basal → M1 → M3 → Hoje), do mais antigo ao mais recente,
+// para o trilho horizontal. `filter` devolve cópia; `reverse` não muta TIMELINE.
+const TIMELINE_MILESTONES = TIMELINE.filter((e) => e.milestone).reverse();
+
+const MONTHS_PT = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+// "28/08/2025" → "28/08/25" (ano em 2 dígitos p/ o trilho).
+const shortDate = (d: string) => d.replace(/\/\d{2}(\d{2})$/, "/$1");
+// "19/06/2026" → "Jun 2026".
+const monthYear = (d: string) => {
+  const [, m, y] = d.split("/");
+  const mo = MONTHS_PT[Number(m) - 1] ?? "";
+  return `${mo.charAt(0).toUpperCase()}${mo.slice(1)} ${y}`;
+};
+// Subtítulo do handle = fase clínica atual (marco "M#" mais recente) + mês/ano.
+const CURRENT_PHASE = TIMELINE.find((e) => e.milestone && /^M\d/.test(e.tag ?? ""));
+const TIMELINE_SUBTITLE = CURRENT_PHASE
+  ? `${CURRENT_PHASE.tag} · ${monthYear(CURRENT_PHASE.date)}`
+  : undefined;
 
 // ── Escalas (PRO). Valores por timepoint; basal usado para o delta.
 const TIMEPOINTS = ["Basal", "Mês 1", "Mês 3", "Mês 6"] as const;
@@ -484,24 +505,102 @@ function AlertsSection() {
   );
 }
 
-// Mini linha do tempo (resumo da sanfona) — nós-ícone conectados; último em ink.
-function TimelineMini() {
-  const icons = ["bx-detail", "bx-test-tube", "bx-capsule", "bx-pulse", "bx-target-lock"];
+// Trilho horizontal de marcos (Basal → M1 → M3 → Hoje) — usado no resumo FECHADO
+// e como visão-geral no topo do ABERTO. Nó atual (último) preenchido em ink. Cada
+// nó empilha ícone + fase + data. Puramente visual (fica dentro do botão da aba).
+function TimelineRail({ className }: { className?: string }) {
   return (
-    <div className="flex items-center">
-      {icons.map((ic, i) => (
-        <Fragment key={i}>
-          {i > 0 ? <span className="h-px w-8 bg-neutral-200" /> : null}
-          <span
+    <div className={cn("flex flex-1 items-start", className)}>
+      {TIMELINE_MILESTONES.map((e, i) => {
+        const current = i === TIMELINE_MILESTONES.length - 1;
+        return (
+          <Fragment key={e.date}>
+            {i > 0 ? (
+              <span className="mt-[15px] h-px min-w-[16px] flex-1 bg-neutral-200" />
+            ) : null}
+            <div className="flex w-[64px] shrink-0 flex-col items-center gap-1.5 text-center">
+              <span
+                className={cn(
+                  "grid h-8 w-8 place-items-center rounded-full shadow-[var(--shadow-tab)]",
+                  current ? "bg-ink text-paper" : "bg-paper text-neutral-600",
+                )}
+              >
+                <Icon name={e.icon} size={16} />
+              </span>
+              <span className="text-micro font-medium leading-none text-neutral-700">{e.tag}</span>
+              <span className="font-mono text-micro leading-none text-neutral-400">{shortDate(e.date)}</span>
+            </div>
+          </Fragment>
+        );
+      })}
+    </div>
+  );
+}
+
+// Card da linha do tempo — barra branca no topo nas DUAS alturas. Fechado: título +
+// trilho de marcos + chevron. Aberto: o trilho recolhe (fade + colapso) e o corpo
+// (lista vertical) desdobra abaixo — grid-rows 0fr↔1fr (mesmo padrão do CollapsibleCard).
+function TimelineCard({ open, onToggle }: { open: boolean; onToggle: () => void }) {
+  return (
+    <div className="rounded-[20px] bg-[#f9f9f9]">
+      {/* Header — sempre visível, full-width, clicável. */}
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="relative z-[1] flex w-full items-center gap-4 rounded-[20px] bg-paper p-4 text-left shadow-[var(--shadow-tab)]"
+      >
+        <span className="flex shrink-0 items-center gap-2 text-ink">
+          <Icon name="timeline" size={18} className="text-neutral-700" />
+          <span className="flex flex-col">
+            <span className="text-body font-medium leading-tight">Linha do tempo</span>
+            {TIMELINE_SUBTITLE ? (
+              <span className="mt-0.5 font-mono text-micro leading-tight text-neutral-500">
+                {TIMELINE_SUBTITLE}
+              </span>
+            ) : null}
+          </span>
+        </span>
+
+        {/* Trilho de marcos — recolhe ao abrir. */}
+        <span
+          aria-hidden={open}
+          className={cn(
+            "min-w-0 flex-1 overflow-hidden transition-all duration-[220ms] ease-out motion-reduce:transition-none",
+            open ? "max-h-0 opacity-0" : "max-h-[64px] opacity-100",
+          )}
+        >
+          <TimelineRail />
+        </span>
+
+        <Icon
+          name="chevron-down"
+          size={22}
+          className={cn(
+            "shrink-0 text-neutral-500 transition-transform duration-[180ms] motion-reduce:transition-none",
+            open && "rotate-180",
+          )}
+        />
+      </button>
+
+      {/* Corpo — desdobra a lista vertical (o trilho não reaparece aqui). */}
+      <div
+        className={cn(
+          "grid transition-[grid-template-rows] duration-[420ms] ease-out motion-reduce:transition-none",
+          open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+        )}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <div
             className={cn(
-              "grid h-[30px] w-[30px] shrink-0 place-items-center rounded-full shadow-[0_4px_13.5px_rgba(0,0,0,0.05)]",
-              i === icons.length - 1 ? "bg-ink text-paper" : "bg-paper text-neutral-600",
+              "px-4 pb-4 pt-3 transition-all duration-[240ms] ease-out motion-reduce:transition-none",
+              open ? "translate-y-0 opacity-100 delay-[80ms]" : "-translate-y-1 opacity-0",
             )}
           >
-            <Icon name={ic} size={16} />
-          </span>
-        </Fragment>
-      ))}
+            <TimelineDetail />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -540,13 +639,6 @@ const SECTIONS: {
       </>
     ),
     body: <EscalasTab />,
-  },
-  {
-    key: "timeline",
-    icon: "timeline",
-    title: "Linha do tempo",
-    summary: <TimelineMini />,
-    body: <TimelineTab />,
   },
   {
     key: "comorbidades",
@@ -632,6 +724,12 @@ export function PreReviewCenter() {
       <SummaryRow />
       <SummarySection />
       <AlertsSection />
+
+      {/* Linha do tempo — card próprio (barra no topo) acima da análise em profundidade. */}
+      <TimelineCard
+        open={openKey === "timeline"}
+        onToggle={() => setOpenKey((k) => (k === "timeline" ? null : "timeline"))}
+      />
 
       <div className="flex flex-col gap-4">
         {SECTIONS.map((s) => (
@@ -745,19 +843,19 @@ function MotivoTab() {
   );
 }
 
-function TimelineTab() {
+function TimelineDetail() {
   const [year, setYear] = useState<(typeof TIMELINE_YEARS)[number]>("Tudo");
-
-  const all = year === "Tudo" ? TIMELINE : TIMELINE.filter((e) => e.year === year);
-  const visible = year === "Tudo" ? all.slice(0, 5) : all;
-  const hiddenCount = all.length - visible.length;
+  // Aberto mostra TODOS os eventos (sem disclosure); os filtros de ano recortam a lista.
+  const events = year === "Tudo" ? TIMELINE : TIMELINE.filter((e) => e.year === year);
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Cabeçalho do corpo + filtro por ano. */}
       <TabHeader aside={<PillFilter options={TIMELINE_YEARS} value={year} onChange={setYear} />}>
-        Histórico clínico
+        Evolução farmacológica do episódio
       </TabHeader>
 
+      {/* Faixa do episódio. */}
       <div className="frost-inset flex items-center gap-3 rounded-2xl px-3.5 py-2.5">
         <span className="text-caption font-medium text-ink">
           Episódio · CBD 200mg/mL · Dor lombar crônica
@@ -767,41 +865,47 @@ function TimelineTab() {
         </span>
       </div>
 
-      <Eyebrow icon="bx-git-commit">
-        {TIMELINE.length} eventos · evolução farmacológica
-      </Eyebrow>
+      <Eyebrow>{events.length} eventos · evolução farmacológica</Eyebrow>
 
+      {/* Timeline vertical: espinha contínua; nó atual (Hoje) em ink. */}
       <ul className="flex flex-col">
-        {visible.map((e) => (
-          <li
-            key={e.date}
-            className="flex gap-3 border-b border-dashed border-neutral-200/70 py-3 first:pt-0 last:border-0"
-          >
-            <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-neutral-100 text-neutral-500">
-              <Icon name={e.icon} size={16} />
-            </span>
-            <div className="flex min-w-0 flex-1 flex-col gap-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="font-mono text-caption text-neutral-600">{e.date}</span>
-                {e.tag ? <Tag variant={e.tag === "Hoje" ? "mid" : "soft"}>{e.tag}</Tag> : null}
-                {e.meds ? (
-                  <span className="font-mono text-micro text-neutral-400">· {e.meds}</span>
-                ) : null}
+        {events.map((e, i) => {
+          const current = e.tag === "Hoje";
+          const last = i === events.length - 1;
+          return (
+            <li key={e.date} className="flex items-stretch gap-3">
+              <div className="flex flex-col items-center">
+                <span
+                  className={cn(
+                    "grid h-7 w-7 shrink-0 place-items-center rounded-full",
+                    current ? "bg-ink text-paper" : "bg-neutral-100 text-neutral-500",
+                  )}
+                >
+                  <Icon name={e.icon} size={15} />
+                </span>
+                {!last ? <span className="mt-1 w-px flex-1 bg-neutral-200" /> : null}
               </div>
-              <span className="text-caption text-neutral-700 text-pretty">{e.text}</span>
-            </div>
-          </li>
-        ))}
+              <div
+                className={cn(
+                  "flex min-w-0 flex-1 flex-col gap-1",
+                  last ? "pb-0" : "pb-5",
+                )}
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-mono text-caption text-neutral-600">{e.date}</span>
+                  {e.tag ? (
+                    <Tag variant={current ? "mid" : "soft"} upper>
+                      {e.tag}
+                    </Tag>
+                  ) : null}
+                  {e.meds ? <Tag variant="soft">+ {e.meds}</Tag> : null}
+                </div>
+                <span className="text-caption text-neutral-700 text-pretty">{e.text}</span>
+              </div>
+            </li>
+          );
+        })}
       </ul>
-
-      {year === "Tudo" && hiddenCount > 0 ? (
-        <button
-          type="button"
-          className="self-start font-mono text-micro uppercase tracking-[0.08em] text-neutral-500 transition-colors hover:text-ink"
-        >
-          + Expandir · {hiddenCount} intervenções anteriores
-        </button>
-      ) : null}
     </div>
   );
 }
