@@ -65,20 +65,13 @@ export const NODES: Record<NodeId, FlowNode> = {
     panels: [],
     next: "consult",
   },
-  // Caixa de entrada pré-consulta (Kanban). Ramo lateral, zona pré.
-  "pre-visit": {
-    id: "pre-visit",
+  // Acompanhamento (Kanban) — unifica pré e pós-consulta numa só tela, alternadas
+  // por filtro. Ramo lateral, zona pré (herda a posição do antigo pré-consulta).
+  acompanhamento: {
+    id: "acompanhamento",
     zone: "pre",
-    title: "Pré-Consulta",
+    title: "Acompanhamento",
     position: [SIDE * 1.8, 0, z(1.2)],
-    panels: [],
-  },
-  // Caixa de trabalho pós-consulta (Kanban). Ramo lateral, zona pós.
-  "pos-visit": {
-    id: "pos-visit",
-    zone: "pos",
-    title: "Pós-Consulta",
-    position: [SIDE * 1.8, 0, z(3.5)],
     panels: [],
   },
   // Documents Studio. Ramo lateral.

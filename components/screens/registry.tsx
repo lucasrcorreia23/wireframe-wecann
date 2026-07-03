@@ -7,8 +7,7 @@ import { ConsultIntroCenter } from "./ConsultIntroScreen";
 import { ConsultCenter } from "./ConsultScreen";
 import { AgendaCenter } from "./AgendaScreen";
 import { PreReviewCenter } from "./PreReviewScreen";
-import { PreVisitCenter } from "./PreVisitScreen";
-import { PosVisitCenter } from "./PosVisitScreen";
+import { AcompanhamentoCenter } from "./AcompanhamentoScreen";
 import { CasuistryCenter } from "./CasuistryScreen";
 import { DocumentsCenter } from "./DocumentsScreen";
 import { ClinicalNoteCenter, ClinicalNoteLeft } from "./ClinicalNoteScreen";
@@ -38,10 +37,8 @@ export const MODULES: Record<string, ModuleView> = {
   // Paciente 360 — coluna ÚNICA centralizada (novo look do Figma). Sem `Left`: o
   // shell renderiza em coluna única e a Athena vira overlay/orbe acionável.
   "pre-review": { Center: PreReviewCenter },
-  // Pré-Consulta (Kanban) — coluna única.
-  "pre-visit": { Center: PreVisitCenter },
-  // Pós-Consulta (Kanban) — coluna única.
-  "pos-visit": { Center: PosVisitCenter },
+  // Acompanhamento (Kanban) — unifica pré e pós-consulta. Coluna única.
+  acompanhamento: { Center: AcompanhamentoCenter },
   // Casuística — página única analítica.
   casuistry: { Center: CasuistryCenter },
   // Documentos (Documents Studio) — coluna única.
