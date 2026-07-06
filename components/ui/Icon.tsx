@@ -1,12 +1,12 @@
 import {
   type LucideIcon,
-  Activity, AlarmClock, ArrowLeft, ArrowRight, BarChart3, Bot, Brain, BookOpen,
+  Activity, AlarmClock, ArrowLeft, ArrowRight, BarChart3, Bookmark, Bot, Brain, BookOpen,
   Calendar, CalendarCheck, CalendarClock, CalendarDays, CalendarPlus, CalendarX,
   Captions, Check, CheckCheck, ChevronDown, ChevronLeft, ChevronRight, ChevronUp,
   CircleAlert, CircleCheck, CircleHelp, ClipboardCheck, ClipboardList, Clock,
   Contact, Eye, EllipsisVertical, File, FileSignature, FileText, Flag, FlaskConical,
   GitCommitHorizontal, GitCompare, HandHeart, Handshake, Heart, HeartPulse, Home,
-  IdCard, Inbox, Layers, LayoutGrid, Lightbulb, LineChart, Link, List, ListChecks,
+  IdCard, Inbox, Info, Layers, LayoutGrid, Lightbulb, LineChart, Link, List, ListChecks,
   Loader2, LogOut, Mail, Maximize, Maximize2, MapPin, Mic, MicOff, Microscope,
   Minimize, Minimize2, Monitor, MessageCircle, MessageSquare, MessageSquareText,
   NotebookPen, Paperclip, Pen, Pencil, PersonStanding, Phone, PhoneOff, Pill, Play,
@@ -30,6 +30,7 @@ const MAP: Record<string, LucideIcon> = {
   "home-alt": Home, "log-out": LogOut, "slider-alt": SlidersHorizontal,
   "grid-alt": LayoutGrid, "list-ul": List, "list-check": ListChecks,
   // ações
+  bookmark: Bookmark,
   check: Check, "check-double": CheckCheck, "check-circle": CircleCheck,
   "check-shield": ShieldCheck, x: X, plus: Plus, pencil: Pencil, edit: Pencil,
   pen: Pen, send: Send, paperclip: Paperclip, refresh: RefreshCw, play: Play,
@@ -66,7 +67,7 @@ const MAP: Record<string, LucideIcon> = {
   star: Star, layers: Layers, collection: Layers, handshake: Handshake,
   // status / alertas
   error: TriangleAlert, warning: TriangleAlert, "error-circle": CircleAlert,
-  help: CircleHelp, flag: Flag, shield: Shield, smile: Smile, loader: Loader2,
+  help: CircleHelp, info: Info, "info-circle": Info, flag: Flag, shield: Shield, smile: Smile, loader: Loader2,
   bolt: Zap, "bolt-circle": Zap,
 };
 

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { AppScreen, ScreenHeader, Eyebrow, Avatar, Chip, Icon, WireButton } from "@/components/ui";
 import { cn } from "@/lib/cn";
+import { DOC_TYPES, SIMPLE_TEMPLATES, type DocType } from "./documents-data";
 
 // `documents` — Documents Studio (padrão Memed). Gera/revisa/assina/envia documentos
 // clínicos. Coração = prescrição estruturada (busca → editor → lote → preview A4 →
@@ -11,22 +12,8 @@ import { cn } from "@/lib/cn";
 
 /* ============================ DADOS (mock) ============================ */
 
-type DocType =
-  | "prescricao" | "exames" | "atestado" | "laudo" | "encaminhamento"
-  | "cirurgia" | "opme" | "sumario" | "orientacoes" | "tcle";
-
-const DOC_TYPES: { key: DocType; label: string; icon: string }[] = [
-  { key: "prescricao", label: "Prescrição", icon: "capsule" },
-  { key: "exames", label: "Exames", icon: "test-tube" },
-  { key: "atestado", label: "Atestado", icon: "file" },
-  { key: "laudo", label: "Laudo", icon: "clipboard" },
-  { key: "encaminhamento", label: "Encaminhamento", icon: "send" },
-  { key: "cirurgia", label: "Cirurgia", icon: "hand-heart" },
-  { key: "opme", label: "OPME", icon: "wrench" },
-  { key: "sumario", label: "Sumário", icon: "book-open" },
-  { key: "orientacoes", label: "Orientações", icon: "heart" },
-  { key: "tcle", label: "TCLE", icon: "file-signature" },
-];
+// DocType/DOC_TYPES/SIMPLE_TEMPLATES vivem em documents-data.ts (compartilhados
+// com o wizard "Gerar documento" do Paciente 360).
 
 type Med = { name: string; ingredient: string; maker: string; type: string; cannabis: boolean; count: number };
 
@@ -60,17 +47,6 @@ const INITIAL_ITEMS: Item[] = [
 ];
 
 const EXAMS = ["Hemograma completo", "Perfil hepático (TGO/TGP)", "Função renal (ureia/creatinina)", "Dosagem de vitamina D"];
-
-const SIMPLE_TEMPLATES: Record<string, string[]> = {
-  atestado: ["Atestado de comparecimento", "Atestado de afastamento (CID)", "Atestado para atividade física"],
-  laudo: ["Laudo para importação (ANVISA)", "Laudo de evolução clínica"],
-  encaminhamento: ["Encaminhamento — Reumatologia", "Encaminhamento — Psiquiatria"],
-  cirurgia: ["Solicitação de procedimento cirúrgico"],
-  opme: ["Solicitação de OPME"],
-  sumario: ["Sumário clínico de alta", "Sumário de seguimento"],
-  orientacoes: ["Orientações pós-consulta", "Higiene do sono"],
-  tcle: ["TCLE — Procedimento"],
-};
 
 const CHECKLIST = [
   { label: "Paciente identificado", done: true },

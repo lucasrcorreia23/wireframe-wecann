@@ -1,10 +1,11 @@
 "use client";
 
 import { Fragment, useState, type ReactNode } from "react";
-import { WireButton, Avatar, Eyebrow, AppScreen, Chip, SummaryStrip, StatusStrip, AccordionRow, Icon } from "@/components/ui";
+import { WireButton, Avatar, Eyebrow, AppScreen, Chip, AccordionRow, Icon, InfoTip } from "@/components/ui";
 import { SlideOverPanel } from "@/components/ui/SlideOverPanel";
 import { useFlow } from "@/flow/store";
 import { cn } from "@/lib/cn";
+import { GenerateDocumentModal } from "./GenerateDocumentModal";
 
 // `pre-review` — Paciente 360 · Perfil. Redesign conforme Figma (4952:10611):
 // COLUNA ÚNICA centralizada (AppScreen) — header do paciente · faixa-resumo de 4
@@ -43,8 +44,6 @@ const SUMMARY_PARAGRAPH =
   "Desde a última consulta houve melhora da dor (EVA 6 → 5) e do sono (PSQI 11 → 9), " +
   "com desmame parcial de tramadol. Relata sonolência diurna leve a investigar.";
 
-const PRE_STATES = ["Respondida", "Pendente", "Não enviada", "1ª consulta"];
-
 const ALERTS: { tone: "critical" | "inset"; label: string; text: string }[] = [
   {
     tone: "critical",
@@ -59,7 +58,7 @@ const ALERTS: { tone: "critical" | "inset"; label: string; text: string }[] = [
   {
     tone: "inset",
     label: "Atenção",
-    text: "Escala PSQI vencida para reaplicação neste timepoint — reaplicar antes do retorno.",
+    text: "M3 fechando sem PHQ-9 — escala primária esperada neste timepoint. Aplicar agora?",
   },
   {
     tone: "inset",
@@ -121,6 +120,106 @@ const TIMELINE_SUBTITLE = CURRENT_PHASE
   ? `${CURRENT_PHASE.tag} · ${monthYear(CURRENT_PHASE.date)}`
   : undefined;
 
+// ── Régua de acompanhamento (jornada TCLE → Pré-consulta → Basal → M1…M12).
+// Prospectiva: cada passo tem estado. Os `gate`s (TCLE/Pré-consulta) são
+// pré-requisitos; "Basal" é a 1ª consulta (M0). A janela do timepoint, o gate de
+// enzimas e a pendência de escala são sinais derivados (mock) exibidos como status.
+type StepState = "done" | "current" | "pending" | "overdue";
+type ProtocolStep = {
+  key: string;
+  label: string;
+  sub?: string;
+  icon: string;
+  state: StepState;
+  gate?: boolean;
+};
+const PROTOCOL: ProtocolStep[] = [
+  { key: "tcle", label: "TCLE", sub: "assinado", icon: "shield", state: "done", gate: true },
+  { key: "previa", label: "Pré-consulta", sub: "completa", icon: "clipboard", state: "done", gate: true },
+  { key: "basal", label: "Basal", sub: "28/08/25", icon: "flag", state: "done" },
+  { key: "m1", label: "M1", sub: "04/03/26", icon: "check", state: "done" },
+  { key: "m3", label: "M3", sub: "hoje", icon: "target", state: "current" },
+  { key: "m6", label: "M6", sub: "set/26", icon: "time", state: "pending" },
+  { key: "m12", label: "M12", sub: "mar/27", icon: "time", state: "pending" },
+];
+
+// Baseline (exposição prévia ao produto) — atributo do episódio. Timepoint atual e
+// janela de aplicação da escala. Sinal Athena = escala primária esperada e não aplicada.
+const BASELINE = "Sem tratamento prévio"; // alternativa: "Em uso prévio"
+const CURRENT_TP = "M3";
+const PROTOCOL_WINDOW = "janela da escala termina em 4 dias";
+const ENZYME_GATE = "Enzimas hepáticas · reavaliar (CBD ≥ 300 mg/dia · a cada 4 meses)";
+
+// Eventos fora da agenda (efeito adverso, internação, cirurgia de urgência, gestação…).
+const PROTOCOL_EVENTS: { date: string; label: string; detail: string }[] = [
+  { date: "19/06/2026", label: "Efeito adverso", detail: "Sonolência diurna · CTCAE Grau 1 (entre M1 e M3)" },
+];
+
+// ── Bateria estruturada checada em cada timepoint (M1/M3/M6/M12).
+type BatteryState = "done" | "pending" | "planned";
+const BATTERY_ITEMS: { key: string; label: string }[] = [
+  { key: "produto", label: "Uso do produto prescrito confirmado" },
+  { key: "adesao", label: "Adesão ao tratamento" },
+  { key: "eq5d", label: "EQ-5D-5L · qualidade de vida" },
+  { key: "pgic", label: "PGIC · mudança global percebida" },
+  { key: "primaria", label: "PHQ-9 · escala primária da condição" },
+  { key: "ae", label: "Efeitos adversos" },
+  { key: "secundarias", label: "Escalas secundárias (configuráveis em Modelos)" },
+];
+const BATTERY_STATE: Record<string, Record<string, { state: BatteryState; note?: string }>> = {
+  m1: {
+    produto: { state: "done" }, adesao: { state: "done", note: "92%" },
+    eq5d: { state: "done" }, pgic: { state: "done" }, primaria: { state: "done" },
+    ae: { state: "done", note: "sem eventos" }, secundarias: { state: "done", note: "EVA · PSQI" },
+  },
+  m3: {
+    produto: { state: "done", note: "mesmo produto" }, adesao: { state: "done", note: "86%" },
+    eq5d: { state: "done" }, pgic: { state: "done" }, primaria: { state: "pending", note: "não aplicada" },
+    ae: { state: "done", note: "sonolência · G1" }, secundarias: { state: "done", note: "EVA · PSQI · BPI · HAD-A" },
+  },
+};
+// M6/M12 ainda não ocorreram → todos os itens ficam "planned".
+function batteryFor(stepKey: string) {
+  const map = BATTERY_STATE[stepKey];
+  return BATTERY_ITEMS.map((it) => ({ ...it, ...(map?.[it.key] ?? { state: "planned" as BatteryState }) }));
+}
+// Pílulas do filtro de timepoint no corpo expandido da régua.
+const BATTERY_TPS = ["M1", "M3", "M6", "M12"] as const;
+
+// ── Produto de cannabis em uso (identificação — campos obrigatórios do RWE).
+const PRODUCT = {
+  nome: "Canabidiol Full Spectrum 200",
+  fabricante: "Prati-Donaduzzi",
+  cbd: "200 mg/mL",
+  thc: "< 0,2 mg/mL",
+  ratio: "≈ 1000:1", // calculado (CBD:THC)
+  quimiotipo: "Tipo III · predominante CBD",
+  via: "Sublingual",
+  d0: "50 mg CBD/dia",
+  dt: "120 mg CBD/dia",
+  dmedia: "95 mg CBD/dia",
+  minoritarios: ["CBG", "CBN"],
+  terpenos: ["Mirceno", "β-cariofileno", "Limoneno"],
+  custo: "R$ 480 / mês",
+  origem: "Importação · autorização Anvisa",
+  inicio: "04/03/2026",
+  outcome: "Intensidade da dor",
+};
+
+// Estilo do nó por estado — monocromático; o acento crítico só aparece no "overdue".
+const STEP_NODE: Record<StepState, string> = {
+  done: "bg-neutral-100 text-neutral-500",
+  current: "bg-ink text-paper ring-2 ring-neutral-300 ring-offset-2 ring-offset-paper",
+  pending: "border border-neutral-200 bg-paper text-neutral-400",
+  overdue: "border border-critical/40 bg-paper text-critical",
+};
+const STEP_LABEL: Record<StepState, string> = {
+  done: "text-neutral-600",
+  current: "font-medium text-ink",
+  pending: "text-neutral-400",
+  overdue: "text-critical",
+};
+
 // ── Escalas (PRO). Valores por timepoint; basal usado para o delta.
 const TIMEPOINTS = ["Basal", "Mês 1", "Mês 3", "Mês 6"] as const;
 type Timepoint = (typeof TIMEPOINTS)[number];
@@ -129,15 +228,16 @@ const SCALES: {
   code: string;
   domain: string;
   label: string;
+  info: string;
   max: number;
   better: "down";
   mcid: number;
   values: Record<Timepoint, number | null>;
 }[] = [
-  { code: "EVA", domain: "Dor", label: "Intensidade da dor", max: 10, better: "down", mcid: 2, values: { Basal: 8, "Mês 1": 6, "Mês 3": 5, "Mês 6": null } },
-  { code: "PSQI", domain: "Sono", label: "Qualidade do sono", max: 21, better: "down", mcid: 3, values: { Basal: 14, "Mês 1": 11, "Mês 3": 9, "Mês 6": null } },
-  { code: "BPI", domain: "Função", label: "Interferência na dor", max: 10, better: "down", mcid: 2, values: { Basal: 7, "Mês 1": 5, "Mês 3": 4, "Mês 6": null } },
-  { code: "HAD-A", domain: "Ansiedade", label: "Ansiedade", max: 21, better: "down", mcid: 3, values: { Basal: 11, "Mês 1": 9, "Mês 3": 7, "Mês 6": null } },
+  { code: "EVA", domain: "Dor", label: "Intensidade da dor", info: "Escala Visual Analógica: o paciente marca a intensidade da dor de 0 (sem dor) a 10 (pior dor imaginável).", max: 10, better: "down", mcid: 2, values: { Basal: 8, "Mês 1": 6, "Mês 3": 5, "Mês 6": null } },
+  { code: "PSQI", domain: "Sono", label: "Qualidade do sono", info: "Índice de Qualidade do Sono de Pittsburgh: avalia a qualidade do sono no último mês (0–21). Quanto menor a pontuação, melhor o sono.", max: 21, better: "down", mcid: 3, values: { Basal: 14, "Mês 1": 11, "Mês 3": 9, "Mês 6": null } },
+  { code: "BPI", domain: "Função", label: "Interferência na dor", info: "Inventário Breve de Dor (Brief Pain Inventory): mede o quanto a dor interfere nas atividades diárias, como sono, trabalho e humor (0–10).", max: 10, better: "down", mcid: 2, values: { Basal: 7, "Mês 1": 5, "Mês 3": 4, "Mês 6": null } },
+  { code: "HAD-A", domain: "Ansiedade", label: "Ansiedade", info: "Subescala de ansiedade da Escala Hospitalar de Ansiedade e Depressão (HADS): rastreia sintomas de ansiedade (0–21).", max: 21, better: "down", mcid: 3, values: { Basal: 11, "Mês 1": 9, "Mês 3": 7, "Mês 6": null } },
 ];
 
 // ── Comorbidades (CID-10 validadas)
@@ -192,8 +292,10 @@ const EXAMS: { group: string; icon: string; items: { name: string; date: string;
   },
 ];
 
-// ── Documentos
-const DOCS: { name: string; status: "Enviado" | "Pendente"; date: string }[] = [
+// ── Documentos — lista inicial; vira estado no PreReviewCenter (o wizard
+// "Gerar documento" injeta itens novos no topo).
+type PatientDoc = { name: string; status: "Enviado" | "Pendente"; date: string };
+const INITIAL_DOCS: PatientDoc[] = [
   { name: "Receita de controle especial · CBD", status: "Enviado", date: "18/06/2026" },
   { name: "Atestado · 2 dias", status: "Enviado", date: "18/06/2026" },
   { name: "Solicitação de exames · perfil hepático", status: "Pendente", date: "10/01/2026" },
@@ -293,7 +395,13 @@ function InfoRow({ label, value, last }: { label: string; value: string; last?: 
 
 /* ===================== HEADER DO PACIENTE ===================== */
 
-function PatientHeader({ onOpenDrawer }: { onOpenDrawer: () => void }) {
+function PatientHeader({
+  onOpenDrawer,
+  onGenerateDocument,
+}: {
+  onOpenDrawer: () => void;
+  onGenerateDocument: () => void;
+}) {
   const goTo = useFlow((s) => s.goTo);
   const back = useFlow((s) => s.back);
 
@@ -340,6 +448,14 @@ function PatientHeader({ onOpenDrawer }: { onOpenDrawer: () => void }) {
           >
             <Icon name="send" size={20} />
             Enviar mensagem
+          </button>
+          <button
+            type="button"
+            onClick={onGenerateDocument}
+            className="inline-flex h-10 items-center gap-2 rounded-full px-3 text-caption font-medium text-ink transition-colors hover:bg-neutral-100"
+          >
+            <Icon name="description" size={20} />
+            Gerar documento
           </button>
           <WireButton variant="primary" onClick={() => goTo("consult")} className="gap-2">
             <Icon name="video_camera_front" size={20} />
@@ -402,101 +518,154 @@ function PersonalDrawer({ open, onClose }: { open: boolean; onClose: () => void 
 
 /* ===================== SEÇÕES DO CENTRO ===================== */
 
-// Faixa-resumo de 4 colunas (Diagnóstico · Comorbidades · Tratamento · Alergias).
-function SummaryRow() {
+// Card Diagnóstico | Tratamento + faixa de Sintomas — conforme o Figma de
+// referência: duas colunas de conteúdo clínico e a linha de escalas embaixo.
+function DiagTreatCard() {
   return (
-    <SummaryStrip
-      columns={[
-        {
-          label: "Diagnóstico",
-          divider: true,
-          children: (
-            <>
-              <Chip>M54.5</Chip>
-              <span className="text-caption text-neutral-700">Dor lombar baixa (crônica)</span>
-            </>
-          ),
-        },
-        {
-          label: "Comorbidades",
-          divider: true,
-          children: ["Fibromialgia", "Ansiedade", "Insônia"].map((c) => (
-            <Chip key={c} tone="muted">
-              {c}
-            </Chip>
-          )),
-        },
-        {
-          label: "Tratamento",
-          children: (
-            <>
-              <Chip tone="inset">Episódio CBD</Chip>
-              <Chip tone="muted">M3</Chip>
-              <Chip tone="muted">86%</Chip>
-            </>
-          ),
-        },
-        {
-          label: "Alergias",
-          children: (
-            <>
-              <Chip tone="inset">Dipirona</Chip>
-              <Chip tone="muted">AINEs</Chip>
-            </>
-          ),
-        },
-      ]}
-    />
-  );
-}
+    <section className="flex flex-col gap-4 rounded-[20px] bg-[#f9f9f9] p-4">
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Diagnóstico — episódio + condições (dot: ativa = crítico; controle = neutro). */}
+        <div className="flex flex-col gap-2.5">
+          <Eyebrow>Diagnóstico</Eyebrow>
+          <div className="flex flex-col gap-2 rounded-[16px] bg-paper p-3.5 shadow-[var(--shadow-tab)]">
+            <div className="flex items-baseline justify-between gap-3 pb-1">
+              <span className="text-body font-medium text-ink">Episódio CBD · M54.5</span>
+              <span className="text-caption text-neutral-500">Dor lombar crônica</span>
+            </div>
+            {COMORBIDITIES.map((c) => (
+              <div key={c.cid} className="flex items-center gap-3 rounded-[12px] bg-[#f9f9f9] px-3 py-2.5">
+                <span className="shrink-0 font-mono text-caption font-medium text-ink">{c.cid}</span>
+                <span className="min-w-0 flex-1 truncate text-caption text-neutral-700">{c.name}</span>
+                <span className="shrink-0 font-mono text-micro text-neutral-400">{c.since}</span>
+                <span
+                  className={cn(
+                    "h-1.5 w-1.5 shrink-0 rounded-full",
+                    c.status === "Ativa" ? "bg-critical/70" : "bg-neutral-300",
+                  )}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
 
-// Resumo do status atual — título + parágrafo + linha pré-anamnese.
-function SummarySection() {
-  const [intro, m3, rest] = SUMMARY_PARAGRAPH.split("§");
+        {/* Tratamento — destaque do episódio CBD + coadjuvantes + lista em uso. */}
+        <div className="flex flex-col gap-2.5">
+          <Eyebrow>Tratamento</Eyebrow>
+          <div className="flex items-center gap-2 rounded-full bg-paper px-3.5 py-2.5 shadow-[var(--shadow-tab)]">
+            <Icon name="capsule" size={16} className="text-neutral-600" />
+            <span className="text-caption font-medium text-ink">Tratamento CBD</span>
+            <span className="ml-auto font-mono text-micro text-neutral-500">CBD 200mg/mL</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {["Tramadol 50mg", "Amitriptilina 25mg"].map((m) => (
+              <span
+                key={m}
+                className="rounded-full bg-paper px-3.5 py-2 text-caption text-ink shadow-[var(--shadow-tab)]"
+              >
+                {m}
+              </span>
+            ))}
+          </div>
+          <Eyebrow className="mt-1">{MEDS_ACTIVE.length} em uso</Eyebrow>
+          <div className="flex flex-col gap-1.5">
+            {MEDS_ACTIVE.slice(0, 4).map((m) => (
+              <div
+                key={m.name}
+                className="flex items-center gap-2 rounded-[12px] bg-paper px-3 py-2 shadow-[var(--shadow-tab)]"
+              >
+                <Icon name="capsule" size={15} className="shrink-0 text-neutral-500" />
+                <span className="min-w-0 flex-1 truncate text-caption text-ink">{m.name}</span>
+                <span className="shrink-0 font-mono text-micro text-neutral-400">{m.note}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
 
-  return (
-    <section className="flex flex-col gap-4 rounded-[20px] bg-[#f9f9f9] px-4 py-3">
-      <h2 className="font-display text-[20px] font-medium text-ink">Resumo do status atual</h2>
-      <p className="text-caption leading-relaxed text-neutral-700 text-pretty">
-        {intro}
-        <strong className="font-medium text-ink">{m3}</strong>
-        {rest}
-      </p>
-      <div className="border-t border-neutral-200/50 pt-3">
-        <StatusStrip
-          label="Pré-anamnese"
-          items={PRE_STATES.map((s, i) => ({ text: s, active: i === 0 }))}
-        />
+      {/* Sintomas — escalas atuais (valor do timepoint vigente). */}
+      <div className="flex flex-col gap-2.5">
+        <Eyebrow>Sintomas</Eyebrow>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {SCALES.map((s) => (
+            <div
+              key={s.code}
+              className="flex items-center justify-between gap-2 rounded-[12px] bg-paper px-3.5 py-2.5 shadow-[var(--shadow-tab)]"
+            >
+              <span className="text-caption text-neutral-500">{s.code}</span>
+              <span className="font-mono text-body font-medium text-ink">
+                {s.values["Mês 3"]}/{s.max}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );
 }
 
-// Alertas pré-consulta — título + dots + faixa de cartões (1 por alerta).
-function AlertsSection() {
+// Resumo do status atual — título + contagem de alertas + parágrafo + linha
+// pré-anamnese (check + estrelas), conforme o Figma de referência.
+function SummarySection() {
+  const [intro, m3, rest] = SUMMARY_PARAGRAPH.split("§");
+
   return (
-    <section className="flex flex-col gap-3">
+    <section className="flex h-full flex-col gap-4 rounded-[20px] bg-[#f9f9f9] px-4 py-3">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="font-display text-[20px] font-medium text-ink">Resumo do status atual</h2>
+        <span className="shrink-0 font-mono text-micro uppercase tracking-[0.08em] text-neutral-400">
+          {ALERTS.length} alertas encontrados
+        </span>
+      </div>
+      <p className="flex-1 text-caption leading-relaxed text-neutral-700 text-pretty">
+        {intro}
+        <strong className="font-medium text-ink">{m3}</strong>
+        {rest}
+      </p>
+      <div className="flex items-center gap-2 border-t border-neutral-200/50 pt-3">
+        <Icon name="check-circle" size={16} className="text-neutral-500" />
+        <span className="font-mono text-micro uppercase tracking-[0.1em] text-neutral-500">
+          Pré-anamnese
+        </span>
+        <span className="font-mono text-caption tracking-[0.14em] text-neutral-500">★★★★☆</span>
+      </div>
+    </section>
+  );
+}
+
+// Alertas pré-consulta — coluna lateral do Resumo (conforme Figma): cartões
+// empilhados, 2 por página, com dots clicáveis de paginação.
+function AlertsSection() {
+  const PER_PAGE = 2;
+  const pages = Math.ceil(ALERTS.length / PER_PAGE);
+  const [page, setPage] = useState(0);
+  const visible = ALERTS.slice(page * PER_PAGE, page * PER_PAGE + PER_PAGE);
+
+  return (
+    <section className="flex h-full flex-col gap-3">
       <div className="flex items-center gap-3 pl-1 pr-2">
         <h3 className="flex-1 font-display text-body-l font-medium text-ink">Alertas pré-consulta</h3>
         <div className="flex items-center gap-1.5">
-          {[0, 1, 2].map((i) => (
-            <span
+          {Array.from({ length: pages }, (_, i) => (
+            <button
               key={i}
+              type="button"
+              aria-label={`Página ${i + 1} de alertas`}
+              onClick={() => setPage(i)}
               className={cn(
-                "h-2 rounded-full",
-                i === 0 ? "w-5 bg-neutral-500" : "w-2 bg-neutral-300",
+                "h-2 rounded-full transition-all duration-[180ms]",
+                i === page ? "w-5 bg-neutral-500" : "w-2 bg-neutral-300 hover:bg-neutral-400",
               )}
             />
           ))}
         </div>
       </div>
-      <div className="flex flex-wrap items-stretch gap-3">
-        {ALERTS.map((a, i) => (
+      <div className="flex flex-1 flex-col gap-3">
+        {visible.map((a, i) => (
           <div
-            key={i}
-            className="flex min-w-[240px] flex-1 flex-col gap-2 rounded-[16px] border-[0.8px] border-white/60 bg-[#f9f9f9] p-3.5"
+            key={`${page}-${i}`}
+            className="flex flex-1 flex-col gap-2 rounded-[16px] border-[0.8px] border-white/60 bg-[#f9f9f9] p-3.5"
           >
-            <Chip tone={a.tone}>{a.label}</Chip>
+            <Chip tone={a.tone} className="self-start">{a.label}</Chip>
             <p className="text-caption leading-snug text-neutral-700 text-pretty">{a.text}</p>
           </div>
         ))}
@@ -605,14 +774,255 @@ function TimelineCard({ open, onToggle }: { open: boolean; onToggle: () => void 
   );
 }
 
+/* ===================== RÉGUA DE ACOMPANHAMENTO ===================== */
+
+// Trilho horizontal da régua (TCLE · Pré-consulta · Basal · M1…M12). Nó estilizado
+// por estado; conector tracejado separa os gates (pré-requisitos) do episódio.
+// Puramente visual — mesma métrica do TimelineRail (fica dentro do botão da aba).
+function ProtocolRail({ className }: { className?: string }) {
+  return (
+    <div className={cn("flex flex-1 items-start", className)}>
+      {PROTOCOL.map((s, i) => {
+        const boundary = i > 0 && Boolean(PROTOCOL[i - 1].gate) && !s.gate;
+        return (
+          <Fragment key={s.key}>
+            {i > 0 ? (
+              <span
+                className={cn(
+                  "mt-[15px] h-px min-w-[16px] flex-1",
+                  boundary ? "border-t border-dashed border-neutral-300 bg-transparent" : "bg-neutral-200",
+                )}
+              />
+            ) : null}
+            <div className="flex w-[64px] shrink-0 flex-col items-center gap-1.5 text-center">
+              <span
+                className={cn(
+                  "grid h-8 w-8 place-items-center rounded-full shadow-[var(--shadow-tab)]",
+                  STEP_NODE[s.state],
+                )}
+              >
+                <Icon name={s.icon} size={16} />
+              </span>
+              <span className={cn("text-micro font-medium leading-none", STEP_LABEL[s.state])}>{s.label}</span>
+              {s.sub ? (
+                <span className="font-mono text-micro leading-none text-neutral-400">{s.sub}</span>
+              ) : null}
+            </div>
+          </Fragment>
+        );
+      })}
+    </div>
+  );
+}
+
+// Marcador de estado de um item da bateria (feito · pendente · programado).
+function BatteryTick({ state }: { state: BatteryState }) {
+  if (state === "done")
+    return (
+      <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-neutral-200 text-neutral-600">
+        <Icon name="check" size={12} />
+      </span>
+    );
+  if (state === "pending")
+    return (
+      <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-critical-weak text-critical">
+        <Icon name="warning" size={12} />
+      </span>
+    );
+  return (
+    <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full border border-neutral-200 text-neutral-300">
+      <Icon name="time" size={12} />
+    </span>
+  );
+}
+
+// Barra da régua de acompanhamento — mesma anatomia da barra "Linha do tempo"
+// (título + subtítulo + trilho), porém SEM sanfona: o detalhe (bateria por
+// timepoint, eventos e enzimas) abre no MODAL deslizante padrão da plataforma
+// (SlideOverPanel), acionado pelo "Ver detalhes".
+function ProtocolRulerCard() {
+  const [detailOpen, setDetailOpen] = useState(false);
+
+  return (
+    <>
+      <div className="flex w-full items-center gap-4 rounded-[20px] bg-paper p-4 shadow-[var(--shadow-tab)]">
+        <span className="flex shrink-0 items-center gap-2 text-ink">
+          <Icon name="target" size={18} className="text-neutral-700" />
+          <span className="flex flex-col">
+            <span className="text-body font-medium leading-tight">Régua de acompanhamento</span>
+            <span className="mt-0.5 font-mono text-micro leading-tight text-neutral-500">
+              {CURRENT_TP} · {PROTOCOL_WINDOW}
+            </span>
+          </span>
+        </span>
+
+        {/* Trilho da régua — sempre visível. */}
+        <span className="min-w-0 flex-1">
+          <ProtocolRail />
+        </span>
+
+        <button
+          type="button"
+          onClick={() => setDetailOpen(true)}
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-caption font-medium text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-ink"
+        >
+          Ver detalhes
+          <Icon name="chevron-right" size={16} />
+        </button>
+      </div>
+
+      {/* Modal — detalhe do protocolo. */}
+      <SlideOverPanel
+        open={detailOpen}
+        onClose={() => setDetailOpen(false)}
+        label="Régua de acompanhamento · detalhes"
+        className="max-w-[560px]"
+      >
+        <div className="flex min-h-0 flex-col gap-4">
+          {/* Header do modal. */}
+          <div className="flex items-start gap-3">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-ink text-paper">
+              <Icon name="target" size={18} />
+            </span>
+            <div className="flex min-w-0 flex-1 flex-col">
+              <span className="font-display text-[20px] font-medium leading-tight text-ink">
+                Régua de acompanhamento
+              </span>
+              <span className="mt-0.5 font-mono text-micro text-neutral-500">
+                {CURRENT_TP} · {PROTOCOL_WINDOW}
+              </span>
+            </div>
+            <button
+              type="button"
+              aria-label="Fechar"
+              onClick={() => setDetailOpen(false)}
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-neutral-500 transition-colors hover:bg-white/60 hover:text-ink"
+            >
+              <Icon name="x" size={18} />
+            </button>
+          </div>
+
+          {/* Corpo rolável. */}
+          <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto">
+            <ProtocolDetail />
+          </div>
+        </div>
+      </SlideOverPanel>
+    </>
+  );
+}
+
+// Corpo do MODAL da régua: faixa do episódio (baseline) · bateria estruturada por
+// timepoint (filtro de pílulas) · eventos fora da agenda · gate de enzimas.
+// Superfícies no idioma de VIDRO do SlideOverPanel (glass-frost-inner).
+function ProtocolDetail() {
+  const [tp, setTp] = useState<(typeof BATTERY_TPS)[number]>("M3");
+  const battery = batteryFor(tp.toLowerCase());
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Faixa do episódio — baseline (exposição prévia ao produto). */}
+      <div className="glass-frost-inner flex items-center gap-3 rounded-2xl px-3.5 py-2.5">
+        <span className="text-caption font-medium text-ink">
+          Episódio · CBD 200mg/mL · Baseline: {BASELINE}
+        </span>
+        <span className="flex-1 text-right font-mono text-micro uppercase tracking-[0.08em] text-neutral-500">
+          início mar/2026
+        </span>
+      </div>
+
+      <TabHeader aside={<PillFilter options={BATTERY_TPS} value={tp} onChange={setTp} />}>
+        Bateria estruturada por timepoint
+      </TabHeader>
+
+      {/* Bateria do timepoint selecionado. */}
+      <div className="flex flex-col gap-1.5">
+        {battery.map((b) => (
+          <div key={b.key} className="glass-frost-inner flex items-center gap-2 rounded-xl px-3 py-2">
+            <BatteryTick state={b.state} />
+            <span className="min-w-0 flex-1 text-caption text-neutral-700 text-pretty">{b.label}</span>
+            {b.note ? <span className="shrink-0 font-mono text-micro text-neutral-400">{b.note}</span> : null}
+          </div>
+        ))}
+      </div>
+
+      {/* Eventos fora da agenda + monitoramento de enzimas hepáticas. */}
+      <div className="flex flex-col gap-2">
+        <Eyebrow icon="error">Eventos fora da agenda</Eyebrow>
+        {PROTOCOL_EVENTS.map((e) => (
+          <div key={e.date} className="flex items-start gap-2 rounded-xl border border-white/50 bg-white/40 px-3 py-2">
+            <Icon name="error" size={15} className="mt-0.5 shrink-0 text-neutral-500" />
+            <div className="flex min-w-0 flex-1 flex-col">
+              <span className="text-caption font-medium text-ink">{e.label}</span>
+              <span className="text-caption text-neutral-600 text-pretty">{e.detail}</span>
+            </div>
+            <span className="shrink-0 font-mono text-micro text-neutral-400">{e.date}</span>
+          </div>
+        ))}
+        <div className="glass-frost-inner flex items-center gap-2 rounded-xl px-3 py-2">
+          <Icon name="warning" size={15} className="shrink-0 text-neutral-500" />
+          <span className="text-caption text-neutral-700 text-pretty">{ENZYME_GATE}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Um campo do card de produto (rótulo micro + valor). `mono` p/ números/doses.
+function ProductField({ label, children, mono = true }: { label: string; children: ReactNode; mono?: boolean }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className="text-micro uppercase tracking-[0.06em] text-neutral-400">{label}</span>
+      <span className={cn("text-caption text-ink", mono && "font-mono")}>{children}</span>
+    </div>
+  );
+}
+
+// "Produto em uso" — corpo da sanfona (Análise em Profundidade): identificação
+// completa do produto de cannabis (campos obrigatórios do RWE). A sanfona já é a
+// camada de disclosure — aqui os campos aparecem todos, em grade.
+function ProdutoTab() {
+  return (
+    <div className="flex flex-col gap-4">
+      <TabHeader>Identificação do produto de cannabis em uso · atualizado a cada visita</TabHeader>
+
+      {/* Nome comercial + fabricante em destaque (mesma faixa do episódio). */}
+      <div className="frost-inset flex items-center gap-3 rounded-2xl px-3.5 py-2.5">
+        <span className="text-caption font-medium text-ink">{PRODUCT.nome}</span>
+        <span className="flex-1 text-right font-mono text-micro uppercase tracking-[0.08em] text-neutral-500">
+          {PRODUCT.fabricante}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
+        <ProductField label="Concentração CBD">{PRODUCT.cbd}</ProductField>
+        <ProductField label="Concentração THC">{PRODUCT.thc}</ProductField>
+        <ProductField label="Proporção CBD:THC">{PRODUCT.ratio}</ProductField>
+        <ProductField label="Quimiotipo" mono={false}>{PRODUCT.quimiotipo}</ProductField>
+        <ProductField label="Via de administração" mono={false}>{PRODUCT.via}</ProductField>
+        <ProductField label="Data de início de uso">{PRODUCT.inicio}</ProductField>
+        <ProductField label="Dose inicial (D0)">{PRODUCT.d0}</ProductField>
+        <ProductField label="Dose atual (Dt)">{PRODUCT.dt}</ProductField>
+        <ProductField label="Dose média (SAP)">{PRODUCT.dmedia}</ProductField>
+        <ProductField label="Cannabinoides minoritários" mono={false}>{PRODUCT.minoritarios.join(" · ")}</ProductField>
+        <ProductField label="Terpenos" mono={false}>{PRODUCT.terpenos.join(" · ")}</ProductField>
+        <ProductField label="Custo mensal">{PRODUCT.custo}</ProductField>
+        <ProductField label="Lote / origem" mono={false}>{PRODUCT.origem}</ProductField>
+        <ProductField label="Outcome primário" mono={false}>{PRODUCT.outcome}</ProductField>
+      </div>
+    </div>
+  );
+}
+
 // Sanfona — uma seção por linha (aba branca + corpo #f9f9f9). `summary` = resumo
 // inline (chips/contagens); `body` = o conteúdo clínico completo (expandido).
+// Ambos opcionais: a seção "documentos" computa os dois no PreReviewCenter
+// (a lista de docs é estado — o wizard "Gerar documento" injeta itens).
 const SECTIONS: {
   key: string;
   icon: string;
   title: string;
-  summary: ReactNode;
-  body: ReactNode;
+  summary?: ReactNode;
+  body?: ReactNode;
 }[] = [
   {
     key: "motivo",
@@ -627,18 +1037,18 @@ const SECTIONS: {
     body: <MotivoTab />,
   },
   {
-    key: "escalas",
-    icon: "trending_up",
-    title: "Escalas de evol.",
+    key: "produto",
+    icon: "capsule",
+    title: "Produto em uso",
     summary: (
       <>
-        <SoftChip label="EVA">5/10</SoftChip>
-        <SoftChip label="PSQI">9/21</SoftChip>
-        <SoftChip label="HAD-A">7/21</SoftChip>
-        <SoftChip label="BPI">4/10</SoftChip>
+        <SoftChip icon="capsule">CBD 200mg/mL</SoftChip>
+        <SoftChip>Tipo III</SoftChip>
+        <SoftChip>Sublingual</SoftChip>
+        <SoftChip label="Dt">120 mg/dia</SoftChip>
       </>
     ),
-    body: <EscalasTab />,
+    body: <ProdutoTab />,
   },
   {
     key: "comorbidades",
@@ -652,6 +1062,20 @@ const SECTIONS: {
       </>
     ),
     body: <ComorbidadesTab />,
+  },
+  {
+    key: "escalas",
+    icon: "trending_up",
+    title: "Escalas de evol.",
+    summary: (
+      <>
+        <SoftChip label="EVA">5/10</SoftChip>
+        <SoftChip label="PSQI">9/21</SoftChip>
+        <SoftChip label="HAD-A">7/21</SoftChip>
+        <SoftChip label="BPI">4/10</SoftChip>
+      </>
+    ),
+    body: <EscalasTab />,
   },
   {
     key: "medicacoes",
@@ -685,17 +1109,7 @@ const SECTIONS: {
     key: "documentos",
     icon: "description",
     title: "Documentos",
-    summary: (
-      <>
-        <SoftChip>
-          <span className="font-medium uppercase tracking-[0.06em] text-neutral-600">2 pendentes</span>
-        </SoftChip>
-        <SoftChip>
-          <span className="font-medium uppercase tracking-[0.06em] text-neutral-600">4 enviados</span>
-        </SoftChip>
-      </>
-    ),
-    body: <DocumentosTab />,
+    // summary/body computados no PreReviewCenter a partir do estado `docs`.
   },
   {
     key: "atendimentos",
@@ -717,36 +1131,92 @@ export function PreReviewCenter() {
   // Sanfona: no máximo uma seção aberta. `null` = todas fechadas (estado inicial).
   const [openKey, setOpenKey] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [docs, setDocs] = useState<PatientDoc[]>(INITIAL_DOCS);
+  const [genDocOpen, setGenDocOpen] = useState(false);
+
+  // Documento gerado pelo wizard: entra no topo da lista como "Pendente" e a
+  // sanfona Documentos abre sozinha para dar o feedback visual.
+  const handleGenerate = (name: string) => {
+    setDocs((prev) => [{ name, status: "Pendente" as const, date: "Hoje" }, ...prev]);
+    setGenDocOpen(false);
+    setOpenKey("documentos");
+  };
+
+  const pendentes = docs.filter((d) => d.status === "Pendente").length;
+  const enviados = docs.length - pendentes;
 
   return (
     <AppScreen>
-      <PatientHeader onOpenDrawer={() => setDrawerOpen(true)} />
-      <SummaryRow />
-      <SummarySection />
-      <AlertsSection />
+      <PatientHeader
+        onOpenDrawer={() => setDrawerOpen(true)}
+        onGenerateDocument={() => setGenDocOpen(true)}
+      />
 
-      {/* Linha do tempo — card próprio (barra no topo) acima da análise em profundidade. */}
+      {/* Resumo do status atual (esq.) + Alertas pré-consulta (dir.) — lado a lado,
+          conforme o Figma de referência. */}
+      <div className="grid items-stretch gap-4 lg:grid-cols-[1.65fr_1fr]">
+        <SummarySection />
+        <AlertsSection />
+      </div>
+
+      {/* Diagnóstico | Tratamento + Sintomas. */}
+      <DiagTreatCard />
+
+      {/* Régua de acompanhamento (protocolo TCLE→M12) — barra estática; o detalhe
+          abre em modal (Ver detalhes). Linha do tempo (histórico) segue na sanfona. */}
+      <ProtocolRulerCard />
       <TimelineCard
         open={openKey === "timeline"}
         onToggle={() => setOpenKey((k) => (k === "timeline" ? null : "timeline"))}
       />
 
+      <h3 className="pl-1 pt-2 font-display text-body-l font-medium text-ink">
+        Análise em Profundidade
+      </h3>
+
       <div className="flex flex-col gap-4">
-        {SECTIONS.map((s) => (
-          <AccordionRow
-            key={s.key}
-            icon={s.icon}
-            title={s.title}
-            summary={s.summary}
-            open={openKey === s.key}
-            onToggle={() => setOpenKey((k) => (k === s.key ? null : s.key))}
-          >
-            {s.body}
-          </AccordionRow>
-        ))}
+        {SECTIONS.map((s) => {
+          const isDocs = s.key === "documentos";
+          return (
+            <AccordionRow
+              key={s.key}
+              icon={s.icon}
+              title={s.title}
+              summary={
+                isDocs ? (
+                  <>
+                    <SoftChip>
+                      <span className="font-medium uppercase tracking-[0.06em] text-neutral-600">
+                        {pendentes} {pendentes === 1 ? "pendente" : "pendentes"}
+                      </span>
+                    </SoftChip>
+                    <SoftChip>
+                      <span className="font-medium uppercase tracking-[0.06em] text-neutral-600">
+                        {enviados} {enviados === 1 ? "enviado" : "enviados"}
+                      </span>
+                    </SoftChip>
+                  </>
+                ) : (
+                  s.summary
+                )
+              }
+              open={openKey === s.key}
+              onToggle={() => setOpenKey((k) => (k === s.key ? null : s.key))}
+            >
+              {isDocs ? <DocumentosTab docs={docs} /> : s.body}
+            </AccordionRow>
+          );
+        })}
       </div>
 
       <PersonalDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      {genDocOpen ? (
+        <GenerateDocumentModal
+          patient={{ ...PATIENT, diagnosis: "M54.5 · Dor lombar crônica" }}
+          onClose={() => setGenDocOpen(false)}
+          onGenerate={handleGenerate}
+        />
+      ) : null}
     </AppScreen>
   );
 }
@@ -936,7 +1406,10 @@ function EscalasTab() {
               </div>
               <div className="flex items-end gap-3">
                 <div className="flex min-w-0 flex-col">
-                  <span className="text-body font-medium text-ink">{sc.code}</span>
+                  <span className="flex items-center gap-1.5 text-body font-medium text-ink">
+                    {sc.code}
+                    <InfoTip text={sc.info} />
+                  </span>
                   <span className="truncate text-caption text-neutral-500">{sc.label}</span>
                 </div>
                 <span className="flex-1" />
@@ -1058,12 +1531,12 @@ function ExamesTab() {
   );
 }
 
-function DocumentosTab() {
+function DocumentosTab({ docs }: { docs: PatientDoc[] }) {
   return (
     <ul className="flex flex-col gap-2">
-      {DOCS.map((d) => (
+      {docs.map((d, i) => (
         <li
-          key={d.name}
+          key={`${d.name}-${i}`}
           className="frost-inset flex items-center gap-3 rounded-2xl px-3.5 py-2.5"
         >
           <Icon name="file" size={18} className="text-neutral-500" />

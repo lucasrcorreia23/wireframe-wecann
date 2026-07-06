@@ -22,3 +22,4 @@ export { AppScreen } from "./AppScreen";
 export { SummaryStrip, type SummaryColumn } from "./SummaryStrip";
 export { StatusStrip, type StatusItem } from "./StatusStrip";
 export { ScreenHeader } from "./ScreenHeader";
+export { InfoTip } from "./InfoTip";
