@@ -10,7 +10,7 @@ import { PreReviewCenter } from "./PreReviewScreen";
 import { AcompanhamentoCenter } from "./AcompanhamentoScreen";
 import { CasuistryCenter } from "./CasuistryScreen";
 import { DocumentsCenter } from "./DocumentsScreen";
-import { ClinicalNoteCenter, ClinicalNoteLeft } from "./ClinicalNoteScreen";
+import { ClinicalNoteCenter } from "./ClinicalNoteScreen";
 
 // Cada módulo fornece o conteúdo do CENTRO (foco) e, opcionalmente, da ESQUERDA
 // (resumos alimentados pela IA). A coluna DIREITA é sempre o AthenaPanel
@@ -44,7 +44,8 @@ export const MODULES: Record<string, ModuleView> = {
   // Documentos (Documents Studio) — coluna única.
   documents: { Center: DocumentsCenter },
   "consult-intro": { Center: ConsultIntroCenter },
-  // Consulta ao Vivo — tela autocontida de 2 zonas (main + aside Athena própria).
+  // Consulta ao Vivo — tela autocontida (header + 2 colunas próprias).
   consult: { Center: ConsultCenter },
-  "clinical-note": { Center: ClinicalNoteCenter, Left: ClinicalNoteLeft },
+  // Conferência da consulta — coluna única (novo look do Figma).
+  "clinical-note": { Center: ClinicalNoteCenter },
 };

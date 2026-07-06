@@ -89,17 +89,17 @@ export function WorkspaceShell() {
 
   const isHome = currentNode === "home";
   const isLauncher = currentNode === "consult-intro";
-  // Consulta ao Vivo: tela autocontida de 2 zonas (tem o seu próprio aside Athena).
+  // Consulta ao Vivo: tela autocontida (header + 2 colunas próprias; Athena via orbe/overlay).
   const isConsult = currentNode === "consult";
   // Telas legadas multi-coluna (ainda definem `Left`).
   const isColumn = !isHome && !isLauncher && !isConsult && Boolean(Left);
   // Telas de conteúdo (novo look) = coluna única.
   const isSingle = !isHome && !isLauncher && !isConsult && !isColumn;
 
-  // Orbe recolhida → âncora do canto. A Consulta tem aside próprio: sem orbe/overlay.
-  const showOrb = !isHome && !isConsult && athenaCollapsed;
-  // Painel overlay da Athena: só nas telas single, quando EXPANDIDA.
-  const showSingleOverlay = isSingle && !athenaCollapsed;
+  // Orbe recolhida → âncora do canto (inclui a Consulta, que não tem mais aside).
+  const showOrb = !isHome && athenaCollapsed;
+  // Painel overlay da Athena: telas single e Consulta, quando EXPANDIDA.
+  const showSingleOverlay = (isSingle || isConsult) && !athenaCollapsed;
 
   let body: ReactNode;
   if (isHome) {

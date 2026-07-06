@@ -1,5 +1,6 @@
 @import "tailwindcss";
 
+/* Tipografia: Inter (Google Fonts) em display/corpo/dados — ver layout.tsx. */
 @theme {
   /* ───────────────────────── Neutros — papel → tinta ───────────────────────── */
   --color-paper: #ffffff;
