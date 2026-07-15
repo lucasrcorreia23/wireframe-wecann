@@ -20,11 +20,16 @@ export function SearchBar() {
   const [q, setQ] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Reset da query ao fechar — ajuste de estado DURANTE o render (padrão React,
+  // sem setState em efeito; mesmo padrão do ActiveStationLayer).
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (prevOpen !== open) {
+    setPrevOpen(open);
+    if (!open) setQ("");
+  }
+
   useEffect(() => {
-    if (!open) {
-      setQ("");
-      return;
-    }
+    if (!open) return;
     inputRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") toggleSearch(false);

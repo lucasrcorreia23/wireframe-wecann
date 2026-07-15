@@ -18,7 +18,7 @@ export function Experience() {
   }
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-neutral-100">
+    <div className="relative h-screen w-screen overflow-hidden bg-warm-bg">
       {/* Camada-mundo */}
       <div className="absolute inset-0">
         <WorldCanvasClient />

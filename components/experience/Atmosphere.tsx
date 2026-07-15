@@ -2,11 +2,49 @@
 
 import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
-import { Grid } from "@react-three/drei";
 import * as THREE from "three";
 import { prefersReducedMotion } from "@/lib/motion";
 
-// Atmosfera WebGL cinza (§3.1): névoa + grid recuando + partículas sutis. É o que
+// Manchas de gradiente suave (paleta pastel da bola) espalhadas pelo corredor
+// −Z — substituem o antigo grid (pedido 15/07/2026): a ambiência remete à
+// suavidade do gradiente, e a paralaxe delas durante o dolly segue dando pista
+// de movimento. [x, y, z, escala, opacidade, índice da cor]
+const WASHES: [number, number, number, number, number, number][] = [
+  [9, -7, -28, 55, 0.5, 0],
+  [-13, 6, -55, 48, 0.35, 1],
+  [10, -6, -95, 60, 0.5, 0],
+  [-11, 5, -135, 50, 0.3, 2],
+];
+
+// Cores das manchas: pêssego, lavanda, menta (mesma família do globo).
+const WASH_COLORS: [number, number, number][] = [
+  [255, 203, 158],
+  [199, 200, 239],
+  [187, 233, 211],
+];
+
+// Textura radial suave (cor → transparente) gerada em canvas 2D, uma por cor.
+function makeWashTexture([r, g, b]: [number, number, number]): THREE.CanvasTexture {
+  const size = 256;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d")!;
+  const grad = ctx.createRadialGradient(
+    size / 2, size / 2, 0,
+    size / 2, size / 2, size / 2,
+  );
+  grad.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.55)`);
+  grad.addColorStop(0.5, `rgba(${r}, ${g}, ${b}, 0.22)`);
+  grad.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, size, size);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+// Atmosfera WebGL: névoa + manchas de gradiente + partículas sutis. É o que
 // faz a transição parecer viagem e não corte. `intensity` (0..1) sobe durante o
 // trânsito para dar pistas de movimento (controlado pela CameraRig na Fase 4).
 export function Atmosphere({
@@ -16,6 +54,7 @@ export function Atmosphere({
 }) {
   const points = useRef<THREE.Points>(null);
   const reduce = useMemo(() => prefersReducedMotion(), []);
+  const washTextures = useMemo(() => WASH_COLORS.map(makeWashTexture), []);
 
   // Nuvem de partículas distribuída ao longo do corredor (−Z), em torno do trilho.
   // PRNG semeado (mulberry32) → layout determinístico e função pura (sem
@@ -51,21 +90,19 @@ export function Atmosphere({
 
   return (
     <group>
-      {/* Grid no piso, recuando — pista de movimento durante o dolly. */}
-      <Grid
-        position={[0, -6, -80]}
-        args={[60, 220]}
-        infiniteGrid
-        cellSize={1.4}
-        cellThickness={0.6}
-        cellColor="#d6d6d3"
-        sectionSize={7}
-        sectionThickness={1}
-        sectionColor="#b5b5b1"
-        fadeDistance={70}
-        fadeStrength={2}
-        followCamera={false}
-      />
+      {/* Manchas de gradiente pastel ao longo do corredor — ambiência suave no
+          lugar do grid; a paralaxe durante o dolly dá a pista de movimento. */}
+      {WASHES.map(([x, y, z, scale, opacity, colorIdx], i) => (
+        <sprite key={i} position={[x, y, z]} scale={[scale, scale, 1]}>
+          <spriteMaterial
+            map={washTextures[colorIdx]}
+            transparent
+            depthWrite={false}
+            toneMapped={false}
+            opacity={opacity}
+          />
+        </sprite>
+      ))}
 
       {/* Partículas cinza no ar. */}
       <points ref={points}>

@@ -42,10 +42,11 @@ export function WorldCanvas() {
         far: 400,
       }}
     >
-      {/* Fundo e névoa cinza — base da atmosfera. Levemente mais escuro que o
-          papel das estações (#fff) para que as telas brancas "flutuem". */}
-      <color attach="background" args={["#e3e3e1"]} />
-      <fog attach="fog" args={["#d6d6d3", 16, 130]} />
+      {/* Fundo e névoa branco-quentes (home.png) — base da atmosfera. Devem
+          casar com --color-warm-bg/--color-warm-fog do globals.css; os cards
+          "flutuam" pela sombra suave (.card-soft/.glass-panel-blue). */}
+      <color attach="background" args={["#fbf7f2"]} />
+      <fog attach="fog" args={["#f3ede6", 16, 130]} />
 
       {/* Environment map — é ele que faz a iridescência/clearcoat do globo
           existirem (reflexos arco-íris que mudam com o ângulo). Rig de

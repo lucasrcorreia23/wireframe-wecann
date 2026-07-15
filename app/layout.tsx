@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Fraunces, Geist, Geist_Mono } from "next/font/google";
+import { Fraunces, Geist, Geist_Mono, Inter } from "next/font/google";
 import "boxicons/css/boxicons.min.css";
 import "./globals.css";
 
@@ -25,6 +25,13 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
+// Horários (agenda, relógio) — Inter, com dígitos tabulares via CSS.
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "WeCann — Fluxo de atendimento",
   description:
@@ -39,7 +46,7 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
-      className={`${fraunces.variable} ${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${fraunces.variable} ${geistSans.variable} ${geistMono.variable} ${inter.variable} h-full antialiased`}
     >
       <body className="min-h-full bg-paper text-ink font-sans">{children}</body>
     </html>
