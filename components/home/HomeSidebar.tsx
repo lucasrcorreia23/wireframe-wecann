@@ -1,6 +1,8 @@
 "use client";
 
 import { cn } from "@/lib/cn";
+import type { Patient } from "@/lib/patients";
+import { PatientAvatar } from "./PatientAvatar";
 import { CHAT_SESSIONS } from "./chatData";
 
 // Conteúdo VERBATIM do Figma "Iteração 9 de Julho" (node 6318-6313).
@@ -41,21 +43,28 @@ const AGENDA = [
 const CARD =
   "orbit-pane relative flex shrink-0 flex-col gap-4 overflow-hidden rounded-[12px] border border-border-default bg-white p-4";
 
-// Sidebar da Home. Em `collapsed` (modo chat, mock 0-174): Pílulas/Agenda
-// recolhem para só o header (chevron aponta para baixo) e Sessões Recentes
-// vira um CARD expandido com as 9 sessões + botão de NOVA SESSÃO (plus). Os
+// Sidebar da Home. Em `collapsed` (modo sessão de chat): Pílulas/Agenda SOMEM
+// por completo — ficam montadas com `hidden` para o Flip da HomeScreen animar
+// a saída/volta (onLeave/onEnter) — e a coluna vira SÓ a lista de Sessões
+// Recentes (seção solta, sem card, título serifado), sempre visível. Os
 // [data-flip] participam do Flip disparado pela HomeScreen na transição.
 export function HomeSidebar({
   collapsed,
   introHidden,
   onNewSession,
   onAskSession,
+  pinnedPatient,
+  pinnedQuestion,
 }: {
   collapsed: boolean;
   introHidden: boolean;
   onNewSession: () => void;
   /** Clicar numa sessão recente dispara a pergunta (inicia/substitui o chat). */
   onAskSession: (question: string) => void;
+  /** Paciente fixado (fluxo "Discutir um caso") — a sessão escopo aparece no
+   *  TOPO das Sessões Recentes com o avatar. */
+  pinnedPatient?: Patient | null;
+  pinnedQuestion?: string;
 }) {
   return (
     <aside
@@ -70,120 +79,131 @@ export function HomeSidebar({
     >
       <section
         data-flip
-        className={cn("home-module", CARD, introHidden && "opacity-0")}
+        className={cn(
+          "home-module",
+          CARD,
+          introHidden && "opacity-0",
+          collapsed && "hidden",
+        )}
       >
         <span
           aria-hidden
           className="card-grad"
           style={{ "--grad-x": "96px" } as React.CSSProperties}
         />
-        <SideCardTitle chevron collapsed={collapsed}>
-          Pílulas de conhecimento
-        </SideCardTitle>
-        {!collapsed && (
-          <ul className="relative flex flex-col gap-0.5">
-            {PILLS.map((pill) => (
-              <li key={pill.title} className="flex items-center gap-3 py-1">
-                <div className="flex min-w-0 flex-1 flex-col">
-                  <h4 className="truncate text-[14px] font-medium leading-[1.4] text-navy">
-                    {pill.title}
-                  </h4>
-                  <p className="truncate text-[14px] leading-[18px] text-neutral-500">
-                    {pill.summary}
-                  </p>
-                </div>
-                <span className="shrink-0 text-[10px] leading-[15px] uppercase text-neutral-500">
-                  {pill.meta}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
+        <SideCardTitle chevron>Pílulas de conhecimento</SideCardTitle>
+        <ul className="relative flex flex-col gap-0.5">
+          {PILLS.map((pill) => (
+            <li key={pill.title} className="flex items-center gap-3 py-1">
+              <div className="flex min-w-0 flex-1 flex-col">
+                <h4 className="truncate text-[14px] font-medium leading-[1.4] text-navy">
+                  {pill.title}
+                </h4>
+                <p className="truncate text-[14px] leading-[18px] text-neutral-500">
+                  {pill.summary}
+                </p>
+              </div>
+              <span className="shrink-0 text-[10px] leading-[15px] uppercase text-neutral-500">
+                {pill.meta}
+              </span>
+            </li>
+          ))}
+        </ul>
       </section>
 
       <section
         data-flip
-        className={cn("home-module", CARD, introHidden && "opacity-0")}
+        className={cn(
+          "home-module",
+          CARD,
+          introHidden && "opacity-0",
+          collapsed && "hidden",
+        )}
       >
         <span
           aria-hidden
           className="card-grad"
           style={{ "--grad-x": "52px" } as React.CSSProperties}
         />
-        <SideCardTitle chevron collapsed={collapsed}>
-          Agenda de hoje
-        </SideCardTitle>
-        {!collapsed && (
-          <ul className="relative flex flex-col gap-0.5">
-            {AGENDA.map((item) => (
-              <li key={item.time} className="flex items-center gap-3 py-1.5 pr-1.5">
-                <span
-                  className={cn(
-                    "w-[42px] shrink-0 text-[14px] font-semibold leading-[1.4]",
-                    item.next ? "text-highlight" : "text-navy",
-                  )}
-                >
-                  {item.time}
-                </span>
-                <span className="min-w-0 flex-1 truncate text-[14px] leading-[1.4] text-navy">
-                  {item.name}
-                </span>
-                <span className="shrink-0 text-[14px] leading-[1.4] text-neutral-500">
-                  {item.kind}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
+        <SideCardTitle chevron>Agenda de hoje</SideCardTitle>
+        <ul className="relative flex flex-col gap-0.5">
+          {AGENDA.map((item) => (
+            <li key={item.time} className="flex items-center gap-3 py-1.5 pr-1.5">
+              <span
+                className={cn(
+                  "w-[42px] shrink-0 text-[14px] font-semibold leading-[1.4]",
+                  item.next ? "text-highlight" : "text-navy",
+                )}
+              >
+                {item.time}
+              </span>
+              <span className="min-w-0 flex-1 truncate text-[14px] leading-[1.4] text-navy">
+                {item.name}
+              </span>
+              <span className="shrink-0 text-[14px] leading-[1.4] text-neutral-500">
+                {item.kind}
+              </span>
+            </li>
+          ))}
+        </ul>
       </section>
 
-      {collapsed ? (
-        // Modo chat: Sessões Recentes vira o card principal (mock 0-174).
-        <section data-flip className={cn(CARD, "min-h-0 flex-1 shrink")}>
-          <span
-            aria-hidden
-            className="card-grad"
-            style={{ "--grad-x": "82px" } as React.CSSProperties}
-          />
-          <SideCardTitle onPlus={onNewSession}>Sessões Recentes</SideCardTitle>
-          <ul className="no-scrollbar relative flex min-h-0 flex-col gap-3 overflow-y-auto">
-            {CHAT_SESSIONS.map((question) => (
-              <li key={question}>
-                <button
-                  type="button"
-                  onClick={() => onAskSession(question)}
-                  className="w-full truncate pr-1.5 text-left text-[12px] leading-[1.4] text-secondary transition-colors hover:text-ink"
-                >
-                  {question}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : (
-        // Idle: seção solta (sem card) + plus para nova sessão.
-        <section
-          data-flip
+      {/* Sessões Recentes — seção solta ÚNICA nos dois modos (o Flip desliza o
+          mesmo elemento para o topo quando os cards somem). No modo sessão o
+          título vira serifado (mock) e a lista mostra as 9 sessões. */}
+      <section
+        data-flip
+        className={cn(
+          "home-module orbit-pane flex flex-col gap-3 px-4 pt-2",
+          collapsed ? "min-h-0 flex-1" : "shrink-0",
+          introHidden && "opacity-0",
+        )}
+      >
+        <div className="flex shrink-0 items-center justify-between">
+          <h3
+            className={
+              collapsed
+                ? "font-display text-[18px] font-semibold leading-[1.2] text-ink"
+                : "text-[12px] leading-[1.4] text-neutral-500"
+            }
+          >
+            Sessões Recentes
+          </h3>
+          <button
+            type="button"
+            aria-label="Nova sessão"
+            onClick={onNewSession}
+            className="transition-opacity hover:opacity-60"
+          >
+            <img
+              src="/figma/icon-add.svg"
+              alt=""
+              className={collapsed ? "size-6" : "size-5"}
+            />
+          </button>
+        </div>
+        <ul
           className={cn(
-            "home-module orbit-pane flex shrink-0 flex-col gap-3 px-4 pt-2",
-            introHidden && "opacity-0",
+            "relative flex flex-col gap-2",
+            collapsed && "no-scrollbar min-h-0 flex-1 overflow-y-auto",
           )}
         >
-          <div className="flex items-center justify-between">
-            <h3 className="text-[12px] leading-[1.4] text-neutral-500">
-              Sessões Recentes
-            </h3>
-            <button
-              type="button"
-              aria-label="Nova sessão"
-              onClick={onNewSession}
-              className="transition-opacity hover:opacity-60"
-            >
-              <img src="/figma/icon-add.svg" alt="" className="size-5" />
-            </button>
-          </div>
-          <ul className="relative flex flex-col gap-2">
-            {CHAT_SESSIONS.slice(0, 4).map((question) => (
+          {/* Sessão fixada (paciente) — topo, com o avatar do paciente. */}
+          {collapsed && pinnedPatient && pinnedQuestion && (
+            <li>
+              <div className="flex items-center gap-2 pr-1.5">
+                <PatientAvatar
+                  patient={pinnedPatient}
+                  className="size-6 text-[9px]"
+                />
+                <span className="min-w-0 flex-1 truncate text-[14px] font-medium leading-[1.4] text-ink">
+                  {pinnedQuestion}
+                </span>
+              </div>
+            </li>
+          )}
+          {(collapsed ? CHAT_SESSIONS : CHAT_SESSIONS.slice(0, 4)).map(
+            (question) => (
               <li key={question}>
                 <button
                   type="button"
@@ -193,26 +213,22 @@ export function HomeSidebar({
                   {question}
                 </button>
               </li>
-            ))}
-          </ul>
-        </section>
-      )}
+            ),
+          )}
+        </ul>
+      </section>
     </aside>
   );
 }
 
-// Título serifado dos cards (Crimson Pro 20 SemiBold) com chevron de recolher
-// opcional (gira para baixo quando o card está recolhido), botão de plus
-// opcional (nova sessão) e fio divisor até as bordas quando expandido.
+// Título serifado dos cards (Crimson Pro 20 SemiBold) com chevron opcional e
+// fio divisor até as bordas. (Os cards não têm mais estado recolhido — no modo
+// sessão eles somem por inteiro.)
 function SideCardTitle({
   chevron,
-  collapsed,
-  onPlus,
   children,
 }: {
   chevron?: boolean;
-  collapsed?: boolean;
-  onPlus?: () => void;
   children: React.ReactNode;
 }) {
   return (
@@ -225,29 +241,14 @@ function SideCardTitle({
           <img
             src="/figma/icon-chevron.svg"
             alt=""
-            className={cn(
-              "size-6 transition-transform duration-300",
-              collapsed ? "rotate-90" : "-rotate-90",
-            )}
+            className="size-6 -rotate-90 transition-transform duration-300"
           />
         )}
-        {onPlus && (
-          <button
-            type="button"
-            aria-label="Nova sessão"
-            onClick={onPlus}
-            className="transition-opacity hover:opacity-60"
-          >
-            <img src="/figma/icon-add.svg" alt="" className="size-6" />
-          </button>
-        )}
       </header>
-      {!collapsed && (
-        <div
-          aria-hidden
-          className="relative -mx-4 -mt-1 h-px shrink-0 bg-border-default"
-        />
-      )}
+      <div
+        aria-hidden
+        className="relative -mx-4 -mt-1 h-px shrink-0 bg-border-default"
+      />
     </>
   );
 }

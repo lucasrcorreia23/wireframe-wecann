@@ -21,12 +21,18 @@ type FlowState = {
   travelToken: number;
   /** Fase atual da intro (orquestra globo + módulos + card de texto). */
   introPhase: IntroPhase;
+  /** Sessão de chat da Home ativa (há turnos) — a TopBar desmarca a aba Home. */
+  homeChatActive: boolean;
+  /** Incrementa quando goTo("home") é chamado com o chat ativo — a HomeScreen
+   *  observa e reseta a sessão de volta ao idle. */
+  homeChatResetToken: number;
 
   goTo: (id: NodeId) => void;
   back: () => void;
   toggleMenu: (open?: boolean) => void;
   toggleSearch: (open?: boolean) => void;
   setIntroPhase: (phase: IntroPhase) => void;
+  setHomeChatActive: (active: boolean) => void;
 };
 
 export const useFlow = create<FlowState>((set, get) => ({
@@ -41,12 +47,21 @@ export const useFlow = create<FlowState>((set, get) => ({
   // (sem divergência de hidratação). O driver (Intro) salta p/ "ready" se
   // reduced-motion, ou avança as fases na timeline.
   introPhase: "text",
+  homeChatActive: false,
+  homeChatResetToken: 0,
 
   goTo: (id) => {
     const { currentNode } = get();
     if (id === currentNode) {
-      // Mesmo nó: apenas fecha overlays de navegação.
-      set({ menuOpen: false, searchOpen: false });
+      // Mesmo nó: fecha overlays; na Home com chat ativo (aba Home ou logo),
+      // pede o reset da sessão de volta ao idle.
+      set((s) => ({
+        menuOpen: false,
+        searchOpen: false,
+        ...(id === "home" && s.homeChatActive
+          ? { homeChatResetToken: s.homeChatResetToken + 1 }
+          : null),
+      }));
       return;
     }
     set((s) => ({
@@ -88,6 +103,8 @@ export const useFlow = create<FlowState>((set, get) => ({
     }),
 
   setIntroPhase: (phase) => set({ introPhase: phase }),
+
+  setHomeChatActive: (active) => set({ homeChatActive: active }),
 }));
 
 // ───────────────────────── Selectors derivados ─────────────────────────

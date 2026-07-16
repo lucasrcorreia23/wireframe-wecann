@@ -6,9 +6,9 @@ import { prefersReducedMotion } from "@/lib/motion";
 import { cn } from "@/lib/cn";
 import { ANSWERED_STATUS, CHAT_STATUSES } from "./chatData";
 
-// Linha de status sob a mensagem fixada (Figma): marca gradiente pequena +
-// texto Inter Medium 12 #676867. Em "asking" as mensagens CICLAM (1.6s) e a
-// marca pulsa; em "answered" vira "Consulta analisada..." com chevron que
+// Linha de status sob a pergunta (Figma): marca gradiente pequena + texto
+// Inter Medium 12 #676867. Em "asking" as mensagens CICLAM (1.6s) e a marca
+// pulsa; em "answered" vira "Consulta analisada..." com chevron que
 // recolhe/expande o corpo da resposta.
 export function StatusLine({
   phase,
@@ -16,12 +16,18 @@ export function StatusLine({
   bodyOpen,
   onToggle,
   className,
+  statuses = CHAT_STATUSES,
+  answeredStatus = ANSWERED_STATUS,
 }: {
   phase: "asking" | "answered";
   session: number;
   bodyOpen: boolean;
   onToggle: () => void;
   className?: string;
+  /** Conjunto de copies do loading (default genérico; variante de paciente no
+   *  fluxo "Discutir um caso"). */
+  statuses?: string[];
+  answeredStatus?: string;
 }) {
   const [idx, setIdx] = useState(0);
   const rootRef = useRef<HTMLButtonElement>(null);
@@ -36,11 +42,11 @@ export function StatusLine({
     setIdx(0);
     if (reduce) return;
     const iv = setInterval(
-      () => setIdx((i) => (i + 1) % CHAT_STATUSES.length),
+      () => setIdx((i) => (i + 1) % statuses.length),
       1600,
     );
     return () => clearInterval(iv);
-  }, [phase, session, reduce]);
+  }, [phase, session, reduce, statuses.length]);
 
   // Crossfade do texto a cada troca de mensagem/fase.
   useGSAP(
@@ -92,18 +98,27 @@ export function StatusLine({
       )}
     >
       <span className="flex items-center gap-2">
-        {/* Orientação/giro 100% via GSAP (classe estática conflitaria). */}
-        <img
-          ref={markRef}
-          src="/figma/icon-loading-mark.svg"
-          alt=""
-          className="h-2 w-4"
-        />
+        {/* A marca vive num SLOT de tamanho fixo (reserva o espaço inline — o
+            copy nunca reflui) que serve de ORIGEM de medição. O wrapper de
+            VIAGEM é transladado pelo ChatTurn (só no turno ativo) para a marca
+            DESCER acompanhando a geração; o <img> guarda só a rotação (giro no
+            pensamento / assenta em 180 no answered) — translate e rotação em
+            elementos diferentes = sem conflito. */}
+        <span data-mark-slot className="relative inline-block h-2 w-4">
+          <span data-mark-travel className="absolute inset-0 will-change-transform">
+            <img
+              ref={markRef}
+              src="/figma/icon-loading-mark.svg"
+              alt=""
+              className="h-2 w-4"
+            />
+          </span>
+        </span>
         <span
           ref={textRef}
           className="text-[12px] font-medium leading-[1.4] text-secondary"
         >
-          {answered ? ANSWERED_STATUS : CHAT_STATUSES[idx]}
+          {answered ? answeredStatus : statuses[idx]}
         </span>
       </span>
       {answered && (
