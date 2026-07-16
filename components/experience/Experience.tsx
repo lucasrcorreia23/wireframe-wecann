@@ -24,6 +24,32 @@ export function Experience() {
         <WorldCanvasClient />
       </div>
 
+      {/* Aurora do rodapé (Figma): faixa do Main Gradient borrada + véu branco
+          + fio azul de 4px na base. Elemento de FUNDO do mundo — presente em
+          todas as telas, entre o canvas e o overlay das estações. A faixa
+          sangra para fora das bordas e a máscara esmaece o topo — nada de
+          corte reto. */}
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-[440px]">
+        <div
+          className="absolute inset-x-[-120px] bottom-[-120px] h-[520px] opacity-[0.14] blur-[48px]"
+          style={{
+            background:
+              "linear-gradient(90deg, rgba(136,234,197,0.5) 0%, rgba(95,146,255,0.5) 25%, rgba(179,136,235,0.5) 50%, rgba(255,166,158,0.5) 75%, rgba(252,215,87,0.5) 100%)",
+            maskImage:
+              "linear-gradient(to top, black 0%, black 35%, transparent 96%)",
+            WebkitMaskImage:
+              "linear-gradient(to top, black 0%, black 35%, transparent 96%)",
+          }}
+        />
+        <div
+          className="absolute inset-0 blur-[32px]"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 78%)",
+          }}
+        />
+      </div>
+
       {/* Camada-tela — overlay DOM 1:1 da estação ativa (nítido) */}
       <ActiveStationLayer />
 

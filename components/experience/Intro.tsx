@@ -79,9 +79,7 @@ export function Intro() {
     >
       {introPhase === "text" ? (
         <div className="intro-card flex max-w-3xl flex-col items-center gap-5 text-center">
-          <span className="intro-eyebrow font-mono text-micro uppercase tracking-[0.3em] text-neutral-500">
-            WeCann · fluxo de atendimento
-          </span>
+       
           <h1 className="intro-title font-display text-display-xl font-medium leading-[1.05] text-ink">
             Tudo que a medicina pode ser, agora.
           </h1>

@@ -18,26 +18,35 @@
   --color-accent: #3f3f3c;
   --color-accent-weak: #ededeb;
 
-  /* ───────── Identidade quente (redesign home.png) ─────────
-     Amostrada do print de referência; o fundo/névoa vivem no canvas 3D
-     (WorldCanvas) e devem casar com --color-warm-bg. */
-  --color-warm-bg: #fbf7f2; /* fundo do mundo (canvas + gradiente do chrome) */
-  --color-warm-fog: #f3ede6; /* névoa do mundo */
-  --color-navy: #1b2b4d; /* botão de mic / ações escuras */
-  --color-brand-orange: #ff8a3d;
-  --color-brand-purple: #d78cf5;
-  --color-brand-blue: #6aa9ff;
-  --color-highlight: #e8590c; /* destaque quente (ex.: próximo horário) */
+  /* ───────── Identidade (Figma "Iteração 9 de Julho", node 6318-6313) ─────────
+     Valores EXATOS do Figma; o fundo/névoa vivem no canvas 3D (WorldCanvas)
+     e devem casar com --color-warm-bg. */
+  --color-warm-bg: #ffffff; /* fundo do mundo (canvas + gradiente do chrome) */
+  --color-warm-fog: #ffffff; /* névoa do mundo */
+  --color-navy: #131126; /* botão de mic / títulos de lista */
+  --color-secondary: #676867; /* Texto Secundário */
+  --color-accent-blue: #588dff; /* bordas/arcos azuis (mic, pills, rodapé) */
+  --color-border-soft: #ededed; /* Border/Soft */
+  --color-border-default: #ededed; /* Border/Default */
+  --color-gray-60: #999999; /* Gray/60 — tabs inativas */
+  --color-highlight: #f36350; /* Main Red (ex.: próximo horário) */
+
+  /* Main Gradient (aurora) — 5 stops exatos do Figma. */
+  --color-grad-mint: #88eac5;
+  --color-grad-blue: #5f92ff;
+  --color-grad-purple: #b388eb;
+  --color-grad-salmon: #ffa69e;
+  --color-grad-yellow: #fcd757;
 
   /* Estados em cinza (gravidade clínica sem cor). */
   --color-state-soft: #9a9a95; /* informativo */
   --color-state-mid: #6b6b66; /* atenção    */
   --color-state-hard: #2a2a28; /* crítico    */
 
-  /* ───────────────────────── Tipografia ───────────────────────── */
-  --font-display: var(--font-fraunces);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* ───────────────────────── Tipografia (Figma) ───────────────────────── */
+  --font-display: var(--font-crimson);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-roboto-mono);
   /* Horários (agenda, relógio) — Inter com dígitos tabulares. */
   --font-time: var(--font-inter);
 
@@ -86,7 +95,7 @@
   }
 
   html {
-    /* Fraunces fica ótica/serifada via --font-display; opsz definido por uso. */
+    /* Crimson Pro serve o --font-display (saudação, títulos de card). */
     text-rendering: optimizeLegibility;
   }
 
@@ -198,24 +207,57 @@
     border: 1px solid rgba(255, 255, 255, 0.62);
   }
 
-  /* Card do redesign home.png: branco quase opaco com contraste por OUTLINE
-     (#ededed) — regra do produto: containers sem shadow. Blur leve só para
-     suavizar o que passa atrás (bola/atmosfera). */
+  /* Card do redesign (Figma): branco OPACO com contraste por OUTLINE
+     (#ededed) — regra do produto: containers sem shadow. */
   .card-soft {
-    background: rgba(255, 255, 255, 0.82);
-    border: 1px solid #ededed;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: #ffffff;
+    border: 1px solid var(--color-border-default);
   }
 
-  /* Barra com o gradiente de marca (underline da aba ativa, base dos chips). */
+  /* Sublinhado de acento (Figma: stroke dos pills/mic/aba ativa) —
+     azul → azul claro → coral → amarelo. */
   .brand-underline {
     background: linear-gradient(
       90deg,
-      var(--color-brand-orange),
-      var(--color-brand-purple),
-      var(--color-brand-blue)
+      #588dff 0%,
+      #94b8f0 28%,
+      #f36350 55%,
+      #fcd757 100%
     );
+  }
+
+  /* Decoração "Grad" dos cards da sidebar (Figma): bloco do Main Gradient a
+     10% + véu branco por cima (branco na base → transparente no topo), tudo
+     borrado — brilho aurora sutil no pé do card. Nudge horizontal por card
+     via --grad-x (Figma: +96px / +52px / +82px). */
+  .card-grad {
+    position: absolute;
+    bottom: 24px;
+    left: calc(50% + var(--grad-x, 70px));
+    width: 255px;
+    height: 113px;
+    transform: translateX(-50%) rotate(10.45deg);
+    filter: blur(20px);
+    pointer-events: none;
+  }
+  .card-grad::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: 0.1;
+    background: linear-gradient(
+      90deg,
+      #588dff 10%,
+      #96adff 26%,
+      #f36350 58%,
+      #f3ac50 96%
+    );
+  }
+  .card-grad::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, #ffffff 39.4%, rgba(255, 255, 255, 0));
   }
 
   /* Esconde scrollbar mantendo o scroll. */

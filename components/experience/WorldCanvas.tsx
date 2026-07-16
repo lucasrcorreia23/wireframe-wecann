@@ -8,6 +8,7 @@ import { Atmosphere } from "./Atmosphere";
 import { CameraRig, type CameraProxy } from "./CameraRig";
 import { Stations } from "./Stations";
 import { AiGlobe } from "./AiGlobe";
+import { IntroFog } from "./IntroFog";
 import { CAM_DIST, CAM_LIFT } from "@/lib/camera";
 import { NODES } from "@/flow/graph";
 
@@ -42,11 +43,13 @@ export function WorldCanvas() {
         far: 400,
       }}
     >
-      {/* Fundo e névoa branco-quentes (home.png) — base da atmosfera. Devem
-          casar com --color-warm-bg/--color-warm-fog do globals.css; os cards
-          "flutuam" pela sombra suave (.card-soft/.glass-panel-blue). */}
-      <color attach="background" args={["#fbf7f2"]} />
-      <fog attach="fog" args={["#f3ede6", 16, 130]} />
+      {/* Fundo e névoa BRANCOS (Figma "Iteração 9 de Julho") — devem casar com
+          --color-warm-bg/--color-warm-fog do globals.css. A névoa nasce DENSA
+          (primeiro frame já encoberto — o globo emerge dela na intro) e o
+          IntroFog relaxa near/far para a forma residual após a fase "globe". */}
+      <color attach="background" args={["#ffffff"]} />
+      <fog attach="fog" args={["#ffffff", 4, 55]} />
+      <IntroFog />
 
       {/* Environment map — é ele que faz a iridescência/clearcoat do globo
           existirem (reflexos arco-íris que mudam com o ângulo). Rig de

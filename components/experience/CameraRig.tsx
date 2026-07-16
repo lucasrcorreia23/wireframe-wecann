@@ -54,6 +54,9 @@ export function CameraRig({
   const reduce = useMemo(() => prefersReducedMotion(), []);
   // Offset Y amortecido dirigido pelo scroll do prontuário (viewScroll.progress).
   const scrollY = useRef(0);
+  // Parallax de ponteiro amortecido (imersão): o mundo responde ao mouse; o
+  // overlay DOM e a bola (ancorada em NDC) ficam parados — o fundo desliza.
+  const parallax = useRef({ x: 0, y: 0 });
 
   // Intro (1º load): a câmera nasce JÁ em repouso na home — sem fly-in. O único
   // movimento cinematográfico da abertura é o globo se aproximando do fundo
@@ -137,7 +140,7 @@ export function CameraRig({
     };
   }, [travelToken, currentNode, proxyRef, intensityRef]);
 
-  useFrame((_, dt) => {
+  useFrame((state, dt) => {
     const p = proxyRef.current;
     if (!p) return;
     const t = target.current;
@@ -166,8 +169,25 @@ export function CameraRig({
     const targetScrollY = reduce ? 0 : -viewScroll.progress * SCROLL_PAN;
     scrollY.current = THREE.MathUtils.damp(scrollY.current, targetScrollY, 4, dt);
 
-    camera.position.set(p.px, p.py + scrollY.current, p.pz);
-    camera.lookAt(p.tx, p.ty + scrollY.current, p.tz);
+    // Parallax de ponteiro (imersão): a câmera desliza minimamente com o mouse
+    // — quem "anda" na tela é o FUNDO (manchas, partículas, chão), porque a
+    // bola é reancorada em NDC por frame e o overlay DOM não se move. O alvo
+    // acompanha pela metade → leve rotação junto do pan. Reduced-motion: fixo.
+    const px = reduce ? 0 : state.pointer.x * 0.35;
+    const py = reduce ? 0 : state.pointer.y * 0.2;
+    parallax.current.x = THREE.MathUtils.damp(parallax.current.x, px, 3, dt);
+    parallax.current.y = THREE.MathUtils.damp(parallax.current.y, py, 3, dt);
+
+    camera.position.set(
+      p.px + parallax.current.x,
+      p.py + scrollY.current + parallax.current.y,
+      p.pz,
+    );
+    camera.lookAt(
+      p.tx + parallax.current.x * 0.5,
+      p.ty + scrollY.current + parallax.current.y * 0.5,
+      p.tz,
+    );
   });
 
   return null;

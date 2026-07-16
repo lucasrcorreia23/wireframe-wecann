@@ -1,0 +1,10 @@
+<svg preserveAspectRatio="none" width="100%" height="100%" overflow="visible" style="display: block;" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="sweep">
+<mask id="mask0_0_550" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24">
+<rect id="Bounding box" width="24" height="24" fill="var(--fill-0, #D9D9D9)"/>
+</mask>
+<g mask="url(#mask0_0_550)">
+<path id="sweep_2" d="M10 18V16H16V18H10ZM6.05 18L0.375 12.325L1.8 10.9L6.05 15.15L15.2 6L16.625 7.425L6.05 18ZM14 14V12H20V14H14ZM18 10V8H24V10H18Z" fill="var(--fill-0, #1C1B1F)"/>
+</g>
+</g>
+</svg>

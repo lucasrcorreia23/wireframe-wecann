@@ -1,251 +1,281 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useReducer, useRef, useState } from "react";
 import { useFlow } from "@/flow/store";
-import { gsap, useGSAP } from "@/lib/gsap";
+import { gsap, useGSAP, Flip } from "@/lib/gsap";
 import { cn } from "@/lib/cn";
 import { HOME_GAP, HOME_SIDEBAR_W } from "@/lib/homeLayout";
+import { homeChat } from "@/lib/homeChat";
+import { PromptBox } from "@/components/home/PromptBox";
+import { HomeSidebar } from "@/components/home/HomeSidebar";
+import { ChatSession } from "@/components/home/ChatSession";
 
-// Conteúdo do print home.png (fase "só visual": listas e chips inertes).
-const PILLS = [
-  {
-    title: "Titulação de CBD em dor neuropática",
-    summary: "Estudo sobre a titulação de canabidiol em dor neuropática",
-    meta: "4 min",
-  },
-  {
-    title: "Nova RDC para controle especial",
-    summary: "Nova regulamentação para o controle especial de produtos",
-    meta: "2 min",
-  },
-  {
-    title: "Aprovação de novos medicamentos",
-    summary: "Recentemente, a ANVISA aprovou novos medicamentos",
-    meta: "3 min",
-  },
-  {
-    title: "Campanha de vacinação ampliada",
-    summary: "O Ministério da Saúde lançou uma campanha ampliada",
-    meta: "4 min",
-  },
-  {
-    title: "Manejo de insônia refratária",
-    summary: "Abordagem abrangente para o manejo de insônia",
-    meta: "5 min",
-  },
-];
-
-const AGENDA = [
-  { time: "09:30", name: "Marina Castro", kind: "Pré-consulta", next: true },
-  { time: "10:15", name: "André Lobo", kind: "Retorno", next: false },
-  { time: "11:00", name: "Júlia Tavares", kind: "1ª consulta", next: false },
-  { time: "13:30", name: "Rui Salgado", kind: "Controle especial", next: false },
-  { time: "14:15", name: "Helena Pires", kind: "Retorno", next: false },
-  { time: "15:00", name: "Bruno Antunes", kind: "Avaliação", next: false },
-  { time: "16:00", name: "João Alves", kind: "1ª consulta", next: false },
-];
-
-// Sugestões de pergunta à IA (texto do print, verbatim).
 const SUGGESTIONS = [
   "Perguntar sobre evidencias primárias",
   "Pergunte sobre tratamento de doenças",
   "Perguntar sobre efeitos colaterais de drogas",
 ];
 
-// Home — layout home.png: coluna principal transparente (saudação + data, a
-// bola 3D billboarda no espaço central, input de chat + chips embaixo) e
-// sidebar direita (Pílulas de conhecimento + Agenda de hoje). A largura da
-// sidebar/gap vem de lib/homeLayout — o AiGlobe deriva a âncora X da bola das
-// MESMAS réguas para alinhar com o eixo da coluna.
+// ───────── Máquina de estados do chat (local à Home) ─────────
+// idle → asking (SEND) → answered (ANSWER); SEND em qualquer fase SUBSTITUI a
+// Q&A (sempre uma por vez); RESET (plus das Sessões) volta ao idle. Navegar
+// para outra tab desmonta a tela → o chat reseta ao voltar (por design).
+type ChatState = {
+  phase: "idle" | "asking" | "answered";
+  question: string;
+  session: number; // re-keia timers/streaming a cada pergunta
+};
+
+type ChatEvent =
+  | { type: "SEND"; question: string }
+  | { type: "ANSWER" }
+  | { type: "RESET" };
+
+function chatReducer(s: ChatState, e: ChatEvent): ChatState {
+  switch (e.type) {
+    case "SEND":
+      return { phase: "asking", question: e.question, session: s.session + 1 };
+    case "ANSWER":
+      return s.phase === "asking" ? { ...s, phase: "answered" } : s;
+    case "RESET":
+      return { phase: "idle", question: "", session: s.session };
+  }
+}
+
+// Home — estado IDLE: orb à esquerda + saudação, prompt + sugestões; sidebar
+// com Pílulas/Agenda/Sessões. Ao ENVIAR uma pergunta vira o modo CHAT (mocks
+// 0-174/0-279/0-459): a orb desliza para o canto da mensagem fixada, os cards
+// recolhem (Flip) e as Sessões viram o card principal; a resposta chega em
+// streaming com Referências e Continue. A sidebar sai ao rolar o conteúdo e
+// volta no topo (histerese).
 export function HomeScreen() {
   const introPhase = useFlow((s) => s.introPhase);
   const rootRef = useRef<HTMLDivElement>(null);
+  const flipSnapshot = useRef<ReturnType<typeof Flip.getState> | null>(null);
+  const [chat, dispatch] = useReducer(chatReducer, {
+    phase: "idle",
+    question: "",
+    session: 0,
+  });
+  const [sidebarAway, setSidebarAway] = useState(false);
 
-  // Antes da fase "modules", os módulos ficam invisíveis (opacity-only — sem
-  // transform, para preservar o backdrop-filter). O stagger anima a OPACIDADE
-  // de cada bloco diretamente (.home-module): animar um wrapper-ancestral com
-  // opacity<1 mataria o blur dos cards filhos durante o fade.
   const introHidden = introPhase === "text" || introPhase === "globe";
 
+  // Espelha a fase no canal 3D (AiGlobe lê por frame) + reset no unmount.
+  useEffect(() => {
+    homeChat.phase = chat.phase;
+  }, [chat.phase]);
+  useEffect(
+    () => () => {
+      homeChat.phase = "idle";
+      homeChat.anchorX = 0;
+      homeChat.anchorY = 0;
+    },
+    [],
+  );
+
+  // Captura o estado dos [data-flip] ANTES do re-render (padrão
+  // CompanionPanels) — o useGSAP abaixo anima do snapshot para o novo layout.
+  const captureFlip = () => {
+    if (!rootRef.current) return;
+    flipSnapshot.current = Flip.getState(
+      rootRef.current.querySelectorAll("[data-flip]"),
+    );
+  };
+
+  const send = (question: string) => {
+    if (chat.phase === "idle" && introPhase !== "ready") return; // não briga com a intro
+    captureFlip();
+    setSidebarAway(false);
+    dispatch({ type: "SEND", question });
+  };
+
+  const reset = () => {
+    captureFlip();
+    setSidebarAway(false);
+    dispatch({ type: "RESET" });
+  };
+
+  // Intro: stagger dos módulos + saudação por último (inalterado).
   useGSAP(
     () => {
       if (introPhase !== "modules") return;
-      gsap.fromTo(
+      const tl = gsap.timeline();
+      tl.fromTo(
         ".home-module",
         { opacity: 0 },
         { opacity: 1, duration: 0.6, stagger: 0.12, ease: "power2.out" },
+      );
+      tl.fromTo(
+        ".home-greeting",
+        { opacity: 0 },
+        { opacity: 1, duration: 0.6, ease: "power2.out" },
+        ">-0.3",
       );
     },
     { dependencies: [introPhase], scope: rootRef },
   );
 
+  // Transição idle⇄chat: os cards da sidebar recolhem/expandem via Flip a
+  // partir do snapshot capturado no handler.
+  useGSAP(
+    () => {
+      if (!flipSnapshot.current) return;
+      Flip.from(flipSnapshot.current, {
+        targets: "[data-flip]",
+        duration: 0.42,
+        ease: "power2.out",
+        absolute: true,
+        nested: true,
+        fade: true,
+      });
+      flipSnapshot.current = null;
+    },
+    { dependencies: [chat.phase], scope: rootRef },
+  );
+
+  // Sidebar sai/volta (modo answered, dirigida pelo scroll do conteúdo).
+  useGSAP(
+    () => {
+      const root = rootRef.current;
+      if (!root) return;
+      const aside = root.querySelector("[data-chat-aside]");
+      if (!aside) return;
+      if (sidebarAway) {
+        gsap.to(aside, {
+          opacity: 0,
+          duration: 0.3,
+          ease: "power2.out",
+          pointerEvents: "none",
+        });
+        gsap.to(root, {
+          "--sb-w": "0px",
+          "--sb-gap": "0px",
+          duration: 0.5,
+          ease: "power2.inOut",
+        });
+      } else {
+        gsap.to(root, {
+          "--sb-w": `${HOME_SIDEBAR_W}px`,
+          "--sb-gap": `${HOME_GAP}px`,
+          duration: 0.5,
+          ease: "power2.inOut",
+        });
+        gsap.to(aside, {
+          opacity: 1,
+          duration: 0.3,
+          delay: 0.15,
+          ease: "power2.out",
+          pointerEvents: "auto",
+        });
+      }
+    },
+    { dependencies: [sidebarAway], scope: rootRef },
+  );
+
+  // Histerese do scroll (só no answered): >80px esconde, <24px mostra.
+  const onScrollDepth = (top: number) => {
+    if (chat.phase !== "answered") return;
+    if (top > 80) setSidebarAway(true);
+    else if (top < 24) setSidebarAway(false);
+  };
+
   return (
     <div
       ref={rootRef}
-      className="grid h-screen w-full pt-28 pb-10"
-      style={{
-        gridTemplateColumns: `minmax(0,1fr) ${HOME_SIDEBAR_W}px`,
-        columnGap: HOME_GAP,
-      }}
+      className="grid h-screen w-full pt-24"
+      style={
+        {
+          gridTemplateColumns: "minmax(0,1fr) var(--sb-w)",
+          columnGap: "var(--sb-gap)",
+          "--sb-w": `${HOME_SIDEBAR_W}px`,
+          "--sb-gap": `${HOME_GAP}px`,
+        } as React.CSSProperties
+      }
     >
       {/* ───── Coluna principal (transparente — a bola fica visível atrás) ───── */}
-      <div className="orbit-pane flex min-h-0 flex-col px-6">
-        <header className="flex items-start justify-between gap-6">
-          <div className={cn("home-module flex flex-col gap-1.5", introHidden && "opacity-0")}>
-            <h1 className="font-display text-[1.9rem] font-medium leading-tight text-ink">
-              Boa tarde, Dr. Ricardo
-            </h1>
-            <p className="text-body text-neutral-500">Você tem 7 compromissos hoje</p>
-          </div>
-          <div
-            className={cn(
-              "home-module flex flex-col items-end gap-1 pt-1.5 text-right",
-              introHidden && "opacity-0",
-            )}
-          >
-            <span className="font-mono text-caption tracking-[0.08em] text-neutral-700">
-              Quinta, 19 de junho
-            </span>
-            <span className="font-mono text-caption tracking-[0.08em] text-neutral-500">
-              14:02 BRT
-            </span>
-          </div>
-        </header>
+      <div className="orbit-pane flex min-h-0 flex-col pb-8">
+        {chat.phase === "idle" ? (
+          <>
+            {/* Área flexível: orb à ESQUERDA e saudação à direita dela. */}
+            <header
+              className={cn(
+                "home-greeting flex flex-1 items-center",
+                introHidden && "opacity-0",
+              )}
+            >
+              <div aria-hidden className="w-1/2" />
+              <div className="flex flex-col gap-1">
+                <h1 className="font-display text-[28px] font-semibold leading-[1.2] text-ink">
+                  Boa tarde, Dr. Ricardo
+                </h1>
+                <p className="text-[14px] leading-[1.6] text-secondary">
+                  Quinta, 19 de junho 14:02
+                </p>
+              </div>
+            </header>
 
-        {/* Espaço da bola (billboard 3D atrás, alinhado ao eixo da coluna) */}
-        <div className="flex-1" />
+            {/* Prompt + sugestões + explorar. */}
+            <div
+              className={cn(
+                "home-module flex w-full flex-col items-center gap-4 px-12",
+                introHidden && "opacity-0",
+              )}
+            >
+              <PromptBox
+                placeholder="Digite sua pergunta ou comando..."
+                onSend={send}
+                disabled={introPhase !== "ready"}
+              />
 
-        {/* Input de chat + sugestões + explorar */}
-        <div
-          className={cn(
-            "home-module mx-auto flex w-full max-w-[820px] flex-col gap-5",
-            introHidden && "opacity-0",
-          )}
-        >
-          {/* Caixa de texto ALTA (print): input no topo, ações na base. */}
-          <section className="card-soft flex min-h-[150px] flex-col justify-between rounded-[18px] p-4">
-            <input
-              type="text"
-              placeholder="Digite sua pergunta ou comando..."
-              className="w-full bg-transparent px-2 pt-1.5 text-body text-ink placeholder:text-neutral-400 focus:outline-none"
-            />
-            <div className="flex items-center justify-between">
-              <button
-                aria-label="Anexar"
-                className="grid h-9 w-9 place-items-center rounded-full border border-neutral-200 bg-paper text-neutral-500 transition-colors hover:text-ink"
-              >
-                <i className="bx bx-plus text-lg" />
-              </button>
-              {/* Botão principal: navy com stroke gradiente de 4px por FORA,
-                  na base (o gradiente aparece como um arco sob o botão). */}
-              <span className="relative isolate inline-grid">
-                <span
-                  aria-hidden
-                  className="brand-underline absolute inset-0 -z-10 translate-y-1 rounded-full"
-                />
-                <button
-                  aria-label="Comando de voz"
-                  className="grid h-11 w-11 place-items-center rounded-full bg-navy text-paper"
-                >
-                  <i className="bx bx-microphone text-xl" />
+              <div className="flex flex-col items-center gap-3">
+                <div className="flex w-max max-w-none flex-nowrap items-center justify-center gap-4">
+                  {SUGGESTIONS.map((text) => (
+                    <span
+                      key={text}
+                      className="brand-underline inline-flex rounded-full pb-px"
+                    >
+                      {/* Clicar numa sugestão TAMBÉM inicia a interação. */}
+                      <button
+                        onClick={() => send(text)}
+                        className="rounded-full bg-white px-3 pt-2 pb-[9px] text-center text-[12px] font-medium leading-[1.4] text-ink transition-colors hover:text-neutral-600"
+                      >
+                        {text}
+                      </button>
+                    </span>
+                  ))}
+                </div>
+
+                <button className="flex items-center gap-2 rounded-full py-2 pr-3 pl-4 text-[12px] font-medium leading-[1.4] text-secondary transition-colors hover:text-ink">
+                  Explorar mais capacidades
+                  <img
+                    src="/figma/icon-chevron-down.svg"
+                    alt=""
+                    className="size-6"
+                  />
                 </button>
-              </span>
+              </div>
             </div>
-          </section>
-
-          <div className="-mx-6 flex flex-wrap justify-center gap-3">
-            {SUGGESTIONS.map((text) => (
-              <button
-                key={text}
-                className="card-soft relative overflow-hidden rounded-full px-3.5 py-2 text-[0.8125rem] text-ink transition-colors hover:text-neutral-600"
-              >
-                {text}
-                {/* Stroke gradiente COMPLETO na base: de borda a borda — o
-                    overflow-hidden recorta a barra na curva do próprio pill. */}
-                <span
-                  aria-hidden
-                  className="brand-underline absolute inset-x-0 bottom-0 h-[3px]"
-                />
-              </button>
-            ))}
-          </div>
-
-          <button className="mx-auto flex items-center gap-1.5 text-caption text-neutral-600 transition-colors hover:text-ink">
-            Explorar mais capacidades
-            <i className="bx bx-chevron-down text-base" />
-          </button>
-        </div>
+          </>
+        ) : (
+          <ChatSession
+            question={chat.question}
+            phase={chat.phase}
+            session={chat.session}
+            onSend={send}
+            onAnswered={() => dispatch({ type: "ANSWER" })}
+            onScrollDepth={onScrollDepth}
+          />
+        )}
       </div>
 
-      {/* ───── Sidebar — Pílulas de conhecimento + Agenda de hoje ───── */}
-      <aside className="flex min-h-0 flex-col gap-6">
-        <section
-          className={cn(
-            "home-module orbit-pane card-soft flex min-h-0 flex-1 flex-col gap-2 rounded-[18px] p-5",
-            introHidden && "opacity-0",
-          )}
-        >
-          <SideCardTitle icon="bx-link">Pílulas de conhecimento</SideCardTitle>
-          <ul className="no-scrollbar flex min-h-0 flex-1 flex-col divide-y divide-neutral-200/70 overflow-y-auto">
-            {PILLS.map((pill) => (
-              <li key={pill.title} className="flex items-center justify-between gap-3 py-2">
-                <div className="flex min-w-0 flex-col gap-0.5">
-                  <h4 className="truncate text-caption font-semibold text-ink">
-                    {pill.title}
-                  </h4>
-                  <p className="truncate text-[0.8125rem] text-neutral-500">{pill.summary}</p>
-                </div>
-                <span className="shrink-0 font-mono text-micro uppercase text-neutral-400">
-                  {pill.meta}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <section
-          className={cn(
-            "home-module orbit-pane card-soft flex min-h-0 flex-1 flex-col gap-2 rounded-[18px] p-5",
-            introHidden && "opacity-0",
-          )}
-        >
-          <SideCardTitle icon="bx-calendar">Agenda de hoje</SideCardTitle>
-          <ul className="no-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto">
-            {AGENDA.map((item) => (
-              <li key={item.time} className="flex items-center gap-3 py-2.5">
-                <span
-                  className={cn(
-                    "w-12 shrink-0 font-time text-caption font-medium tabular-nums",
-                    item.next ? "text-highlight" : "text-ink",
-                  )}
-                >
-                  {item.time}
-                </span>
-                <span className="min-w-0 flex-1 truncate text-caption font-medium text-ink">
-                  {item.name}
-                </span>
-                <span className="shrink-0 text-caption text-neutral-400">{item.kind}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      </aside>
+      {/* ───── Sidebar (recolhe no chat; sai/volta pelo scroll no answered) ───── */}
+      <HomeSidebar
+        collapsed={chat.phase !== "idle"}
+        introHidden={introHidden}
+        onNewSession={reset}
+        onAskSession={send}
+      />
     </div>
-  );
-}
-
-// Título serifado dos cards da sidebar (ícone sutil + display face, como no print).
-function SideCardTitle({
-  icon,
-  children,
-}: {
-  icon: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <header className="flex items-center gap-2.5">
-      <i className={cn("bx text-lg text-neutral-400", icon)} />
-      <h3 className="font-display text-[1.15rem] font-medium text-ink">{children}</h3>
-    </header>
   );
 }

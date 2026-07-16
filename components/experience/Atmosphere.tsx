@@ -44,6 +44,30 @@ function makeWashTexture([r, g, b]: [number, number, number]): THREE.CanvasTextu
   return tex;
 }
 
+// "Chão" de luz: elipse radial quente MUITO clara deitada sob o corredor.
+// Não é um piso literal — é a insinuação de gravidade/horizonte que faz o
+// espaço branco ler como AMBIENTE 3D (a perspectiva do plano + o fade na
+// névoa ao longe dão a profundidade).
+function makeFloorTexture(): THREE.CanvasTexture {
+  const size = 512;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d")!;
+  const g = ctx.createRadialGradient(
+    size / 2, size / 2, 0,
+    size / 2, size / 2, size / 2,
+  );
+  g.addColorStop(0.0, "rgba(243, 233, 221, 0.9)");
+  g.addColorStop(0.45, "rgba(243, 233, 221, 0.4)");
+  g.addColorStop(1.0, "rgba(243, 233, 221, 0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, size, size);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
 // Atmosfera WebGL: névoa + manchas de gradiente + partículas sutis. É o que
 // faz a transição parecer viagem e não corte. `intensity` (0..1) sobe durante o
 // trânsito para dar pistas de movimento (controlado pela CameraRig na Fase 4).
@@ -55,6 +79,7 @@ export function Atmosphere({
   const points = useRef<THREE.Points>(null);
   const reduce = useMemo(() => prefersReducedMotion(), []);
   const washTextures = useMemo(() => WASH_COLORS.map(makeWashTexture), []);
+  const floorTex = useMemo(() => makeFloorTexture(), []);
 
   // Nuvem de partículas distribuída ao longo do corredor (−Z), em torno do trilho.
   // PRNG semeado (mulberry32) → layout determinístico e função pura (sem
@@ -90,6 +115,20 @@ export function Atmosphere({
 
   return (
     <group>
+      {/* Chão de luz quente: plano deitado sob o corredor, com perspectiva —
+          dá horizonte/gravidade ao espaço branco e some na névoa ao longe. O
+          parallax do ponteiro (CameraRig) desliza este plano ↔ profundidade. */}
+      <mesh rotation-x={-Math.PI / 2} position={[0, -7, -46]}>
+        <planeGeometry args={[240, 170]} />
+        <meshBasicMaterial
+          map={floorTex}
+          transparent
+          depthWrite={false}
+          toneMapped={false}
+          opacity={0.55}
+        />
+      </mesh>
+
       {/* Manchas de gradiente pastel ao longo do corredor — ambiência suave no
           lugar do grid; a paralaxe durante o dolly dá a pista de movimento. */}
       {WASHES.map(([x, y, z, scale, opacity, colorIdx], i) => (
