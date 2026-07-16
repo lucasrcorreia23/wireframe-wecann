@@ -9,11 +9,13 @@ import { prefersReducedMotion } from "@/lib/motion";
 // −Z — substituem o antigo grid (pedido 15/07/2026): a ambiência remete à
 // suavidade do gradiente, e a paralaxe delas durante o dolly segue dando pista
 // de movimento. [x, y, z, escala, opacidade, índice da cor]
+// Opacidades enxutas (redesign 16/07/2026): as manchas pêssego (índice 0)
+// caíram de 0.5 → 0.2 para a página ler branca; lavanda/menta seguem sutis.
 const WASHES: [number, number, number, number, number, number][] = [
-  [9, -7, -28, 55, 0.5, 0],
-  [-13, 6, -55, 48, 0.35, 1],
-  [10, -6, -95, 60, 0.5, 0],
-  [-11, 5, -135, 50, 0.3, 2],
+  [9, -7, -28, 55, 0.2, 0],
+  [-13, 6, -55, 48, 0.28, 1],
+  [10, -6, -95, 60, 0.2, 0],
+  [-11, 5, -135, 50, 0.24, 2],
 ];
 
 // Cores das manchas: pêssego, lavanda, menta (mesma família do globo).
@@ -125,7 +127,7 @@ export function Atmosphere({
           transparent
           depthWrite={false}
           toneMapped={false}
-          opacity={0.55}
+          opacity={0.22}
         />
       </mesh>
 

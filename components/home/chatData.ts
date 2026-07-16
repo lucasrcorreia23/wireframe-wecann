@@ -10,7 +10,24 @@ export const CHAT_STATUSES = [
 
 export const ANSWERED_STATUS = "Consulta analisada, pesquisas sintetizadas";
 
+/** Variante com escopo de PACIENTE (fluxo "Discutir um caso", mock 0-174 do
+ *  Paciente 360). A 1ª é verbatim do mock. */
+export const CHAT_STATUSES_PATIENT = [
+  "Analisando dados históricos do paciente...",
+  "Revisando evolução clínica...",
+  "Cruzando com evidências recentes...",
+];
+
+export const ANSWERED_STATUS_PATIENT = "Histórico analisado, evolução sintetizada";
+
 export const CHAT_PLACEHOLDER = "Complemente com outras perguntas";
+
+/** Um turno da sessão multi-turno: pergunta + fase da resposta mockada. */
+export type Turn = {
+  id: number;
+  question: string;
+  phase: "asking" | "answered";
+};
 
 export type AnswerBlock =
   | { kind: "p"; text: string }

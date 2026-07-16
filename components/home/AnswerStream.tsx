@@ -12,21 +12,29 @@ import { ContinueCard } from "./ContinueCard";
 // progressivo (timeline GSAP, opacidade+y em folhas), depois ações
 // (dislike/like/copiar), divisor, Referências e "Continue com mais perguntas".
 // O chevron do status recolhe/expande o TEXTO da resposta (bodyOpen).
+// `stream=false` monta tudo visível de uma vez — turnos force-answered por
+// uma pergunta supersedente não re-streamam. Cada bloco de texto carrega
+// `data-answer-block`: é a FRONTEIRA que a marquinha da StatusLine persegue
+// enquanto desce (ver ChatTurn) — o GSAP escreve a opacidade inline que o
+// ChatTurn lê para saber até onde já "gerou".
 export function AnswerStream({
   bodyOpen,
   onFollowUp,
+  stream = true,
 }: {
   bodyOpen: boolean;
   onFollowUp: (question: string) => void;
+  stream?: boolean;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const reduce = useMemo(() => prefersReducedMotion(), []);
 
-  // Streaming no mount (o wrapper é re-keyado por pergunta na ChatSession).
+  // Streaming no mount (monta UMA vez, quando o turno vira answered — o valor
+  // de `stream` no mount decide timeline × estático).
   useGSAP(
     () => {
-      if (reduce) {
+      if (reduce || !stream) {
         gsap.set(".chat-block, .chat-after", { opacity: 1, y: 0 });
         return;
       }
@@ -77,6 +85,7 @@ export function AnswerStream({
               return (
                 <p
                   key={i}
+                  data-answer-block
                   className="chat-block text-[14px] leading-[1.6] font-bold text-ink"
                 >
                   {b.text}
@@ -85,21 +94,22 @@ export function AnswerStream({
             }
             if (b.kind === "bullet") {
               return (
-                <p key={i} className="chat-block text-[14px] leading-[1.6] text-ink">
+                <p key={i} data-answer-block className="chat-block text-[14px] leading-[1.6] text-ink">
                   <strong className="font-bold">{b.lead}</strong>
                   {b.text}
                 </p>
               );
             }
             return (
-              <p key={i} className="chat-block text-[14px] leading-[1.6] text-ink">
+              <p key={i} data-answer-block className="chat-block text-[14px] leading-[1.6] text-ink">
                 {b.text}
               </p>
             );
           })}
 
-          {/* Ações da resposta (ícones 20px, gap-24 — Figma). */}
-          <div className="chat-block flex items-center gap-6">
+          {/* Ações da resposta (ícones 20px, gap-24 — Figma). data-answer-actions
+              = referência para a marquinha parar ~32px ACIMA dos ícones. */}
+          <div data-answer-actions className="chat-block flex items-center gap-6">
             <ActionIcon src="/figma/icon-thumb-down.svg" label="Não ajudou" />
             <ActionIcon src="/figma/icon-thumb-up.svg" label="Ajudou" />
             <ActionIcon

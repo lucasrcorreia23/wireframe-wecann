@@ -165,10 +165,12 @@ function makeGlowTexture(): THREE.CanvasTexture {
     size / 2, size / 2, 0,
     size / 2, size / 2, size / 2,
   );
-  g.addColorStop(0.0, "rgba(255, 189, 138, 0.9)");
-  g.addColorStop(0.25, "rgba(255, 203, 158, 0.5)");
-  g.addColorStop(0.55, "rgba(255, 216, 180, 0.18)");
-  g.addColorStop(1.0, "rgba(255, 224, 194, 0)");
+  // Halo SUAVE (redesign 16/07/2026): levemente laranjado no miolo esvaindo
+  // em roxo na borda — discreto, a página segue branca.
+  g.addColorStop(0.0, "rgba(255, 200, 150, 0.4)"); // laranja suave
+  g.addColorStop(0.35, "rgba(247, 174, 148, 0.18)"); // laranja→rosado
+  g.addColorStop(0.7, "rgba(179, 136, 235, 0.1)"); // roxo suave
+  g.addColorStop(1.0, "rgba(179, 136, 235, 0)");
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, size, size);
   const tex = new THREE.CanvasTexture(canvas);
@@ -303,10 +305,10 @@ export function AiGlobe() {
     let targetY = target.y;
     let targetScale = target.scale;
 
-    // Modo CHAT da Home: a orb deixa o hero e vai "iluminar o canto" da
-    // mensagem fixada. O alvo vem da MEDIÇÃO do DOM da pill (lib/homeChat, px
-    // de viewport → NDC); fallback nas réguas do mock até a 1ª medição. O
-    // deslize continua sendo o lerp harmônico de sempre.
+    // Modo CHAT da Home: o globo deixa o hero e vai "iluminar o canto" da pill.
+    // O alvo vem da MEDIÇÃO do DOM da pill do último turno (QuestionPill →
+    // lib/homeChat, px de viewport → NDC); fallback nas réguas do mock até a 1ª
+    // medição. O deslize continua sendo o lerp harmônico de sempre.
     const chatActive = node === "home" && homeChat.phase !== "idle";
     if (chatActive) {
       const ax =
@@ -386,11 +388,15 @@ export function AiGlobe() {
     const breath = reduce ? 1 : 1 + Math.sin(state.clock.elapsedTime * 0.9) * 0.012;
     g.scale.setScalar(cur.current.scale * breath);
 
-    // Fade da entrada: bola (uniform do shader) + casca + halo + sombra juntos.
-    if (orbMat.current) orbMat.current.uniforms.uOpacity.value = entry.current.opacity;
-    if (rimMat.current) rimMat.current.uniforms.uOpacity.value = entry.current.opacity;
-    if (glowMat.current) glowMat.current.opacity = entry.current.opacity;
-    if (shadowMat.current) shadowMat.current.opacity = entry.current.opacity * 0.3;
+    // Fade da entrada × visibilidade do chat: no chat o globo segue a pill e
+    // DISSOLVE junto dela nas zonas de fade do scroller (anchorAlpha publicado
+    // pela QuestionPill) — nunca passa sobre o header.
+    const vis =
+      entry.current.opacity * (chatActive ? homeChat.anchorAlpha : 1);
+    if (orbMat.current) orbMat.current.uniforms.uOpacity.value = vis;
+    if (rimMat.current) rimMat.current.uniforms.uOpacity.value = vis;
+    if (glowMat.current) glowMat.current.opacity = vis;
+    if (shadowMat.current) shadowMat.current.opacity = vis * 0.3;
 
     invalidate();
   });
@@ -411,10 +417,11 @@ export function AiGlobe() {
         />
       </sprite>
 
-      {/* Halo quente: sprite radial ATRÁS do núcleo, viajando e escalando com
-          o grupo. toneMapped=false preserva o pêssego exato; depthWrite=false
-          evita ocluir o núcleo. Opacidade segue a entrada. */}
-      <sprite position={[0, 0, -RADIUS * 1.2]} scale={[RADIUS * 9, RADIUS * 9, 1]}>
+      {/* Halo laranja→roxo: sprite radial ATRÁS do núcleo, viajando e escalando
+          com o grupo. toneMapped=false preserva as cores exatas; depthWrite=false
+          evita ocluir o núcleo. Escala RADIUS*7 — contido junto do globo, some
+          antes de tingir a página (redesign 16/07/2026). */}
+      <sprite position={[0, 0, -RADIUS * 1.2]} scale={[RADIUS * 7, RADIUS * 7, 1]}>
         <spriteMaterial
           ref={glowMat}
           map={glowTex}

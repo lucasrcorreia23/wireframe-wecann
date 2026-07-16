@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useReducer, useRef, useState } from "react";
+import { useEffect, useReducer, useRef } from "react";
 import { useFlow } from "@/flow/store";
 import { gsap, useGSAP, Flip } from "@/lib/gsap";
 import { cn } from "@/lib/cn";
@@ -9,68 +9,136 @@ import { homeChat } from "@/lib/homeChat";
 import { PromptBox } from "@/components/home/PromptBox";
 import { HomeSidebar } from "@/components/home/HomeSidebar";
 import { ChatSession } from "@/components/home/ChatSession";
+import type { Patient } from "@/lib/patients";
+import type { Turn } from "@/components/home/chatData";
 
 const SUGGESTIONS = [
-  "Perguntar sobre evidencias primárias",
-  "Pergunte sobre tratamento de doenças",
-  "Perguntar sobre efeitos colaterais de drogas",
+  "Suporte à Decisão Clínica",
+  "Documentação",
+  "Calculadoras",
+  "Diretrizes",
+  "Segurança de Medicamentos",
+  "E mais",
 ];
 
 // ───────── Máquina de estados do chat (local à Home) ─────────
-// idle → asking (SEND) → answered (ANSWER); SEND em qualquer fase SUBSTITUI a
-// Q&A (sempre uma por vez); RESET (plus das Sessões) volta ao idle. Navegar
-// para outra tab desmonta a tela → o chat reseta ao voltar (por design).
+// turns [] = idle. SEND APENDA um turno (transcript multi-turno); NEW_SESSION
+// (clique numa Sessão Recente) zera o transcript com 1 turno; ANSWER vira a
+// fase de UM turno (guardado por id — mata race de timers); RESET (plus /
+// aba Home / logo) volta ao idle. Navegar para outra tab desmonta a tela →
+// o chat reseta ao voltar (por design).
 type ChatState = {
-  phase: "idle" | "asking" | "answered";
-  question: string;
-  session: number; // re-keia timers/streaming a cada pergunta
+  turns: Turn[];
+  session: number; // re-keia o transcript a cada sessão nova
+  nextId: number;
+  /** Paciente fixado ("Discutir um caso") — escopa a sessão; parte do ciclo de
+   *  vida dela (RESET/NEW_SESSION limpam, SEND mantém). */
+  patient: Patient | null;
 };
 
 type ChatEvent =
   | { type: "SEND"; question: string }
-  | { type: "ANSWER" }
+  | { type: "NEW_SESSION"; question: string }
+  | { type: "ANSWER"; turnId: number }
+  | { type: "PIN"; patient: Patient | null }
   | { type: "RESET" };
 
 function chatReducer(s: ChatState, e: ChatEvent): ChatState {
   switch (e.type) {
-    case "SEND":
-      return { phase: "asking", question: e.question, session: s.session + 1 };
+    case "SEND": {
+      // Turno anterior ainda "asking" é encerrado AQUI (a resposta dele monta
+      // estática — sem status órfã ciclando quando o timer for limpo).
+      const settled = s.turns.map((t) =>
+        t.phase === "asking" ? { ...t, phase: "answered" as const } : t,
+      );
+      return {
+        ...s,
+        turns: [
+          ...settled,
+          { id: s.nextId, question: e.question, phase: "asking" },
+        ],
+        nextId: s.nextId + 1,
+      };
+    }
+    case "NEW_SESSION":
+      // Sessão recente = sem paciente (escopo genérico).
+      return {
+        turns: [{ id: s.nextId, question: e.question, phase: "asking" }],
+        session: s.session + 1,
+        nextId: s.nextId + 1,
+        patient: null,
+      };
     case "ANSWER":
-      return s.phase === "asking" ? { ...s, phase: "answered" } : s;
+      return {
+        ...s,
+        turns: s.turns.map((t) =>
+          t.id === e.turnId && t.phase === "asking"
+            ? { ...t, phase: "answered" as const }
+            : t,
+        ),
+      };
+    case "PIN":
+      return { ...s, patient: e.patient };
     case "RESET":
-      return { phase: "idle", question: "", session: s.session };
+      return {
+        turns: [],
+        session: s.session + 1,
+        nextId: s.nextId,
+        patient: null,
+      };
   }
 }
 
 // Home — estado IDLE: orb à esquerda + saudação, prompt + sugestões; sidebar
-// com Pílulas/Agenda/Sessões. Ao ENVIAR uma pergunta vira o modo CHAT (mocks
-// 0-174/0-279/0-459): a orb desliza para o canto da mensagem fixada, os cards
-// recolhem (Flip) e as Sessões viram o card principal; a resposta chega em
-// streaming com Referências e Continue. A sidebar sai ao rolar o conteúdo e
-// volta no topo (histerese).
+// com Pílulas/Agenda/Sessões. Ao ENVIAR uma pergunta vira o modo SESSÃO
+// (mocks 0-174/0-279/0-459): a orb desliza para o canto da pergunta, a
+// sidebar vira SÓ a lista de Sessões Recentes (Flip), a aba Home desmarca e
+// o prompt complementar fixa no rodapé. Da 2ª pergunta em diante o
+// transcript empilha e a pergunta do topo SOLTA (rola junto).
 export function HomeScreen() {
   const introPhase = useFlow((s) => s.introPhase);
+  const setHomeChatActive = useFlow((s) => s.setHomeChatActive);
+  const homeChatResetToken = useFlow((s) => s.homeChatResetToken);
   const rootRef = useRef<HTMLDivElement>(null);
   const flipSnapshot = useRef<ReturnType<typeof Flip.getState> | null>(null);
   const [chat, dispatch] = useReducer(chatReducer, {
-    phase: "idle",
-    question: "",
+    turns: [],
     session: 0,
+    nextId: 1,
+    patient: null,
   });
-  const [sidebarAway, setSidebarAway] = useState(false);
 
+  // Fluxo "Discutir um caso": o paciente fixado vive no reducer (chat.patient);
+  // a busca/dropdown vivem dentro do PromptBox.
+
+  const collapsed = chat.turns.length > 0;
+  const lastTurn = chat.turns[chat.turns.length - 1];
   const introHidden = introPhase === "text" || introPhase === "globe";
 
-  // Espelha a fase no canal 3D (AiGlobe lê por frame) + reset no unmount.
+  // Espelha a fase no canal 3D (AiGlobe lê por frame) — a âncora só é zerada
+  // no idle (zerar no handoff entre turnos faria a orb pular pro fallback).
   useEffect(() => {
-    homeChat.phase = chat.phase;
-  }, [chat.phase]);
+    homeChat.phase = lastTurn?.phase ?? "idle";
+    if (!lastTurn) {
+      homeChat.anchorX = 0;
+      homeChat.anchorY = 0;
+      homeChat.anchorAlpha = 1;
+    }
+  }, [lastTurn]);
+
+  // Flag reativa p/ TopBar (desmarca a aba Home) + limpeza no unmount.
+  useEffect(() => {
+    setHomeChatActive(collapsed);
+  }, [collapsed, setHomeChatActive]);
   useEffect(
     () => () => {
+      setHomeChatActive(false);
       homeChat.phase = "idle";
       homeChat.anchorX = 0;
       homeChat.anchorY = 0;
+      homeChat.anchorAlpha = 1;
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
 
@@ -83,16 +151,33 @@ export function HomeScreen() {
     );
   };
 
+  // Clicar na aba Home (ou no logo) com o chat ativo → reset para o idle.
+  const resetTokenRef = useRef(homeChatResetToken);
+  useEffect(() => {
+    if (homeChatResetToken === resetTokenRef.current) return;
+    resetTokenRef.current = homeChatResetToken;
+    captureFlip(); // o DOM ainda mostra o chat — snapshot válido p/ o Flip
+    dispatch({ type: "RESET" });
+  }, [homeChatResetToken]);
+
   const send = (question: string) => {
-    if (chat.phase === "idle" && introPhase !== "ready") return; // não briga com a intro
-    captureFlip();
-    setSidebarAway(false);
+    if (chat.turns.length === 0) {
+      if (introPhase !== "ready") return; // não briga com a intro
+      captureFlip(); // só a transição idle→chat anima via Flip
+    }
     dispatch({ type: "SEND", question });
+  };
+
+  const startSession = (question: string) => {
+    if (chat.turns.length === 0) {
+      if (introPhase !== "ready") return;
+      captureFlip();
+    }
+    dispatch({ type: "NEW_SESSION", question });
   };
 
   const reset = () => {
     captureFlip();
-    setSidebarAway(false);
     dispatch({ type: "RESET" });
   };
 
@@ -116,8 +201,9 @@ export function HomeScreen() {
     { dependencies: [introPhase], scope: rootRef },
   );
 
-  // Transição idle⇄chat: os cards da sidebar recolhem/expandem via Flip a
-  // partir do snapshot capturado no handler.
+  // Transição idle⇄chat: a sidebar reorganiza via Flip a partir do snapshot
+  // capturado no handler. Pílulas/Agenda ficam montadas com `hidden` no modo
+  // chat — entram/saem por fade orquestrado pelo próprio Flip.
   useGSAP(
     () => {
       if (!flipSnapshot.current) return;
@@ -128,57 +214,23 @@ export function HomeScreen() {
         absolute: true,
         nested: true,
         fade: true,
+        onEnter: (els) =>
+          gsap.fromTo(
+            els,
+            { opacity: 0 },
+            { opacity: 1, duration: 0.25, delay: 0.1, ease: "power2.out" },
+          ),
+        onLeave: (els) =>
+          gsap.fromTo(
+            els,
+            { opacity: 1 },
+            { opacity: 0, duration: 0.25, ease: "power2.out" },
+          ),
       });
       flipSnapshot.current = null;
     },
-    { dependencies: [chat.phase], scope: rootRef },
+    { dependencies: [collapsed], scope: rootRef },
   );
-
-  // Sidebar sai/volta (modo answered, dirigida pelo scroll do conteúdo).
-  useGSAP(
-    () => {
-      const root = rootRef.current;
-      if (!root) return;
-      const aside = root.querySelector("[data-chat-aside]");
-      if (!aside) return;
-      if (sidebarAway) {
-        gsap.to(aside, {
-          opacity: 0,
-          duration: 0.3,
-          ease: "power2.out",
-          pointerEvents: "none",
-        });
-        gsap.to(root, {
-          "--sb-w": "0px",
-          "--sb-gap": "0px",
-          duration: 0.5,
-          ease: "power2.inOut",
-        });
-      } else {
-        gsap.to(root, {
-          "--sb-w": `${HOME_SIDEBAR_W}px`,
-          "--sb-gap": `${HOME_GAP}px`,
-          duration: 0.5,
-          ease: "power2.inOut",
-        });
-        gsap.to(aside, {
-          opacity: 1,
-          duration: 0.3,
-          delay: 0.15,
-          ease: "power2.out",
-          pointerEvents: "auto",
-        });
-      }
-    },
-    { dependencies: [sidebarAway], scope: rootRef },
-  );
-
-  // Histerese do scroll (só no answered): >80px esconde, <24px mostra.
-  const onScrollDepth = (top: number) => {
-    if (chat.phase !== "answered") return;
-    if (top > 80) setSidebarAway(true);
-    else if (top < 24) setSidebarAway(false);
-  };
 
   return (
     <div
@@ -193,9 +245,15 @@ export function HomeScreen() {
         } as React.CSSProperties
       }
     >
-      {/* ───── Coluna principal (transparente — a bola fica visível atrás) ───── */}
-      <div className="orbit-pane flex min-h-0 flex-col pb-8">
-        {chat.phase === "idle" ? (
+      {/* ───── Coluna principal (transparente — a bola fica visível atrás) ─────
+          No chat o padding inferior encolhe: o prompt fixa no LIMITE da tela. */}
+      <div
+        className={cn(
+          "orbit-pane flex min-h-0 flex-col",
+          collapsed ? "pb-3" : "pb-8",
+        )}
+      >
+        {!collapsed ? (
           <>
             {/* Área flexível: orb à ESQUERDA e saudação à direita dela. */}
             <header
@@ -215,7 +273,7 @@ export function HomeScreen() {
               </div>
             </header>
 
-            {/* Prompt + sugestões + explorar. */}
+            {/* Prompt + tópicos. */}
             <div
               className={cn(
                 "home-module flex w-full flex-col items-center gap-4 px-12",
@@ -226,55 +284,48 @@ export function HomeScreen() {
                 placeholder="Digite sua pergunta ou comando..."
                 onSend={send}
                 disabled={introPhase !== "ready"}
+                onPinPatient={(p) => dispatch({ type: "PIN", patient: p })}
+                pinnedPatient={chat.patient}
+                onUnpin={() => dispatch({ type: "PIN", patient: null })}
               />
 
-              <div className="flex flex-col items-center gap-3">
-                <div className="flex w-max max-w-none flex-nowrap items-center justify-center gap-4">
-                  {SUGGESTIONS.map((text) => (
-                    <span
-                      key={text}
-                      className="brand-underline inline-flex rounded-full pb-px"
+              <div className="flex w-max max-w-none flex-nowrap items-center justify-center gap-4">
+                {SUGGESTIONS.map((text) => (
+                  <span
+                    key={text}
+                    className="brand-underline inline-flex rounded-full pb-px"
+                  >
+                    {/* Clicar num tópico TAMBÉM inicia a interação. */}
+                    <button
+                      onClick={() => send(text)}
+                      className="rounded-full bg-white px-3 pt-2 pb-[9px] text-center text-[12px] font-medium leading-[1.4] text-ink transition-colors hover:text-neutral-600"
                     >
-                      {/* Clicar numa sugestão TAMBÉM inicia a interação. */}
-                      <button
-                        onClick={() => send(text)}
-                        className="rounded-full bg-white px-3 pt-2 pb-[9px] text-center text-[12px] font-medium leading-[1.4] text-ink transition-colors hover:text-neutral-600"
-                      >
-                        {text}
-                      </button>
-                    </span>
-                  ))}
-                </div>
-
-                <button className="flex items-center gap-2 rounded-full py-2 pr-3 pl-4 text-[12px] font-medium leading-[1.4] text-secondary transition-colors hover:text-ink">
-                  Explorar mais capacidades
-                  <img
-                    src="/figma/icon-chevron-down.svg"
-                    alt=""
-                    className="size-6"
-                  />
-                </button>
+                      {text}
+                    </button>
+                  </span>
+                ))}
               </div>
             </div>
           </>
         ) : (
           <ChatSession
-            question={chat.question}
-            phase={chat.phase}
+            turns={chat.turns}
             session={chat.session}
             onSend={send}
-            onAnswered={() => dispatch({ type: "ANSWER" })}
-            onScrollDepth={onScrollDepth}
+            onAnswered={(turnId) => dispatch({ type: "ANSWER", turnId })}
+            patient={chat.patient}
           />
         )}
       </div>
 
-      {/* ───── Sidebar (recolhe no chat; sai/volta pelo scroll no answered) ───── */}
+      {/* ───── Sidebar (no chat vira SÓ a lista de Sessões, sempre visível) ───── */}
       <HomeSidebar
-        collapsed={chat.phase !== "idle"}
+        collapsed={collapsed}
         introHidden={introHidden}
         onNewSession={reset}
-        onAskSession={send}
+        onAskSession={startSession}
+        pinnedPatient={chat.patient}
+        pinnedQuestion={chat.turns[0]?.question}
       />
     </div>
   );
