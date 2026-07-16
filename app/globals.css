@@ -18,16 +18,37 @@
   --color-accent: #3f3f3c;
   --color-accent-weak: #ededeb;
 
+  /* ───────── Identidade (Figma "Iteração 9 de Julho", node 6318-6313) ─────────
+     Valores EXATOS do Figma; o fundo/névoa vivem no canvas 3D (WorldCanvas)
+     e devem casar com --color-warm-bg. */
+  --color-warm-bg: #ffffff; /* fundo do mundo (canvas + gradiente do chrome) */
+  --color-warm-fog: #ffffff; /* névoa do mundo */
+  --color-navy: #131126; /* botão de mic / títulos de lista */
+  --color-secondary: #676867; /* Texto Secundário */
+  --color-accent-blue: #588dff; /* bordas/arcos azuis (mic, pills, rodapé) */
+  --color-border-soft: #ededed; /* Border/Soft */
+  --color-border-default: #ededed; /* Border/Default */
+  --color-gray-60: #999999; /* Gray/60 — tabs inativas */
+  --color-highlight: #f36350; /* Main Red (ex.: próximo horário) */
+
+  /* Main Gradient (aurora) — 5 stops exatos do Figma. */
+  --color-grad-mint: #88eac5;
+  --color-grad-blue: #5f92ff;
+  --color-grad-purple: #b388eb;
+  --color-grad-salmon: #ffa69e;
+  --color-grad-yellow: #fcd757;
+
   /* Estados em cinza (gravidade clínica sem cor). */
   --color-state-soft: #9a9a95; /* informativo */
   --color-state-mid: #6b6b66; /* atenção    */
   --color-state-hard: #2a2a28; /* crítico    */
 
-  /* ───────────────────────── Tipografia ───────────────────────── */
-  /* Adobe Fonts (Typekit · kit jir2fmf) — font-family conferidos no CSS do kit. */
-  --font-display: "late-serif-variable", Georgia, serif; /* serifada editorial (display) */
-  --font-sans: "config-mono-vf", ui-monospace, monospace; /* corpo/UI = mono variável */
-  --font-mono: "config-mono-vf", ui-monospace, monospace; /* dados/métricas */
+  /* ───────────────────────── Tipografia (Figma) ───────────────────────── */
+  --font-display: var(--font-crimson);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-roboto-mono);
+  /* Horários (agenda, relógio) — Inter com dígitos tabulares. */
+  --font-time: var(--font-inter);
 
   /* Escala modular ~1.25 (rem). */
   --text-display-xl: 3.815rem;
@@ -74,7 +95,7 @@
   }
 
   html {
-    /* Late Serif (serifada) via --font-display; Config Mono no corpo (--font-sans). */
+    /* Crimson Pro serve o --font-display (saudação, títulos de card). */
     text-rendering: optimizeLegibility;
   }
 
@@ -142,21 +163,6 @@
   animation: panel-in-right 420ms ease-out both;
 }
 
-/* Dica de scroll ("tem mais abaixo"): bob vertical leve e contínuo na setinha.
-   Sob reduced-motion é neutralizado pela regra global abaixo. */
-@keyframes scroll-hint {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(3px);
-  }
-}
-.scroll-hint {
-  animation: scroll-hint 1.6s ease-in-out infinite;
-}
-
 /* Cross-fade curto (fallback reduced-motion, §6): substitui reveal/slide por
    um fade de 200ms — sem dolly, sem translate. A câmera é setada instantaneamente
    na CameraRig e a atmosfera fica estática (Atmosphere). */
@@ -185,18 +191,73 @@
      (que comprovadamente fica fosco): branco leitoso sólido + blur(40px). */
   .glass-panel-blue {
     background: rgba(255, 255, 255, 0.42);
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    /* Contraste por OUTLINE (#ededed), nunca shadow — sobre o fundo
+       branco-quente a borda branca antiga sumia. */
+    border: 1px solid #ededed;
     /* blur 24px (era 40px): mais leve para o backdrop-filter re-rasterizar a
        cada frame com o globo animando atrás — reduz o lag mantendo o fosco. */
     backdrop-filter: blur(24px) saturate(1.4);
     -webkit-backdrop-filter: blur(24px) saturate(1.4);
-   
+
   }
 
   /* Camada interna (listas, chips, input) — translúcido sólido, sem blur próprio. */
   .glass-frost-inner {
     background: rgba(255, 255, 255, 0.5);
     border: 1px solid rgba(255, 255, 255, 0.62);
+  }
+
+  /* Card do redesign (Figma): branco OPACO com contraste por OUTLINE
+     (#ededed) — regra do produto: containers sem shadow. */
+  .card-soft {
+    background: #ffffff;
+    border: 1px solid var(--color-border-default);
+  }
+
+  /* Sublinhado de acento (Figma: stroke dos pills/mic/aba ativa) —
+     azul → azul claro → coral → amarelo. */
+  .brand-underline {
+    background: linear-gradient(
+      90deg,
+      #588dff 0%,
+      #94b8f0 28%,
+      #f36350 55%,
+      #fcd757 100%
+    );
+  }
+
+  /* Decoração "Grad" dos cards da sidebar (Figma): bloco do Main Gradient a
+     10% + véu branco por cima (branco na base → transparente no topo), tudo
+     borrado — brilho aurora sutil no pé do card. Nudge horizontal por card
+     via --grad-x (Figma: +96px / +52px / +82px). */
+  .card-grad {
+    position: absolute;
+    bottom: 24px;
+    left: calc(50% + var(--grad-x, 70px));
+    width: 255px;
+    height: 113px;
+    transform: translateX(-50%) rotate(10.45deg);
+    filter: blur(20px);
+    pointer-events: none;
+  }
+  .card-grad::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: 0.1;
+    background: linear-gradient(
+      90deg,
+      #588dff 10%,
+      #96adff 26%,
+      #f36350 58%,
+      #f3ac50 96%
+    );
+  }
+  .card-grad::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, #ffffff 39.4%, rgba(255, 255, 255, 0));
   }
 
   /* Esconde scrollbar mantendo o scroll. */
@@ -219,11 +280,6 @@
   .panel-in-left,
   .panel-in-right {
     animation: soft-fade 200ms ease both;
-  }
-
-  /* A dica de scroll perde o movimento, mas continua visível (estática). */
-  .scroll-hint {
-    animation: none;
   }
 
   /* Neutraliza grandes movimentos de transição decorativos, preservando o

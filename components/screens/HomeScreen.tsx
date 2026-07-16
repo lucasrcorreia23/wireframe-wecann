@@ -1,261 +1,281 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useReducer, useRef, useState } from "react";
 import { useFlow } from "@/flow/store";
-import { PillDetailPanel, type Pill } from "./PillDetailPanel";
-import { AppointmentSummaryPanel, type Appt } from "./AppointmentSummaryPanel";
-import { PATIENTS, type PatientKey } from "./appointments";
+import { gsap, useGSAP, Flip } from "@/lib/gsap";
+import { cn } from "@/lib/cn";
+import { HOME_GAP, HOME_SIDEBAR_W } from "@/lib/homeLayout";
+import { homeChat } from "@/lib/homeChat";
+import { PromptBox } from "@/components/home/PromptBox";
+import { HomeSidebar } from "@/components/home/HomeSidebar";
+import { ChatSession } from "@/components/home/ChatSession";
 
-// Agenda de hoje — referencia a fonte compartilhada (PATIENTS) e adiciona só os
-// campos de exibição da lista. Clicar abre o Preview da Agenda.
-const TODAY_ORDER: {
-  key: PatientKey;
-  time: string;
-  duration: string;
-  convenio: string;
-  modality: "presencial" | "teleconsulta";
-  urgent?: boolean;
-}[] = [
-  { key: "marina", time: "09:30", duration: "30 min", convenio: "Unimed Nacional", modality: "presencial", urgent: true },
-  { key: "andre", time: "10:15", duration: "20 min", convenio: "Bradesco Saúde", modality: "teleconsulta" },
-  { key: "julia", time: "11:00", duration: "50 min", convenio: "Particular", modality: "presencial" },
-  { key: "rui", time: "13:30", duration: "30 min", convenio: "SulAmérica", modality: "presencial" },
-  { key: "helena", time: "14:15", duration: "20 min", convenio: "Unimed Nacional", modality: "teleconsulta" },
-  { key: "bruno", time: "15:00", duration: "40 min", convenio: "Particular", modality: "presencial" },
-];
-
-const PILLS: Pill[] = [
-  {
-    tag: "Farmacologia",
-    title: "Titulação de CBD em dor neuropática",
-    meta: "4 min",
-    summary:
-      "Protocolo de titulação lenta (start low, go slow) do canabidiol em dor neuropática. O objetivo é encontrar a menor dose eficaz com o menor número de efeitos adversos, reavaliando a resposta em janelas curtas antes de cada incremento.",
-    keyPoints: [
-      "Início 5–10 mg/dia, com incrementos a cada 7 dias conforme resposta.",
-      "Reavaliar dor, sono e efeitos adversos a cada janela de titulação.",
-      "Atenção a interações com anticoagulantes e anticonvulsivantes.",
-    ],
-    source: "Pain Medicine, 2024 · Revisão sistemática (n=1.240)",
-  },
-  {
-    tag: "Regulatório",
-    title: "Nova RDC para controle especial",
-    meta: "2 min",
-    summary:
-      "Resumo das mudanças na escrituração e na prescrição de produtos de Cannabis sob controle especial, com o que muda na rotina do consultório e os prazos de adequação dos serviços.",
-    keyPoints: [
-      "Escrituração digital passa a ser obrigatória para controle especial.",
-      "Prescrição mantém validade de 30 dias, com retenção da 2ª via.",
-      "Prazo de adequação dos serviços definido em 180 dias.",
-    ],
-    source: "RDC 660/2022 — Anvisa",
-  },
-  {
-    tag: "Casuística",
-    title: "Manejo de insônia refratária",
-    meta: "5 min",
-    summary:
-      "Caso clínico de insônia refratária à primeira linha, conduzido com canabinoides associados à higiene do sono. Discute a escolha da razão THC:CBD, o horário de administração e os critérios de reavaliação.",
-    keyPoints: [
-      "Razão THC:CBD ajustada para predomínio noturno.",
-      "Administração 60–90 min antes de dormir.",
-      "Higiene do sono mantida como base do tratamento.",
-    ],
-    source: "Caso clínico WeCann · Núcleo de sono",
-  },
-];
-
-// Sugestões da Athena (visual por ora) — grade 2 por linha no container da IA.
 const SUGGESTIONS = [
-  "Resumir paciente",
-  "Sugerir conduta",
-  "Buscar evidência",
-  "Gerar laudo",
-  "Transcrever",
-  "Casuística",
-] as const;
+  "Perguntar sobre evidencias primárias",
+  "Pergunte sobre tratamento de doenças",
+  "Perguntar sobre efeitos colaterais de drogas",
+];
 
-// HOME — duas colunas (renderizada full-bleed pelo WorkspaceShell):
-//  • ESQUERDA (menor): saudação à esquerda → pílulas → próximas agendas, minimalista.
-//  • DIREITA (maior): container da Athena — globo (âncora do PersistentGlobe) + status
-//    + sugestões (grade 2×3) + input com pills de contexto.
-export function HomeCenter() {
-  const goTo = useFlow((s) => s.goTo);
-  const [selected, setSelected] = useState<Appt | null>(null);
-  const [activePill, setActivePill] = useState<Pill | null>(null);
+// ───────── Máquina de estados do chat (local à Home) ─────────
+// idle → asking (SEND) → answered (ANSWER); SEND em qualquer fase SUBSTITUI a
+// Q&A (sempre uma por vez); RESET (plus das Sessões) volta ao idle. Navegar
+// para outra tab desmonta a tela → o chat reseta ao voltar (por design).
+type ChatState = {
+  phase: "idle" | "asking" | "answered";
+  question: string;
+  session: number; // re-keia timers/streaming a cada pergunta
+};
+
+type ChatEvent =
+  | { type: "SEND"; question: string }
+  | { type: "ANSWER" }
+  | { type: "RESET" };
+
+function chatReducer(s: ChatState, e: ChatEvent): ChatState {
+  switch (e.type) {
+    case "SEND":
+      return { phase: "asking", question: e.question, session: s.session + 1 };
+    case "ANSWER":
+      return s.phase === "asking" ? { ...s, phase: "answered" } : s;
+    case "RESET":
+      return { phase: "idle", question: "", session: s.session };
+  }
+}
+
+// Home — estado IDLE: orb à esquerda + saudação, prompt + sugestões; sidebar
+// com Pílulas/Agenda/Sessões. Ao ENVIAR uma pergunta vira o modo CHAT (mocks
+// 0-174/0-279/0-459): a orb desliza para o canto da mensagem fixada, os cards
+// recolhem (Flip) e as Sessões viram o card principal; a resposta chega em
+// streaming com Referências e Continue. A sidebar sai ao rolar o conteúdo e
+// volta no topo (histerese).
+export function HomeScreen() {
+  const introPhase = useFlow((s) => s.introPhase);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const flipSnapshot = useRef<ReturnType<typeof Flip.getState> | null>(null);
+  const [chat, dispatch] = useReducer(chatReducer, {
+    phase: "idle",
+    question: "",
+    session: 0,
+  });
+  const [sidebarAway, setSidebarAway] = useState(false);
+
+  const introHidden = introPhase === "text" || introPhase === "globe";
+
+  // Espelha a fase no canal 3D (AiGlobe lê por frame) + reset no unmount.
+  useEffect(() => {
+    homeChat.phase = chat.phase;
+  }, [chat.phase]);
+  useEffect(
+    () => () => {
+      homeChat.phase = "idle";
+      homeChat.anchorX = 0;
+      homeChat.anchorY = 0;
+    },
+    [],
+  );
+
+  // Captura o estado dos [data-flip] ANTES do re-render (padrão
+  // CompanionPanels) — o useGSAP abaixo anima do snapshot para o novo layout.
+  const captureFlip = () => {
+    if (!rootRef.current) return;
+    flipSnapshot.current = Flip.getState(
+      rootRef.current.querySelectorAll("[data-flip]"),
+    );
+  };
+
+  const send = (question: string) => {
+    if (chat.phase === "idle" && introPhase !== "ready") return; // não briga com a intro
+    captureFlip();
+    setSidebarAway(false);
+    dispatch({ type: "SEND", question });
+  };
+
+  const reset = () => {
+    captureFlip();
+    setSidebarAway(false);
+    dispatch({ type: "RESET" });
+  };
+
+  // Intro: stagger dos módulos + saudação por último (inalterado).
+  useGSAP(
+    () => {
+      if (introPhase !== "modules") return;
+      const tl = gsap.timeline();
+      tl.fromTo(
+        ".home-module",
+        { opacity: 0 },
+        { opacity: 1, duration: 0.6, stagger: 0.12, ease: "power2.out" },
+      );
+      tl.fromTo(
+        ".home-greeting",
+        { opacity: 0 },
+        { opacity: 1, duration: 0.6, ease: "power2.out" },
+        ">-0.3",
+      );
+    },
+    { dependencies: [introPhase], scope: rootRef },
+  );
+
+  // Transição idle⇄chat: os cards da sidebar recolhem/expandem via Flip a
+  // partir do snapshot capturado no handler.
+  useGSAP(
+    () => {
+      if (!flipSnapshot.current) return;
+      Flip.from(flipSnapshot.current, {
+        targets: "[data-flip]",
+        duration: 0.42,
+        ease: "power2.out",
+        absolute: true,
+        nested: true,
+        fade: true,
+      });
+      flipSnapshot.current = null;
+    },
+    { dependencies: [chat.phase], scope: rootRef },
+  );
+
+  // Sidebar sai/volta (modo answered, dirigida pelo scroll do conteúdo).
+  useGSAP(
+    () => {
+      const root = rootRef.current;
+      if (!root) return;
+      const aside = root.querySelector("[data-chat-aside]");
+      if (!aside) return;
+      if (sidebarAway) {
+        gsap.to(aside, {
+          opacity: 0,
+          duration: 0.3,
+          ease: "power2.out",
+          pointerEvents: "none",
+        });
+        gsap.to(root, {
+          "--sb-w": "0px",
+          "--sb-gap": "0px",
+          duration: 0.5,
+          ease: "power2.inOut",
+        });
+      } else {
+        gsap.to(root, {
+          "--sb-w": `${HOME_SIDEBAR_W}px`,
+          "--sb-gap": `${HOME_GAP}px`,
+          duration: 0.5,
+          ease: "power2.inOut",
+        });
+        gsap.to(aside, {
+          opacity: 1,
+          duration: 0.3,
+          delay: 0.15,
+          ease: "power2.out",
+          pointerEvents: "auto",
+        });
+      }
+    },
+    { dependencies: [sidebarAway], scope: rootRef },
+  );
+
+  // Histerese do scroll (só no answered): >80px esconde, <24px mostra.
+  const onScrollDepth = (top: number) => {
+    if (chat.phase !== "answered") return;
+    if (top > 80) setSidebarAway(true);
+    else if (top < 24) setSidebarAway(false);
+  };
 
   return (
-    <>
-      <div className="no-scrollbar flex h-full flex-col items-center overflow-y-auto px-4 pt-[88px] pb-12">
-        <div className="grid w-full max-w-[940px] grid-cols-1 items-stretch gap-4 md:grid-cols-[300px_minmax(0,1fr)]">
-          {/* ───────────── COLUNA ESQUERDA ───────────── */}
-          <div className="flex flex-col gap-4">
-            {/* Saudação — alinhada à esquerda */}
-            <div className="flex flex-col gap-1 px-1">
-              <h1 className="font-display text-[25px] font-medium leading-[30px] text-[#131126]">
-                Boa tarde, Dra. Helena
-              </h1>
-              <p className="font-mono text-[12px] uppercase leading-[19.6px] text-[#afafaf]">
-                7 compromissos hoje · 2 ações pendentes
-              </p>
-            </div>
-
-            {/* Pílulas — card minimalista */}
-            <section className="flex flex-col gap-3 rounded-[12px] border border-[#f7f7f7] bg-white px-[25px] py-[18px]">
-              <h3 className="font-display text-[16px] font-medium text-[#131126]">→ Pílulas</h3>
-              <ul className="flex flex-col gap-0.5">
-                {PILLS.map((pill) => (
-                  <li key={pill.title}>
-                    <button
-                      onClick={() => setActivePill(pill)}
-                      className="group flex w-full items-center gap-2.5 rounded-[8px] px-1.5 py-1.5 text-left transition-colors hover:bg-neutral-100/70"
-                    >
-                      <Dot />
-                      <span className="min-w-0 flex-1 truncate font-mono text-[12px] text-[#131126]">
-                        {pill.title}
-                      </span>
-                      <span className="shrink-0 font-mono text-[10px] uppercase text-[#afafaf]">
-                        {pill.meta}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </section>
-
-            {/* Próximas agendas — card minimalista */}
-            <section className="flex flex-col gap-3 rounded-[12px] border border-[#f7f7f7] bg-white px-[25px] py-[18px]">
-              <h3 className="font-display text-[16px] font-medium text-[#131126]">→ Agenda de hoje</h3>
-              <ul className="flex flex-col gap-0.5">
-                {TODAY_ORDER.map((slot) => {
-                  const p = PATIENTS[slot.key];
-                  return (
-                    <li key={slot.key}>
-                      <button
-                        onClick={() =>
-                          setSelected({
-                            ...p,
-                            time: slot.time,
-                            duration: slot.duration,
-                            convenio: slot.convenio,
-                            modality: slot.modality,
-                            urgent: slot.urgent,
-                          })
-                        }
-                        className="group flex w-full items-center gap-3 rounded-[8px] px-1.5 py-1.5 text-left transition-colors hover:bg-neutral-100/70"
-                      >
-                        <span className="w-[42px] shrink-0 font-mono text-[12px] tabular-nums text-[#131126]">
-                          {slot.time}
-                        </span>
-                        <span className="min-w-0 flex-1 truncate font-mono text-[12px] text-[#131126]">
-                          {p.title}
-                        </span>
-                        <span className="shrink-0 font-mono text-[10px] uppercase text-[#afafaf]">
-                          {p.type}
-                        </span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
-          </div>
-
-          {/* ───────────── COLUNA DIREITA — container da Athena ───────────── */}
-          <section className="relative flex min-h-[560px] flex-col rounded-[12px] border border-[#f7f7f7] bg-white p-[25px]">
-            {/* Topo — data/hora à direita */}
-            <div className="flex items-start justify-end">
-              <div className="flex flex-col items-end font-mono uppercase leading-[19.6px] text-[#afafaf]">
-                <span className="text-[14px]">Quinta, 19 de junho</span>
-                <span className="text-[12px]">14:02 BRT</span>
-              </div>
-            </div>
-
-            {/* Centro — globo + status + sugestões */}
-            <div className="flex flex-1 flex-col items-center justify-center gap-5 py-6">
-              {/* Âncora do PersistentGlobe (o globo voa para cá; escala p/ ~72px). */}
-              <div data-globe-anchor className="h-[72px] w-[72px] shrink-0" />
-
-              <div className="flex flex-col items-center gap-1.5 text-center">
-                <p className="font-mono text-[25px] font-medium leading-none text-[#18181a]">athena</p>
-                <p className="font-mono text-[12px] uppercase text-[#131126]">
-                  Aguardando suas instruções ou comando de voz
+    <div
+      ref={rootRef}
+      className="grid h-screen w-full pt-24"
+      style={
+        {
+          gridTemplateColumns: "minmax(0,1fr) var(--sb-w)",
+          columnGap: "var(--sb-gap)",
+          "--sb-w": `${HOME_SIDEBAR_W}px`,
+          "--sb-gap": `${HOME_GAP}px`,
+        } as React.CSSProperties
+      }
+    >
+      {/* ───── Coluna principal (transparente — a bola fica visível atrás) ───── */}
+      <div className="orbit-pane flex min-h-0 flex-col pb-8">
+        {chat.phase === "idle" ? (
+          <>
+            {/* Área flexível: orb à ESQUERDA e saudação à direita dela. */}
+            <header
+              className={cn(
+                "home-greeting flex flex-1 items-center",
+                introHidden && "opacity-0",
+              )}
+            >
+              <div aria-hidden className="w-1/2" />
+              <div className="flex flex-col gap-1">
+                <h1 className="font-display text-[28px] font-semibold leading-[1.2] text-ink">
+                  Boa tarde, Dr. Ricardo
+                </h1>
+                <p className="text-[14px] leading-[1.6] text-secondary">
+                  Quinta, 19 de junho 14:02
                 </p>
               </div>
+            </header>
 
-              {/* Sugestões — grade 2 por linha */}
-              <div className="grid grid-cols-2 gap-x-10 gap-y-2 pt-1">
-                {SUGGESTIONS.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    className="group flex items-center justify-center gap-2 rounded-full px-2 py-1.5 transition-colors hover:bg-neutral-100/70"
-                  >
-                    <Dot />
-                    <span className="font-mono text-[12px] text-[#afafaf] transition-colors group-hover:text-[#131126]">
-                      {s}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Input + pills de contexto */}
-            <div className="flex flex-col gap-3 rounded-[24px] border border-[#f7f7f7] bg-white/25 p-[17px]">
-              <input
-                placeholder="Pergunte à Athena ou dê instruções…"
-                className="w-full bg-transparent px-1 font-mono text-[12px] text-[#131126] placeholder:text-[#afafaf] focus:outline-none"
+            {/* Prompt + sugestões + explorar. */}
+            <div
+              className={cn(
+                "home-module flex w-full flex-col items-center gap-4 px-12",
+                introHidden && "opacity-0",
+              )}
+            >
+              <PromptBox
+                placeholder="Digite sua pergunta ou comando..."
+                onSend={send}
+                disabled={introPhase !== "ready"}
               />
-              <div className="flex items-center justify-between">
-                <ContextPill label="Núcleo clínico" />
-                <ContextPill label="Ações rápidas" />
+
+              <div className="flex flex-col items-center gap-3">
+                <div className="flex w-max max-w-none flex-nowrap items-center justify-center gap-4">
+                  {SUGGESTIONS.map((text) => (
+                    <span
+                      key={text}
+                      className="brand-underline inline-flex rounded-full pb-px"
+                    >
+                      {/* Clicar numa sugestão TAMBÉM inicia a interação. */}
+                      <button
+                        onClick={() => send(text)}
+                        className="rounded-full bg-white px-3 pt-2 pb-[9px] text-center text-[12px] font-medium leading-[1.4] text-ink transition-colors hover:text-neutral-600"
+                      >
+                        {text}
+                      </button>
+                    </span>
+                  ))}
+                </div>
+
+                <button className="flex items-center gap-2 rounded-full py-2 pr-3 pl-4 text-[12px] font-medium leading-[1.4] text-secondary transition-colors hover:text-ink">
+                  Explorar mais capacidades
+                  <img
+                    src="/figma/icon-chevron-down.svg"
+                    alt=""
+                    className="size-6"
+                  />
+                </button>
               </div>
             </div>
-          </section>
-        </div>
+          </>
+        ) : (
+          <ChatSession
+            question={chat.question}
+            phase={chat.phase}
+            session={chat.session}
+            onSend={send}
+            onAnswered={() => dispatch({ type: "ANSWER" })}
+            onScrollDepth={onScrollDepth}
+          />
+        )}
       </div>
 
-      {/* Detalhe da pílula — overlay deslizante. */}
-      <PillDetailPanel pill={activePill} onClose={() => setActivePill(null)} />
-
-      {/* Preview Pré-Consulta — o mesmo da Agenda. */}
-      <AppointmentSummaryPanel
-        appt={selected}
-        onClose={() => setSelected(null)}
-        onGoConsult={() => goTo("consult")}
-        onGoProfile={() => goTo("pre-review")}
+      {/* ───── Sidebar (recolhe no chat; sai/volta pelo scroll no answered) ───── */}
+      <HomeSidebar
+        collapsed={chat.phase !== "idle"}
+        introHidden={introHidden}
+        onNewSession={reset}
+        onAskSession={send}
       />
-    </>
-  );
-}
-
-// Pontinho multicolor (eco do globo) — usado nas pílulas, agenda e sugestões.
-function Dot() {
-  return (
-    <span
-      aria-hidden
-      className="size-2 shrink-0 rounded-full"
-      style={{
-        background: "radial-gradient(circle at 30% 30%, #7cedc4 0%, #489eff 55%, #ff3838 100%)",
-      }}
-    />
-  );
-}
-
-// Pill de contexto do input (estilo Figma) — rótulo + losango da marca.
-function ContextPill({ label }: { label: string }) {
-  return (
-    <button
-      type="button"
-      className="flex items-center gap-2 rounded-[40px] border border-[#f7f7f7] px-[13px] py-[9px] transition-colors hover:bg-neutral-100/70"
-    >
-      <span className="font-mono text-[12px] uppercase text-[#131126]">{label}</span>
-      <span
-        aria-hidden
-        className="size-[13px] rotate-45 rounded-[3px]"
-        style={{ background: "linear-gradient(135deg, #7cedc4 0%, #489eff 55%, #ff3838 100%)" }}
-      />
-    </button>
+    </div>
   );
 }

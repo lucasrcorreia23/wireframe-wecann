@@ -36,7 +36,7 @@ export function ScreenShell({
           {zone ? <Eyebrow icon={icon}>{zone}</Eyebrow> : null}
           <div className="flex items-center gap-3">
             <BackButton />
-            <h1 className="font-display text-display-s font-medium text-ink text-balance">
+            <h1 className="font-display text-display-m font-medium text-ink text-balance">
               {title}
             </h1>
           </div>

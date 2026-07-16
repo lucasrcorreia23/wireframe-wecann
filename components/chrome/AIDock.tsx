@@ -4,30 +4,30 @@ import { useFlow } from "@/flow/store";
 import { Eyebrow } from "@/components/ui";
 import { cn } from "@/lib/cn";
 
-// Sugestões contextuais por tela (Mapa Funcional): frases de prompt clicáveis.
-// A IA muda de "funcionalidades" conforme a etapa da jornada.
-const SUGGESTIONS: Record<string, string[]> = {
+type Insight = { tag: string; text: string };
+
+// Insights contextuais por tela (Mapa Funcional). A IA muda de "funcionalidades"
+// conforme a etapa da jornada.
+const INSIGHTS: Record<string, Insight[]> = {
   "pre-review": [
-    "Resumir o paciente",
-    "O que falta na pré-consulta?",
-    "Pontos de atenção",
-    "Checar alergias",
+    { tag: "Atenção", text: "Alergia a dipirona — evitar combinações." },
+    { tag: "Pauta", text: "Focar em sono e desmame de opioide." },
+    { tag: "Pré-consulta", text: "40% preenchida — faltam escalas de dor." },
   ],
   consult: [
-    "Resumir a queixa",
-    "Sugerir CID",
-    "Checar interações",
-    "Sugerir conduta",
+    { tag: "Pergunta-chave", text: "Investigar qualidade do sono." },
+    { tag: "Alerta", text: "Interação: tramadol + amitriptilina." },
+    { tag: "CID sugerido", text: "M79.7 · fibromialgia." },
   ],
   report: [
-    "Resumir os desfechos",
-    "Gerar laudo",
-    "Evolução em 6 meses",
+    { tag: "Outcome", text: "Dor (BPI) caiu 32% em 6 meses." },
+    { tag: "Evolução", text: "Sono (PSQI) estável; ansiedade ↓." },
+    { tag: "Pesquisa", text: "Caso elegível p/ coorte (LGPD)." },
   ],
   casuistry: [
-    "Resumir a coorte",
-    "Casos elegíveis (LGPD)",
-    "Exportar casuística",
+    { tag: "Outcome", text: "73% de resposta favorável em 128 casos." },
+    { tag: "Escalas", text: "Dor (BPI) −41% · sono (PSQI) −28%." },
+    { tag: "Pesquisa", text: "Coorte elegível p/ exportação (LGPD)." },
   ],
 };
 
@@ -39,10 +39,10 @@ const PROMPT: Record<string, string> = {
 };
 
 // Companheiro de IA docado à direita: slot do globo (o globo 3D billboarda
-// atrás), sugestões contextuais e um chat (mock). Presente na jornada não-Home.
+// atrás), insights contextuais e um chat (mock). Presente na jornada não-Home.
 export function AIDock({ className }: { className?: string }) {
   const node = useFlow((s) => s.currentNode);
-  const suggestions = SUGGESTIONS[node] ?? [];
+  const insights = INSIGHTS[node] ?? [];
   const prompt = PROMPT[node] ?? "Pergunte à Athena…";
 
   return (
@@ -60,22 +60,23 @@ export function AIDock({ className }: { className?: string }) {
         </div>
       </div>
 
-      {/* Sugestões contextuais por tela — pills clicáveis. Fluem na superfície de
-          scroll única (sem scroll interno próprio — tudo rola junto). */}
+      {/* Insights contextuais por tela. Fluem na superfície de scroll única
+          (sem scroll interno próprio — tudo rola junto). */}
       <div className="flex flex-col gap-2">
-        <Eyebrow>Sugestões</Eyebrow>
-        <div className="flex flex-wrap gap-2">
-          {suggestions.map((s) => (
-            <button
-              key={s}
-              type="button"
-              className="glass-frost-inner flex items-center gap-1.5 rounded-full px-3 py-1.5 text-caption text-neutral-700 transition-colors hover:text-ink"
+        <Eyebrow>Insights</Eyebrow>
+        <ul className="flex flex-col gap-2">
+          {insights.map((it) => (
+            <li
+              key={it.tag}
+              className="glass-frost-inner flex flex-col gap-1 rounded-2xl px-3 py-2.5"
             >
-              <i className="bx bx-message-square-dots text-base text-neutral-500" />
-              {s}
-            </button>
+              <span className="font-mono text-micro uppercase tracking-[0.1em] text-neutral-500">
+                {it.tag}
+              </span>
+              <span className="text-caption text-neutral-700">{it.text}</span>
+            </li>
           ))}
-        </div>
+        </ul>
       </div>
 
       {/* Chat (mock). */}

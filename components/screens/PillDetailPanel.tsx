@@ -3,7 +3,7 @@
 import { WireButton } from "@/components/ui";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { ScrollFade } from "@/components/ui/ScrollFade";
-import { SlideOverPanel } from "@/components/ui/SlideOverPanel";
+import { cn } from "@/lib/cn";
 
 export type Pill = {
   tag: string;
@@ -14,8 +14,10 @@ export type Pill = {
   source: string;
 };
 
-// Painel "Pílula do dia" — overlay da Home. Usa o SlideOverPanel (padrão da
-// pílula: desliza da direita, GSAP 0.5s power2.out, vidro + rounded-[28px]).
+// Painel "Pílula do dia" — overlay local da Home (wireframe). Espelha a casca do
+// NewAppointmentPanel: é o próprio vidro (backdrop-filter próprio), entra pela
+// direita enquanto os módulos da Home recuam. Animação fica no HomeScreen via a
+// classe .pill-detail-panel.
 export function PillDetailPanel({
   pill,
   onClose,
@@ -24,22 +26,12 @@ export function PillDetailPanel({
   onClose: () => void;
 }) {
   return (
-    <SlideOverPanel
-      open={pill !== null}
-      onClose={onClose}
-      className="max-w-[1080px]"
-      label="Pílula do dia"
-      footer={
-        <>
-          <WireButton variant="ghost" onClick={onClose}>
-            Fechar
-          </WireButton>
-          <WireButton variant="primary" onClick={onClose} className="gap-2">
-            <i className="bx bx-check text-lg" />
-            Marcar como lida
-          </WireButton>
-        </>
-      }
+    <div
+      className={cn(
+        "pill-detail-panel glass-panel-blue backdrop-blur-2xl absolute inset-y-0 right-0 my-auto flex h-fit max-h-full w-full max-w-[1080px] flex-col rounded-[28px] p-7 opacity-0",
+        pill ? "pointer-events-auto" : "pointer-events-none",
+      )}
+      aria-hidden={!pill}
     >
       {/* Header */}
       <header className="flex items-start gap-3">
@@ -64,9 +56,8 @@ export function PillDetailPanel({
         </button>
       </header>
 
-      {/* Conteúdo — vídeo à esquerda, resumo + pontos-chave na lateral. pb p/ rolar
-          atrás do CTA fixo. */}
-      <ScrollFade className="mt-6 min-h-0 flex-1 pb-24">
+      {/* Conteúdo — vídeo à esquerda, resumo + pontos-chave na lateral. */}
+      <ScrollFade className="mt-6 min-h-0 flex-1">
         <div className="grid grid-cols-[1.3fr_1fr] items-start gap-7">
           {/* Esquerda — vídeo. */}
           <div className="glass-frost-inner grid aspect-[16/9] w-full place-items-center rounded-2xl">
@@ -100,6 +91,17 @@ export function PillDetailPanel({
           </div>
         </div>
       </ScrollFade>
-    </SlideOverPanel>
+
+      {/* Footer */}
+      <footer className="mt-6 flex items-center justify-end gap-3 border-t border-white/50 pt-5">
+        <WireButton variant="ghost" onClick={onClose}>
+          Fechar
+        </WireButton>
+        <WireButton variant="primary" onClick={onClose} className="gap-2">
+          <i className="bx bx-check text-lg" />
+          Marcar como lida
+        </WireButton>
+      </footer>
+    </div>
   );
 }

@@ -8,7 +8,6 @@ export type NodeId =
   | "utilities"
   | "pre-review"
   | "clinical-queue"
-  | "consult-intro"
   | "consult"
   | "clinical-note"
   | "casuistry"

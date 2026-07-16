@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { WireBadge, WireButton } from "@/components/ui";
+import { WireBadge, WireButton, Eyebrow } from "@/components/ui";
 import { ModuleCard } from "@/components/ui/ModuleCard";
 import { BackButton } from "@/components/ui/BackButton";
+import { ScrollFade } from "@/components/ui/ScrollFade";
 import { cn } from "@/lib/cn";
 import { gsap, useGSAP } from "@/lib/gsap";
 import { DURATION, EASE, prefersReducedMotion } from "@/lib/motion";
@@ -14,30 +15,36 @@ import type { ScreenProps } from "./index";
 const CALL_FADE =
   "opacity-0 transition-opacity duration-300 group-hover:opacity-100";
 
-// `consult` — Tela de consulta do paciente (módulo "Consulta e Análise").
-// Pós-reestruturação 2D, a tela é dividida nas ZONAS do WorkspaceShell:
-//  • ConsultLeft  (ESQUERDA, resumo): contexto do paciente + anamnese da sessão.
-//  • ConsultCenter (CENTRO, foco): a chamada DOMINA + notas do médico.
-//  • A IA (Athena) vive na coluna DIREITA persistente do shell (AthenaPanel).
-// Encerrar a chamada (`onContinue`) faz o CENTRO evoluir para a tela de Análise.
-// Tudo em vidro/neutros; gravidade por peso (WireBadge), nunca por matiz.
-
-// ESQUERDA — contexto do paciente + anamnese da sessão (resumo alimentado pela IA).
-export function ConsultLeft() {
+// `consult` — Tela de consulta do paciente. 3 colunas sobre o mundo 3D:
+//  • Esquerda: contexto do paciente (maior) + anamnese da sessão (rótulo em cima
+//    do valor; toggle Anamnese ↔ Exame físico full-width; rows rolam com fade).
+//  • Centro (mais largo): a chamada DOMINA (~2/3) e, abaixo, notas compactas do
+//    médico. Controles/overlays da chamada só aparecem no hover (modo cinema).
+//  • Direita: Athena (copiloto) — globo, transcrição, insights, disclaimer.
+// Tudo em vidro/neutros; gravidade por peso (WireBadge), nunca por matiz (§2.1).
+// Scroll interno nunca corta bruto: usa `scroll-fade-y` (regra de plataforma).
+export function ConsultScreen({ onContinue }: ScreenProps) {
   return (
-    <div className="no-scrollbar flex h-full min-h-0 min-w-0 flex-col gap-4 overflow-y-auto pt-[88px] pb-6">
-      <PatientHeader />
-      <Anamnese />
-    </div>
-  );
-}
+    <div
+      className="grid h-screen w-full max-w-[1240px] items-stretch gap-4 pt-24 pb-12"
+      style={{
+        gridTemplateColumns: "minmax(0,1fr) minmax(0,1.6fr) minmax(0,1fr)",
+      }}
+    >
+      {/* Esquerda — contexto do paciente + anamnese da sessão. */}
+      <div className="orbit-pane flex min-h-0 min-w-0 flex-col gap-4">
+        <PatientHeader />
+        <Anamnese />
+      </div>
 
-// CENTRO — chamada em foco + notas do médico.
-export function ConsultCenter({ onContinue }: ScreenProps) {
-  return (
-    <div className="flex h-full min-h-0 min-w-0 flex-col gap-4 pt-[88px] pb-6">
-      <CallScreen onEnd={onContinue} />
-      <NotesBox />
+      {/* Centro — chamada em foco + notas do médico. */}
+      <div className="orbit-pane flex min-h-0 min-w-0 flex-col gap-4">
+        <CallScreen onEnd={onContinue} />
+        <NotesBox />
+      </div>
+
+      {/* Direita — copiloto Athena (sem a tela da consulta). */}
+      <AthenaPanel />
     </div>
   );
 }
@@ -48,7 +55,7 @@ export function ConsultCenter({ onContinue }: ScreenProps) {
 // presença — avatar e nome ampliados.
 function PatientHeader() {
   return (
-    <ModuleCard className="gap-3.5 px-5 pb-5 pt-4">
+    <ModuleCard className="shrink-0 gap-3.5 px-5 pb-5 pt-4">
       <div className="flex items-start gap-3.5">
         <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full border border-white/50 bg-paper/60 font-display text-title font-medium text-ink">
           MC
@@ -83,9 +90,9 @@ function Anamnese() {
   );
 
   return (
-    <ModuleCard title="Anamnese da sessão">
+    <ModuleCard title="Anamnese da sessão" className="min-h-0 flex-1">
       {/* Toggle segmentado full-width. */}
-      <div className="grid grid-cols-2 gap-1 rounded-full bg-white/40 p-1">
+      <div className="grid shrink-0 grid-cols-2 gap-1 rounded-full bg-white/40 p-1">
         {ANAMNESE_VIEWS.map((v) => (
           <button
             key={v.key}
@@ -104,8 +111,11 @@ function Anamnese() {
         ))}
       </div>
 
-      {/* A coluna inteira rola (nada fixo); o conteúdo da anamnese empilha aqui. */}
-      {view === "anamnese" ? <AnamneseContent /> : <ExameFisicoContent />}
+      {/* Conteúdo rolável com esvanecer (rows são texto/glass-frost — seguro).
+          driveOrb: rolar o prontuário move a orb 3D atrás (chamada fica fixa). */}
+      <ScrollFade watch={view} driveOrb className="min-h-0 flex-1">
+        {view === "anamnese" ? <AnamneseContent /> : <ExameFisicoContent />}
+      </ScrollFade>
     </ModuleCard>
   );
 }
@@ -689,3 +699,59 @@ function NotesBox() {
   );
 }
 
+/* ============================ COLUNA DIREITA ============================ */
+
+const INSIGHTS = [
+  { tag: "Pergunta-chave", text: "Investigar qualidade do sono e despertares." },
+  { tag: "Alerta", text: "Interação: tramadol + amitriptilina (serotoninérgica)." },
+  { tag: "CID sugerido", text: "M79.7 · fibromialgia." },
+  { tag: "Literatura", text: "Canabinoide adjuvante reduz dor noturna (coorte 2023)." },
+];
+
+// Athena — copiloto clínico docado à direita (sem a tela da consulta, que vive
+// no centro). Mantém o slot do globo p/ o AiGlobe billboardar atrás.
+function AthenaPanel() {
+  return (
+    <aside className="orbit-pane glass-panel-blue backdrop-blur-2xl flex min-h-0 flex-col gap-4 rounded-[28px] p-5">
+      {/* Slot do globo — área transparente onde o globo 3D aparece. */}
+      <div className="relative h-44 shrink-0">
+        <div className="absolute inset-x-0 bottom-0 flex flex-col items-center">
+          <p className="font-display text-title font-medium text-ink">Athena</p>
+          <p className="text-caption text-neutral-600">Copiloto clínico</p>
+        </div>
+      </div>
+
+     
+
+      {/* Insights / alertas contextuais — esvanecem ao rolar e movem a orb. */}
+      <ScrollFade driveOrb className="flex min-h-0 flex-1 flex-col gap-2">
+        <Eyebrow>Insights</Eyebrow>
+        <ul className="flex flex-col gap-2">
+          {INSIGHTS.map((it) => (
+            <li
+              key={it.tag}
+              className="glass-frost-inner flex flex-col gap-1 rounded-2xl px-3 py-2.5"
+            >
+              <span className="font-mono text-micro uppercase tracking-[0.1em] text-neutral-500">
+                {it.tag}
+              </span>
+              <span className="text-caption text-neutral-700">{it.text}</span>
+            </li>
+          ))}
+        </ul>
+      </ScrollFade>
+
+      {/* Disclaimer. */}
+      <div className="flex shrink-0 items-start gap-2 border-t border-white/50 pt-3">
+        <i className="bx bx-shield-quarter mt-0.5 text-base text-neutral-400" />
+        <p className="text-micro leading-relaxed text-neutral-500">
+          <strong className="font-medium text-neutral-600">
+            Athena é assistiva
+          </strong>{" "}
+          · decisão final do médico · sugestões em log de auditoria · CFM
+          2.314/22 · LGPD.
+        </p>
+      </div>
+    </aside>
+  );
+}

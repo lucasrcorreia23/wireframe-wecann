@@ -1,22 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { WireButton, WireBadge } from "@/components/ui";
 import { ModuleCard } from "@/components/ui/ModuleCard";
 import { BackButton } from "@/components/ui/BackButton";
 import { ScrollFade } from "@/components/ui/ScrollFade";
+import { gsap, useGSAP } from "@/lib/gsap";
 import { useFlow } from "@/flow/store";
 import { cn } from "@/lib/cn";
 import {
   AppointmentSummaryPanel,
   type Appt,
 } from "./AppointmentSummaryPanel";
-import { PATIENTS, type PatientKey } from "./appointments";
 
-// `agenda` — calendário estilo Google Calendar, no padrão de MÓDULO (Centro/Esquerda)
-// do WorkspaceShell. ESQUERDA: criar + mini-mês + legenda. CENTRO: grade da semana;
-// clicar num evento abre o Modal Preview Pré-Consulta (T-06a). Dali o médico bifurca
-// para o perfil 360 (pre-review) ou inicia a consulta (consult).
+// `agenda` — calendário estilo Google Calendar: mini-mês + "Criar" à esquerda,
+// grade da semana (gutter de horários + 7 dias, eventos por hora/duração) à direita.
 const DAYS = [
   ["Seg", "16"], ["Ter", "17"], ["Qua", "18"], ["Qui", "19"],
   ["Sex", "20"], ["Sáb", "21"], ["Dom", "22"],
@@ -24,40 +22,15 @@ const DAYS = [
 const START_HOUR = 8;
 const HOURS = Array.from({ length: 10 }, (_, i) => START_HOUR + i);
 
-// Posição de cada paciente na grade da semana (sobrescreve o slot default de hoje
-// da fonte compartilhada). O conteúdo clínico/Preview vem de PATIENTS — o Modal
-// Preview fica idêntico ao da Home.
-const PATIENT_SLOTS: { key: PatientKey; day: number; hour: number; span: number }[] = [
-  { key: "marina", day: 3, hour: 9, span: 1 },
-  { key: "andre", day: 3, hour: 10, span: 1 },
-  { key: "julia", day: 3, hour: 11, span: 1 },
-  { key: "rui", day: 2, hour: 10, span: 1 },
-  { key: "helena", day: 4, hour: 9, span: 1 },
-];
-
-const BLOCKS: Appt[] = [
-  {
-    kind: "block", day: 1, hour: 8, span: 2,
-    title: "Bloco de retornos", sub: "Teleconsulta", type: "Teleconsulta",
-    reason: "Bloco de retornos por teleconsulta (4 pacientes).",
-  },
-  {
-    kind: "block", day: 0, hour: 14, span: 2,
-    title: "Casuística", sub: "Discussão de casos", type: "Discussão",
-    reason: "Discussão de casos da coorte.",
-  },
-];
-
 const EVENTS: Appt[] = [
-  ...PATIENT_SLOTS.map((s) => ({
-    ...PATIENTS[s.key],
-    day: s.day,
-    hour: s.hour,
-    span: s.span,
-  })),
-  ...BLOCKS,
+  { kind: "patient", day: 3, hour: 9, span: 1, title: "Marina Castro", sub: "Pré-consulta · Dor", tone: "mid", type: "Pré-consulta", reason: "Dor crônica — avaliação inicial", patientMeta: "38 anos · Dor crônica" },
+  { kind: "patient", day: 3, hour: 10, span: 1, title: "André Lobo", sub: "Fibromialgia", type: "Consulta", reason: "Fibromialgia — acompanhamento", patientMeta: "45 anos · Fibromialgia" },
+  { kind: "patient", day: 3, hour: 11, span: 1, title: "Júlia Tavares", sub: "Insônia · 1ª", type: "Consulta · 1ª", reason: "Insônia persistente — primeira consulta", patientMeta: "29 anos · Insônia" },
+  { kind: "block", day: 1, hour: 8, span: 2, title: "Bloco de retornos", sub: "Teleconsulta", type: "Teleconsulta", reason: "Bloco de retornos por teleconsulta (4 pacientes)." },
+  { kind: "patient", day: 2, hour: 10, span: 1, title: "Rui Salgado", sub: "Controle especial", tone: "hard", type: "Controle especial", reason: "Renovação de receita — controle especial", patientMeta: "52 anos · Dor neuropática" },
+  { kind: "patient", day: 4, hour: 9, span: 1, title: "Helena Pires", sub: "Retorno", type: "Retorno", reason: "Retorno — reavaliação de conduta", patientMeta: "61 anos · Artrose" },
+  { kind: "block", day: 0, hour: 14, span: 2, title: "Casuística", sub: "Discussão de casos", type: "Discussão", reason: "Discussão de casos da coorte." },
 ];
-
 const TONE_BAR: Record<NonNullable<Appt["tone"]>, string> = {
   neutral: "border-l-neutral-400",
   mid: "border-l-state-mid",
@@ -69,76 +42,93 @@ const WEEK_INITIALS = ["S", "T", "Q", "Q", "S", "S", "D"];
 const CURRENT_WEEK = new Set([16, 17, 18, 19, 20, 21, 22]);
 const TODAY = 19;
 
-// ESQUERDA — criar + mini-mês + legenda (resumos do contexto).
-export function AgendaLeft() {
-  return (
-    <div className="no-scrollbar flex h-full min-h-0 flex-col gap-4 overflow-y-auto pt-[88px] pb-6">
-      <ModuleCard className="gap-4">
-        <WireButton variant="primary" className="w-full">
-          <i className="bx bx-plus mr-1.5 text-base" />
-          Criar
-        </WireButton>
-
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <span className="text-body font-medium text-ink">Junho 2026</span>
-            <div className="flex gap-1 text-neutral-400">
-              <button className="hover:text-ink" aria-label="Mês anterior">
-                <i className="bx bx-chevron-left text-lg" />
-              </button>
-              <button className="hover:text-ink" aria-label="Próximo mês">
-                <i className="bx bx-chevron-right text-lg" />
-              </button>
-            </div>
-          </div>
-          <div className="grid grid-cols-7 gap-0.5">
-            {WEEK_INITIALS.map((w, i) => (
-              <span
-                key={i}
-                className="grid h-6 place-items-center font-mono text-micro text-neutral-400"
-              >
-                {w}
-              </span>
-            ))}
-            {MONTH_DAYS.map((d) => (
-              <span
-                key={d}
-                className={cn(
-                  "grid h-7 place-items-center rounded-full font-mono text-micro",
-                  d === TODAY
-                    ? "bg-ink text-paper"
-                    : CURRENT_WEEK.has(d)
-                      ? "bg-white/55 text-ink"
-                      : "text-neutral-600",
-                )}
-              >
-                {d}
-              </span>
-            ))}
-          </div>
-        </div>
-      </ModuleCard>
-
-      <ModuleCard eyebrow="Legenda" icon="bx-palette" size="sm">
-        <div className="flex flex-wrap gap-1.5">
-          <WireBadge>Consulta</WireBadge>
-          <WireBadge tone="mid">Pré-consulta</WireBadge>
-          <WireBadge tone="hard">Controle especial</WireBadge>
-        </div>
-      </ModuleCard>
-    </div>
-  );
-}
-
-// CENTRO — grade da semana + Modal Preview (T-06a).
-export function AgendaCenter() {
+export function AgendaScreen() {
   const cols = `52px repeat(${DAYS.length}, minmax(0, 1fr))`;
   const goTo = useFlow((s) => s.goTo);
   const [selected, setSelected] = useState<Appt | null>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  // Padrão "pílula": ao abrir o painel, os cards de vidro (.orbit-pane) recuam +
+  // escurecem (transform/opacity NO PRÓPRIO card → blur intacto). Escopo no root
+  // p/ não afetar outras telas. Mesmo ease/duração do painel (power2.out · 0.5s).
+  useGSAP(
+    () => {
+      gsap.to(".orbit-pane", {
+        xPercent: selected ? -8 : 0,
+        scale: selected ? 0.97 : 1,
+        opacity: selected ? 0.35 : 1,
+        duration: 0.5,
+        ease: "power2.out",
+      });
+    },
+    { dependencies: [selected], scope: rootRef },
+  );
 
   return (
-    <div className="relative h-full pt-[88px] pb-6">
-      <ModuleCard className="h-full gap-4">
+    <div ref={rootRef} className="relative w-full max-w-[1220px]">
+    <div
+      className="grid items-start gap-4"
+      style={{ gridTemplateColumns: "248px minmax(0, 1fr)" }}
+    >
+      {/* Coluna esquerda — criar + mini-mês + legenda */}
+      <div className="flex flex-col gap-4">
+        <ModuleCard className="orbit-pane gap-4">
+          <WireButton variant="primary" className="w-full">
+            <i className="bx bx-plus mr-1.5 text-base" />
+            Criar
+          </WireButton>
+
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <span className="text-body font-medium text-ink">Junho 2026</span>
+              <div className="flex gap-1 text-neutral-400">
+                <button className="hover:text-ink" aria-label="Mês anterior">
+                  <i className="bx bx-chevron-left text-lg" />
+                </button>
+                <button className="hover:text-ink" aria-label="Próximo mês">
+                  <i className="bx bx-chevron-right text-lg" />
+                </button>
+              </div>
+            </div>
+            <div className="grid grid-cols-7 gap-0.5">
+              {WEEK_INITIALS.map((w, i) => (
+                <span
+                  key={i}
+                  className="grid h-6 place-items-center font-mono text-micro text-neutral-400"
+                >
+                  {w}
+                </span>
+              ))}
+              {MONTH_DAYS.map((d) => (
+                <span
+                  key={d}
+                  className={cn(
+                    "grid h-7 place-items-center rounded-full font-mono text-micro",
+                    d === TODAY
+                      ? "bg-ink text-paper"
+                      : CURRENT_WEEK.has(d)
+                        ? "bg-white/55 text-ink"
+                        : "text-neutral-600",
+                  )}
+                >
+                  {d}
+                </span>
+              ))}
+            </div>
+          </div>
+        </ModuleCard>
+
+        <ModuleCard eyebrow="Legenda" icon="bx-palette" className="orbit-pane">
+          <div className="flex flex-wrap gap-1.5">
+            <WireBadge>Consulta</WireBadge>
+            <WireBadge tone="mid">Pré-consulta</WireBadge>
+            <WireBadge tone="hard">Controle especial</WireBadge>
+          </div>
+        </ModuleCard>
+      </div>
+
+      {/* Coluna direita — grade da semana */}
+      <ModuleCard className="orbit-pane gap-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <BackButton />
@@ -180,8 +170,13 @@ export function AgendaCenter() {
           ))}
         </div>
 
-        {/* Grade horária — ScrollFade: bordas esvanecem em vez de cortar. */}
-        <ScrollFade className="min-h-0 flex-1" fade={20} watch={selected?.title}>
+        {/* Grade horária — ScrollFade: bordas esvanecem em vez de cortar (regra de
+            plataforma); altura adaptativa nunca estoura a viewport. */}
+        <ScrollFade
+          className="max-h-[min(520px,calc(100vh-22rem))]"
+          fade={20}
+          watch={selected?.title}
+        >
           <div
             className="grid pt-2"
             style={{ gridTemplateColumns: cols, gridAutoRows: "3rem" }}
@@ -225,6 +220,7 @@ export function AgendaCenter() {
           </div>
         </ScrollFade>
       </ModuleCard>
+    </div>
 
       <AppointmentSummaryPanel
         appt={selected}

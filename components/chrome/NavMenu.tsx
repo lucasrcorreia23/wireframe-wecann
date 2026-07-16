@@ -7,10 +7,11 @@ import { cn } from "@/lib/cn";
 
 const ITEMS: { label: string; node: NodeId; icon: string }[] = [
   { label: "Home", node: "home", icon: "bx-home-alt" },
+  { label: "Agenda", node: "agenda", icon: "bx-calendar" },
   { label: "Mensagens", node: "messages", icon: "bx-envelope" },
   { label: "Pacientes", node: "patients", icon: "bx-group" },
-  { label: "Consulta", node: "consult-intro", icon: "bx-pulse" },
-  { label: "Documentos", node: "clinical-note", icon: "bx-file" },
+  { label: "Casuísticas", node: "casuistry", icon: "bx-bar-chart-alt-2" },
+  { label: "Utilidades", node: "utilities", icon: "bx-wrench" },
 ];
 
 // Dropdown grande de navegação, ancorado ao botão de menu (topo-esquerda).

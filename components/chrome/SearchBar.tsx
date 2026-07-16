@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFlow } from "@/flow/store";
-import { Avatar } from "@/components/ui";
 
 const PATIENTS = [
   { initials: "MC", name: "Marina Castro", condition: "Dor crônica · fibromialgia" },
@@ -21,11 +20,16 @@ export function SearchBar() {
   const [q, setQ] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Reset da query ao fechar — ajuste de estado DURANTE o render (padrão React,
+  // sem setState em efeito; mesmo padrão do ActiveStationLayer).
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (prevOpen !== open) {
+    setPrevOpen(open);
+    if (!open) setQ("");
+  }
+
   useEffect(() => {
-    if (!open) {
-      setQ("");
-      return;
-    }
+    if (!open) return;
     inputRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") toggleSearch(false);
@@ -75,10 +79,12 @@ export function SearchBar() {
               {results.map((p) => (
                 <li key={p.name}>
                   <button
-                    onClick={() => goTo("consult")}
+                    onClick={() => goTo("pre-review")}
                     className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-white/45"
                   >
-                    <Avatar name={p.name} size="sm" />
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/50 bg-white/40 font-mono text-micro text-neutral-700">
+                      {p.initials}
+                    </span>
                     <div className="flex min-w-0 flex-col">
                       <span className="text-body font-medium text-ink">{p.name}</span>
                       <span className="truncate text-caption text-neutral-600">

@@ -18,6 +18,7 @@ export const NODES: Record<NodeId, FlowNode> = {
     position: [0, 0, z(0)],
     panels: [],
     next: "pre-review",
+    branch: "clinical-queue",
   },
   agenda: {
     id: "agenda",
@@ -60,18 +61,8 @@ export const NODES: Record<NodeId, FlowNode> = {
   "pre-review": {
     id: "pre-review",
     zone: "pre",
-    title: "Paciente 360 · Perfil",
+    title: "Revisão da pré-consulta",
     position: [0, 0, z(1)],
-    panels: [],
-    next: "consult",
-  },
-  // Launcher do módulo (tela cheia, estilo "home do Google"): título serifado +
-  // busca + sugestões de pacientes. Escolher um paciente inicia a consulta.
-  "consult-intro": {
-    id: "consult-intro",
-    zone: "consulta",
-    title: "Consulta e Análise",
-    position: [0, 0, z(1.5)],
     panels: [],
     next: "consult",
   },
@@ -81,9 +72,6 @@ export const NODES: Record<NodeId, FlowNode> = {
     title: "Tela de consulta",
     position: [0, 0, z(2)],
     panels: ["patient360", "transcription"],
-    // Encerrar a consulta vai DIRETO para o Documento da consulta / Conferência
-    // (clinical-note · T-11) — único passo pós-chamada, onde o médico valida e
-    // aceita as sugestões da IA seção a seção. (Análise foi absorvida aqui.)
     next: "clinical-note",
   },
   "clinical-note": {
@@ -112,8 +100,15 @@ export const NODES: Record<NodeId, FlowNode> = {
   },
 };
 
-/** Ordem do caminho vivo (pós-redução para 2D). Os nós desativados saem daqui. */
-export const GOLDEN_PATH: NodeId[] = ["home", "consult", "clinical-note"];
+/** Ordem do caminho-ouro (travessia padrão) para o stepper e prefetch de vizinhos. */
+export const GOLDEN_PATH: NodeId[] = [
+  "home",
+  "pre-review",
+  "consult",
+  "clinical-note",
+  "casuistry",
+  "report",
+];
 
 export const ALL_NODE_IDS = Object.keys(NODES) as NodeId[];
 

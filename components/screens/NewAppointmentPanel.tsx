@@ -3,12 +3,11 @@
 import { useState } from "react";
 import { WireButton } from "@/components/ui";
 import { Eyebrow } from "@/components/ui/Eyebrow";
-import { SlideOverPanel } from "@/components/ui/SlideOverPanel";
 import { cn } from "@/lib/cn";
 
-// Painel "Novo agendamento" — overlay da Home. Usa o SlideOverPanel (padrão da
-// pílula: desliza da direita, GSAP 0.5s power2.out, vidro + rounded-[28px]).
-// Campos espelham a referência da imagem.
+// Painel "Novo agendamento" — overlay local da Home (wireframe, sem submit real).
+// É o próprio vidro (backdrop-filter próprio); entra pela direita enquanto os
+// módulos da Home recuam para o lado. Campos espelham a referência da imagem.
 export function NewAppointmentPanel({
   open,
   onClose,
@@ -21,22 +20,12 @@ export function NewAppointmentPanel({
   );
 
   return (
-    <SlideOverPanel
-      open={open}
-      onClose={onClose}
-      className="max-w-[760px]"
-      label="Novo agendamento"
-      footer={
-        <>
-          <WireButton variant="ghost" onClick={onClose}>
-            Cancelar
-          </WireButton>
-          <WireButton variant="primary" onClick={onClose} className="gap-2">
-            <i className="bx bx-calendar-check text-lg" />
-            Agendar
-          </WireButton>
-        </>
-      }
+    <div
+      className={cn(
+        "new-appt-panel glass-panel-blue backdrop-blur-2xl absolute inset-y-0 right-0 flex w-full max-w-[760px] flex-col rounded-[28px] p-7 opacity-0",
+        open ? "pointer-events-auto" : "pointer-events-none",
+      )}
+      aria-hidden={!open}
     >
       {/* Header */}
       <header className="flex items-center gap-3">
@@ -56,8 +45,8 @@ export function NewAppointmentPanel({
         </button>
       </header>
 
-      {/* Campos — pb p/ o último campo não ficar sob o CTA fixo (rola atrás dele). */}
-      <div className="no-scrollbar mt-6 flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto pb-24">
+      {/* Campos */}
+      <div className="no-scrollbar mt-6 flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto">
         <Field label="Paciente *">
           <div className="glass-frost-inner flex items-center gap-2 rounded-2xl px-4 py-3">
             <i className="bx bx-search text-lg text-neutral-400" />
@@ -143,7 +132,18 @@ export function NewAppointmentPanel({
           </Field>
         </div>
       </div>
-    </SlideOverPanel>
+
+      {/* Footer */}
+      <footer className="mt-6 flex items-center justify-end gap-3 border-t border-white/50 pt-5">
+        <WireButton variant="ghost" onClick={onClose}>
+          Cancelar
+        </WireButton>
+        <WireButton variant="primary" onClick={onClose} className="gap-2">
+          <i className="bx bx-calendar-check text-lg" />
+          Agendar
+        </WireButton>
+      </footer>
+    </div>
   );
 }
 

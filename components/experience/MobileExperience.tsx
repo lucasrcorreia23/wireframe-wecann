@@ -5,9 +5,6 @@ import { useFlow, useCanBack } from "@/flow/store";
 import { NODES, ALL_NODE_IDS, ZONE_LABEL } from "@/flow/graph";
 import { WireButton, WireBadge, Eyebrow } from "@/components/ui";
 
-// Só os nós com tela registrada (módulos vivos pós-reestruturação 2D).
-const LIVE_NODE_IDS = ALL_NODE_IDS.filter((id) => id in SCREENS);
-
 // Fallback mobile (§0/§6): sem o trilho 3D completo. As estações entram por
 // cross-fade; navegação por seleção de nó + avanço/voltar. Forks na própria tela.
 export function MobileExperience() {
@@ -39,7 +36,7 @@ export function MobileExperience() {
 
       {/* Seletor de estação */}
       <div className="flex shrink-0 gap-1.5 overflow-x-auto border-b border-neutral-200 bg-paper-50 px-4 py-2">
-        {LIVE_NODE_IDS.map((id) => (
+        {ALL_NODE_IDS.map((id) => (
           <button
             key={id}
             onClick={() => goTo(id)}
