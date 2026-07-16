@@ -42,7 +42,7 @@ export function TopBar() {
         aria-label="Ir para a Home"
         className="pointer-events-auto flex w-fit items-center"
       >
-        <img src="/figma/logo.svg" alt="wecann.care" className="h-[23px] w-[136px]" />
+        <img src="/logotipo.svg" alt="wecann.care" className="h-[23px] w-[136px]" />
       </button>
 
       {/* ───── Centro — pílula de navegação + busca ───── */}
