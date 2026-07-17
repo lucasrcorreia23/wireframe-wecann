@@ -47,32 +47,30 @@ const SCROLL_RISE = 0.95;
 // set MODULAR transparente que deixa o globo aparecer atrás.
 const CENTERED = new Set<string>(["consult", "pre-review", "report", "casuistry"]);
 
-// ───────── Material da bola: gradiente pastel (referência globe.png) ─────────
-// Esfera LISA e cristalina com o gradiente do print: menta no topo → branco →
-// lavanda (lados periwinkle) → rosa → pêssego na base. Miolo LEITOSO
-// concentrado; a borda SATURA e acende (fresnel) e o alpha faz um fade LONGO
-// — a esfera "derrete" no glow, como na referência. Sem specular pontual
-// (entregava plástico) e sem véu leitoso global (achatava o gradiente).
+// ───────── Material da bola: Main Gradient da marca (pastelizado) ─────────
+// Esfera LISA e cristalina com o gradiente da marca (gradiente02) suavizado:
+// azul no topo → azul claro → coral → amarelo na base. As 4 cores da marca
+// são pastelizadas (lavadas com branco) para manter a delicadeza do globo.
+// Miolo LEITOSO concentrado; a borda SATURA e acende (fresnel) e o alpha faz
+// um fade LONGO — a esfera "derrete" no glow. Sem specular pontual (entregava
+// plástico) e sem véu leitoso global (achatava o gradiente).
 // A normal é amostrada em VIEW SPACE e o grupo billboarda a câmera → o
 // gradiente fica sempre "em pé", estável.
-// Sem tone mapping/colorspace includes: os valores são sRGB diretos do print.
+// Sem tone mapping/colorspace includes: os valores são sRGB diretos.
 
 // Ramp compartilhado entre o núcleo e a casca de rim — uma única fonte de
 // verdade para as cores, interpolada nas duas strings GLSL.
 const RAMP_GLSL = /* glsl */ `
 vec3 ramp(float t) {
-  vec3 peach = vec3(0.976, 0.757, 0.549); // #f9c18c
-  vec3 coral = vec3(0.953, 0.663, 0.596); // #f3a998
-  vec3 pink  = vec3(0.949, 0.757, 0.786); // #f2c1c8
-  vec3 lav   = vec3(0.780, 0.784, 0.937); // #c7c8ef
-  vec3 white = vec3(0.988, 0.996, 0.992); // #fcfefd
-  vec3 mint  = vec3(0.733, 0.914, 0.827); // #bbe9d3
-  vec3 c = peach;
-  c = mix(c, coral, smoothstep(0.04, 0.20, t));
-  c = mix(c, pink,  smoothstep(0.20, 0.38, t));
-  c = mix(c, lav,   smoothstep(0.38, 0.55, t));
-  c = mix(c, white, smoothstep(0.55, 0.78, t));
-  c = mix(c, mint,  smoothstep(0.80, 0.98, t));
+  // Main Gradient da marca pastelizado — quente na base, frio no topo.
+  vec3 gold  = vec3(0.976, 0.875, 0.627); // #f9dfa0  (marca #fcd757 suavizado)
+  vec3 coral = vec3(0.965, 0.639, 0.573); // #f6a392  (marca #f36350 suavizado)
+  vec3 sky   = vec3(0.682, 0.725, 0.937); // #aeb9ef  (marca #94b8f0, periwinkle p/ não puxar ciano)
+  vec3 blue  = vec3(0.541, 0.690, 1.000); // #8ab0ff  (marca #588dff suavizado)
+  vec3 c = gold;
+  c = mix(c, coral, smoothstep(0.08, 0.34, t));
+  c = mix(c, sky,   smoothstep(0.38, 0.62, t));
+  c = mix(c, blue,  smoothstep(0.66, 0.95, t));
   return c;
 }
 `;
@@ -106,9 +104,9 @@ void main() {
   float t = clamp(n.y * 0.5 + 0.5, 0.0, 1.0);
   vec3 col = ramp(t);
 
-  // Lados do terço médio puxam para periwinkle (como no print).
+  // Lados do terço médio puxam sutilmente para o periwinkle da marca.
   float side = smoothstep(0.25, 0.9, abs(n.x)) * (1.0 - abs(n.y));
-  col = mix(col, vec3(0.72, 0.73, 0.93), side * 0.25);
+  col = mix(col, vec3(0.682, 0.725, 0.937), side * 0.15);
 
   float facing = clamp(n.z, 0.0, 1.0);
   float fresnel = 1.0 - facing;
@@ -165,12 +163,12 @@ function makeGlowTexture(): THREE.CanvasTexture {
     size / 2, size / 2, 0,
     size / 2, size / 2, size / 2,
   );
-  // Halo SUAVE (redesign 16/07/2026): levemente laranjado no miolo esvaindo
-  // em roxo na borda — discreto, a página segue branca.
-  g.addColorStop(0.0, "rgba(255, 200, 150, 0.4)"); // laranja suave
-  g.addColorStop(0.35, "rgba(247, 174, 148, 0.18)"); // laranja→rosado
-  g.addColorStop(0.7, "rgba(179, 136, 235, 0.1)"); // roxo suave
-  g.addColorStop(1.0, "rgba(179, 136, 235, 0)");
+  // Halo SUAVE nos tons da marca: miolo quente (amarelo→coral) esvaindo em
+  // azul suave na borda — discreto, a página segue branca.
+  g.addColorStop(0.0, "rgba(252, 215, 135, 0.36)"); // amarelo suave
+  g.addColorStop(0.4, "rgba(243, 120, 100, 0.16)"); // coral
+  g.addColorStop(0.72, "rgba(138, 176, 255, 0.1)"); // azul suave
+  g.addColorStop(1.0, "rgba(138, 176, 255, 0)");
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, size, size);
   const tex = new THREE.CanvasTexture(canvas);
@@ -178,9 +176,9 @@ function makeGlowTexture(): THREE.CanvasTexture {
   return tex;
 }
 
-// "Sombra" de contato: elipse com o GRADIENTE da marca (Figma: azul → azul
-// claro → coral → laranja) esvaindo nas bordas — mais um reflexo de luz
-// colorida no chão do que sombra. Renderizada a 30% de opacidade.
+// "Sombra" de contato: elipse com o Main Gradient da marca (gradiente02:
+// azul → azul claro → coral → amarelo) esvaindo nas bordas — mais um reflexo
+// de luz colorida no chão do que sombra. Renderizada a 30% de opacidade.
 function makeShadowTexture(): THREE.CanvasTexture {
   const size = 256;
   const canvas = document.createElement("canvas");
@@ -188,10 +186,10 @@ function makeShadowTexture(): THREE.CanvasTexture {
   canvas.height = size;
   const ctx = canvas.getContext("2d")!;
   const lin = ctx.createLinearGradient(0, 0, size, 0);
-  lin.addColorStop(0.1, "#588dff");
-  lin.addColorStop(0.26, "#96adff");
-  lin.addColorStop(0.58, "#f36350");
-  lin.addColorStop(0.96, "#f3ac50");
+  lin.addColorStop(0.0, "#588dff");
+  lin.addColorStop(0.28, "#94b8f0");
+  lin.addColorStop(0.55, "#f36350");
+  lin.addColorStop(1.0, "#fcd757");
   ctx.fillStyle = lin;
   ctx.fillRect(0, 0, size, size);
   // Máscara elíptica: miolo pleno, bordas esvaídas.
@@ -433,7 +431,7 @@ export function AiGlobe() {
       </sprite>
 
       {/* Casca additive: rim glow colorido que acompanha o gradiente da esfera
-          (menta no topo, coral embaixo). BackSide + escala 1.12 → anel de luz
+          (azul no topo, amarelo embaixo). BackSide + escala 1.12 → anel de luz
           colado na silhueta, atrás do núcleo. */}
       <mesh scale={1.12}>
         <icosahedronGeometry args={[RADIUS, 32]} />
