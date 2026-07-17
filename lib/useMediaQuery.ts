@@ -18,5 +18,5 @@ export function useMediaQuery(query: string): boolean {
 
 /** Tablet/mobile: a experiência 3D completa é trocada pelo fallback (§0/§6). */
 export function useIsMobile(): boolean {
-  return useMediaQuery("(max-width: 768px)");
+  return useMediaQuery("(max-width: 1024px)");
 }

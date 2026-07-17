@@ -1,9 +1,12 @@
 "use client";
 
+import { useState } from "react";
+import Image from "next/image";
 import { SCREENS, type ScreenProps } from "@/components/screens";
 import { useFlow, useCanBack } from "@/flow/store";
 import { NODES, ALL_NODE_IDS, ZONE_LABEL } from "@/flow/graph";
 import { WireButton, WireBadge, Eyebrow } from "@/components/ui";
+import { PromptBox } from "@/components/home/PromptBox";
 
 // Fallback mobile (§0/§6): sem o trilho 3D completo. As estações entram por
 // cross-fade; navegação por seleção de nó + avanço/voltar. Forks na própria tela.
@@ -12,6 +15,10 @@ export function MobileExperience() {
   const goTo = useFlow((s) => s.goTo);
   const back = useFlow((s) => s.back);
   const canBack = useCanBack();
+
+  if (currentNode === "home") {
+    return <MobileHomeExperience />;
+  }
 
   const node = NODES[currentNode];
   const Screen = SCREENS[currentNode];
@@ -81,5 +88,90 @@ export function MobileExperience() {
         )}
       </footer>
     </div>
+  );
+}
+
+function MobileHomeExperience() {
+  const [question, setQuestion] = useState("");
+
+  return (
+    <main className="relative min-h-dvh overflow-hidden bg-white px-5 pt-5 pb-6 sm:px-8 md:px-10">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-[-35%] top-20 h-[420px] opacity-80 blur-3xl"
+        style={{
+          background:
+            "radial-gradient(circle at 42% 38%, rgba(88,141,255,0.16), transparent 34%), radial-gradient(circle at 58% 46%, rgba(243,99,80,0.12), transparent 32%), radial-gradient(circle at 50% 68%, rgba(252,215,87,0.14), transparent 36%)",
+        }}
+      />
+
+      <header className="relative z-10 flex items-center justify-between gap-4">
+        <Image
+          src="/logotipo.svg"
+          alt="wecann.care"
+          width={136}
+          height={23}
+          priority
+          className="h-[23px] w-[136px]"
+        />
+        <button
+          aria-label="Perfil"
+          className="relative size-10 shrink-0 overflow-hidden rounded-full"
+        >
+          <Image
+            src="/figma/avatar.png"
+            alt=""
+            width={46}
+            height={61}
+            className="absolute top-[-26.64%] left-[-7.5%] h-[153.29%] w-[115%] max-w-none"
+          />
+        </button>
+      </header>
+
+      <section className="relative z-10 mx-auto flex min-h-[calc(100dvh-92px)] w-full max-w-[720px] flex-col justify-center gap-8 pt-10">
+        <div className="flex flex-col items-center gap-6 text-center">
+          <div
+            aria-hidden
+            className="relative size-[156px] rounded-full sm:size-[190px]"
+            style={{
+              background:
+                "linear-gradient(180deg, rgba(138,176,255,0.72) 0%, rgba(174,185,239,0.52) 38%, rgba(246,163,146,0.6) 66%, rgba(249,223,160,0.72) 100%)",
+              boxShadow:
+                "0 0 64px rgba(138,176,255,0.26), 0 28px 70px rgba(243,99,80,0.16)",
+            }}
+          >
+            <span className="absolute inset-[18px] rounded-full bg-white/42 blur-xl" />
+            <span className="absolute inset-0 rounded-full ring-1 ring-white/80" />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <h1 className="font-display text-[30px] font-semibold leading-[1.12] text-ink sm:text-[36px]">
+              Boa tarde, Dr. Ricardo
+            </h1>
+            <p className="text-[14px] leading-[1.6] text-secondary">
+              Quinta, 19 de junho 14:02
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <PromptBox
+            placeholder="Digite sua pergunta ou comando..."
+            onSend={(value) => setQuestion(value)}
+          />
+
+          {question ? (
+            <section className="rounded-[20px] border border-border-soft bg-white/90 p-4">
+              <p className="text-[12px] font-medium uppercase tracking-[0.08em] text-secondary">
+                Nova conversa
+              </p>
+              <p className="mt-2 text-[15px] font-medium leading-[1.45] text-ink">
+                {question}
+              </p>
+            </section>
+          ) : null}
+        </div>
+      </section>
+    </main>
   );
 }
